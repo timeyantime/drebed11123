@@ -70,10 +70,15 @@
 
   function animateIn() {
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    pageBody.querySelectorAll(".panel, .kpi, .hub-tile, .quick-card").forEach((el, i) => {
+    /* stagger только для верхнеуровневых блоков: вложенные элементы
+       (KPI внутри panel, tiles внутри grid) анимируются вместе с родителем */
+    const sel = ".panel, .kpi-grid, .hub-grid, .quick-grid, .detail-hero";
+    const nodes = Array.from(pageBody.querySelectorAll(sel));
+    const top = nodes.filter((el) => !nodes.some((p) => p !== el && p.contains(el)));
+    top.forEach((el, i) => {
       el.style.animation = "none";
       el.offsetHeight; // reflow
-      el.style.animation = `fadeUp .35s ease ${Math.min(i * 24, 240)}ms both`;
+      el.style.animation = `fadeUp .35s ease ${Math.min(i * 40, 280)}ms both`;
     });
   }
 

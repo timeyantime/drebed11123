@@ -108,8 +108,20 @@
       </div>`).join("")}</div>`;
   }
 
+  /* Кольцевой прогресс (цели) — Этап 11. ratio 0..1 */
+  function ringSVG(ratio, label, size = 72) {
+    const r = 30, c = 2 * Math.PI * r;
+    const clamped = Math.max(0, Math.min(1, ratio));
+    const kind = clamped >= 1 ? "" : clamped > 0.5 ? "" : "warn";
+    return `<svg class="ring ${kind}" viewBox="0 0 72 72" width="${size}" height="${size}" role="img" aria-label="${esc(label || "")}">
+      <circle class="ring-bg" cx="36" cy="36" r="${r}"></circle>
+      <circle class="ring-fg" cx="36" cy="36" r="${r}" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${(c * (1 - clamped)).toFixed(1)}"></circle>
+      <text x="36" y="40" text-anchor="middle" class="donut-center">${Math.round(clamped * 100)}%</text>
+    </svg>`;
+  }
+
   window.u = {
-    ic, money, pct, fillIcons, esc, chartColor, donutSVG, legendHTML,
+    ic, money, pct, fillIcons, esc, chartColor, donutSVG, legendHTML, ringSVG,
     moneyFormatter
   };
 })();

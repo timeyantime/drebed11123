@@ -189,15 +189,16 @@ window.Views = window.Views || {};
                 <h2>${esc(g.name)}</h2>
                 <span class="note">до ${esc(g.deadline)}</span>
               </div>
-              <div class="budget-row" style="border:0;padding:0">
-                <div class="head">
-                  <span class="name"><span class="cat-dot" style="--c:${u.chartColor(i)}"></span>${money(g.saved)} из ${money(g.target)}</span>
-                  <span class="sum">${Math.round(ratio * 100)}%</span>
-                </div>
-                <div class="progress ${ratio >= 1 ? "ok" : ratio > 0.5 ? "" : "warn"}"><span style="width:${ratio * 100}%"></span></div>
-                <div class="foot">
-                  <span>${g.saved >= g.target ? "Цель достигнута 🎉" : "не хватает " + money(g.target - g.saved)}</span>
-                  ${g.saved < g.target ? `<button class="mini-btn" data-action="goal-add" data-goal="${esc(g.name)}" title="Пополнить цель">+ взнос</button>` : ""}
+              <div class="budget-row" style="border:0;padding:0;display:flex;gap:var(--sp-4);align-items:center">
+                ${u.ringSVG(ratio, g.name)}
+                <div style="flex:1;min-width:0">
+                  <div class="head">
+                    <span class="name"><span class="cat-dot" style="--c:${u.chartColor(i)}"></span>${money(g.saved)} из ${money(g.target)}</span>
+                  </div>
+                  <div class="foot">
+                    <span>${g.saved >= g.target ? "Цель достигнута 🎉" : "не хватает " + money(g.target - g.saved)}</span>
+                    ${g.saved < g.target ? `<button class="mini-btn" data-action="goal-add" data-goal="${esc(g.name)}" title="Пополнить цель">+ взнос</button>` : ""}
+                  </div>
                 </div>
               </div>
             </section>`;

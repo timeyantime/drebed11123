@@ -697,3 +697,37 @@ body.fan-open .fan-backdrop {
    поднимаем z-index поверх шапки/рейла, но ниже модалок и выхода из рамки */
 body.framed .fan-backdrop { z-index: 250 !important; }
 body.framed .sheet-backdrop { z-index: 260 !important; }
+
+/* ============================================================
+   ЭТАП 11 — анимации компонентов + тонкая настройка дизайна
+   ============================================================ */
+
+/* Пульс скелетонов */
+@keyframes shimmerPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
+.skeleton { animation: shimmerPulse 1.2s ease-in-out infinite; }
+
+/* Кольцо-прогресс целей */
+.ring { display: inline-block; line-height: 0; }
+.ring circle { fill: none; stroke-width: 8; }
+.ring .ring-bg { stroke: var(--hover); }
+.ring .ring-fg { stroke: var(--accent); stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dashoffset 0.5s ease; }
+.ring.warn .ring-fg { stroke: var(--amber); }
+.ring.over .ring-fg { stroke: var(--red); }
+
+/* Чипы фильтров */
+.chip { cursor: pointer; }
+.chip.is-active { background: var(--active-bg); color: var(--active-text); border-color: transparent; }
+
+/* Активная плашка раздела в hub-сетке */
+.hub-tile[aria-current="page"] { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+/* Мicro-interaction для строк списков */
+.row { transition: background 0.15s ease; }
+
+/* Плавный hover lift для карточек */
+.panel:hover { box-shadow: var(--shadow); }
+
+/* Уменьшение смещения при нажатии FAB/табов */
+.tab-item:active, .rail-btn:active { transform: scale(0.97); }
+
+/* prefers-reduced-motion обрабатывается глобально в layout-base.css */

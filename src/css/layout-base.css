@@ -1069,3 +1069,25 @@
 /* Кнопка превью активна — подсветка */
 .preview-btn.is-on { color: var(--accent-text); background: var(--accent); }
 .preview-btn.is-on:hover { background: var(--accent); color: var(--accent-text); }
+
+/* ============================================================
+   ЭТАП 11 — синхронизация принудительных режимов с реальными
+   media-запросами (mobile/tablet правила уже есть выше; здесь
+   desktop ≥1180px) + единое отключение анимаций по prefers-reduced-motion
+   ============================================================ */
+:root[data-preview="desktop"] .nav-history { display: grid; }
+:root[data-preview="desktop"] .toolbar { display: flex; }
+:root[data-preview="desktop"] .bottom-nav { display: none !important; }
+:root[data-preview="desktop"] .desktop-fab { display: block; }
+
+/* Единое уважение prefers-reduced-motion для всех компонентов и режимов.
+   Глобальный блок внутри @media в начале файла не покрывал правила,
+   добавленные позже (components/anim), поэтому дублируем здесь. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

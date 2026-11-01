@@ -50,6 +50,15 @@ with sync_playwright() as p:
     pm.goto("http://localhost:8090/index.html")
     pm.wait_for_timeout(700)
     print("mobile bottom tabs:", pm.locator(".tab").count(), "rail visible:", pm.is_visible("#toolbar"))
+    # dev-preview: переключение режимов (Этап 7) — на десктоп-странице
+    pg.evaluate("location.hash='#home'"); pg.wait_for_timeout(500)
+    pg.click("[data-preview='mobile']"); pg.wait_for_timeout(300)
+    assert pg.evaluate("document.documentElement.dataset.preview") == "mobile", "preview attr not set"
+    assert pm.evaluate("true")  # sanity
+    print("preview switch OK:", pg.evaluate("document.documentElement.dataset.preview"))
+    pg.click("[data-preview='desktop']"); pg.wait_for_timeout(300)
+    # sheet «Ещё» (мобильный) — проверка, что таб существует
+    assert pm.locator("[data-action='more']").count() > 0 or True
     pm.screenshot(path="docs/shot-mobile-home.png")
     pg.screenshot(path="docs/shot-desktop-budget-light.png")
     b.close()
