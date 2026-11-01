@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Домкнига — BudgetCard (бюджеты по категориям)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5f6fa; --card:#fff; --text:#172033; --muted:#7b8496; --line:#e7eaf2;
+    --accent:#6c5ce7; --accent-soft:rgba(108,92,231,.12);
+    --green:#00b894; --amber:#e6a700; --red:#ff6b6b;
+    --green-bg:rgba(0,184,148,.12); --amber-bg:rgba(230,167,0,.14); --red-bg:rgba(255,107,107,.12);
+    --shadow:0 10px 28px rgba(0,0,0,.05); --radius:14px;
+    --ring:color-mix(in srgb, var(--text) 28%, transparent);   /* нейтральный контур выделения */
+  }
+  [data-theme="dark"]{
+    --bg:#0f1220; --card:#191e30; --text:#eef0ff; --muted:#8b93ad; --line:#262d45;
+    --accent:#8b7cff; --accent-soft:rgba(139,124,255,.16);
+    --green:#2ee6c0; --amber:#ffd93d; --red:#ff8080;
+    --green-bg:rgba(46,230,192,.14); --amber-bg:rgba(255,217,61,.16); --red-bg:rgba(255,128,128,.14);
+    --shadow:0 10px 28px rgba(0,0,0,.25);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:'Manrope',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    display:grid;place-items:start center;min-height:100dvh;padding:24px 16px;transition:background .2s,color .2s}
+  .stage{width:100%;max-width:760px}
+  .topline{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .topline b{font-size:18px;font-weight:800}
+  .topline span{color:var(--muted);font-size:12px}
+  .topline .acts{display:flex;gap:8px}
+  .icon-btn{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);
+    background:var(--card);color:var(--text);font-size:16px;cursor:pointer;display:grid;place-items:center}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px;box-shadow:var(--shadow);container-type:inline-size;container-name:card;
+    --fs-sm:13px;--fs-md:15px;--fs-lg:17px;--fs-xs:12px;--fs-2xs:10px}
+  @supports (width:1cqi){
+    .card{--fs-sm:clamp(11px,2.4cqi,15px);--fs-md:clamp(13px,2.8cqi,18px);
+      --fs-lg:clamp(15px,3.2cqi,21px);--fs-xs:clamp(11px,2.2cqi,14px);--fs-2xs:clamp(9px,1.8cqi,12px)}
+  }
+  .section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+  .section-head .l{display:flex;align-items:baseline;gap:8px;min-width:0}
+  .section-title{margin:0;font-size:var(--fs-lg);font-weight:800;letter-spacing:-.2px}
+  .section-note{color:var(--muted);font-size:var(--fs-sm);font-weight:700;white-space:nowrap}
+  .head-actions{display:flex;gap:6px;flex:0 0 auto}
+  .mini-btn{height:34px;min-width:34px;padding:0 10px;border-radius:10px;border:1px solid var(--line);
+    background:var(--bg);color:var(--text);font:inherit;font-size:var(--fs-xs);font-weight:800;cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;transition:background .15s,transform .1s,color .15s}
+  .mini-btn:active{transform:scale(.96)}
+  .mini-btn.accent{background:var(--accent);color:#fff;border-color:transparent}   /* только первичные действия модалок */
+  .mini-btn .ic{width:15px;height:15px}
+  /* тон-кнопка: НЕЙТРАЛЬНАЯ серая заливка без контура (без фиолета) */
+  .mini-btn.btn-tonal{border:none;background:var(--bg);color:var(--text)}
+  .mini-btn.btn-tonal .ic{color:var(--muted)}
+  .mini-btn.btn-tonal:hover{background:var(--line)}
+  .mini-btn.btn-tonal:focus-visible{outline:2px solid var(--muted);outline-offset:2px}
+
+  .ic{display:inline-block;width:16px;height:16px;flex:0 0 auto;background-color:currentColor;
+    -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;
+    -webkit-mask-size:contain;mask-size:contain}
+  .ic.ic-fb{-webkit-mask-image:none!important;mask-image:none!important;background:none!important;
+    display:inline-flex;align-items:center;justify-content:center;line-height:1;font-size:16px}   /* fallback читаем */
+
+  /* общий индикатор: безрамочный контейнер (нет серой плашки-«рамки») */
+  .overall{margin-bottom:16px}
+  .ov-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  .ov-k{font-size:var(--fs-xs);font-weight:700;color:var(--muted)}
+  .ov-pct{font-size:clamp(20px,6cqi,26px);font-weight:800;letter-spacing:-.6px;line-height:1}
+  .ov-bar{height:8px;border-radius:999px;background:var(--line);overflow:hidden;margin:9px 0 8px}
+  .ov-bar i{display:block;height:100%;border-radius:999px;transition:width .45s cubic-bezier(.22,.61,.36,1),background .25s}
+  .ov-chips{display:flex;gap:6px;flex-wrap:wrap}
+  /* чипы: контрастный тёмный текст + цветная точка-маркер (не сливается с плашкой) */
+  .chip{font-size:var(--fs-2xs);font-weight:800;padding:4px 9px;border-radius:999px;white-space:nowrap;
+    display:inline-flex;align-items:center;gap:6px;color:var(--text)}
+  .chip .cd{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+  .chip.red{background:var(--red-bg)}     .chip.red .cd{background:var(--red)}
+  .chip.amber{background:var(--amber-bg)} .chip.amber .cd{background:var(--amber)}
+  .chip.green{background:var(--green-bg)} .chip.green .cd{background:var(--green)}
+  .chip.mute{background:var(--card);color:var(--muted);border:1px solid var(--line)}
+
+  /* ===== контейнер master-detail ===== */
+  .bd-grid{display:block}                 /* мобила: одна колонка, панель скрыта */
+  .detail-pane{display:none;position:relative}   /* relative — база для absolute-иконки */
+
+  /* ===== плитки/строки бюджетов ===== */
+  .tiles{display:flex;flex-direction:column;gap:2px}   /* мобила: список строк */
+  .tile{border-radius:10px;transition:background .15s,box-shadow .15s,transform .12s}
+  .tile-main{display:grid;grid-template-columns:1fr auto;
+    grid-template-areas:"head vals" "bar bar" "foot foot";align-items:center;gap:9px;
+    width:100%;text-align:left;border:0;background:transparent;color:inherit;font:inherit;
+    padding:9px 8px;cursor:pointer;border-radius:10px;transition:background .15s}
+  .tile-main:hover{background:var(--bg)}
+  .tile-main:focus-visible{outline:2px solid var(--muted);outline-offset:-2px}
+  .t-head{grid-area:head;display:flex;align-items:center;gap:8px;min-width:0}
+  .t-head .dot{width:10px;height:10px;border-radius:2px;flex:0 0 auto}
+  .t-head .ic{color:var(--muted)}
+  .t-head .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;font-size:var(--fs-sm)}
+  .vals{grid-area:vals;display:flex;flex-direction:column;text-align:right;flex:0 0 auto}
+  .v-spent{font-size:var(--fs-sm);font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+  .v-limit{font-size:var(--fs-2xs);font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+  .tile .bar{grid-area:bar;height:6px;border-radius:999px;background:var(--line);overflow:hidden;margin:2px 8px 4px}
+  .tile .bar i{display:block;height:100%;border-radius:999px;transition:width .45s cubic-bezier(.22,.61,.36,1),background .25s}
+  .tile .foot{grid-area:foot;display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 8px 6px}
+  .tile .status{font-size:var(--fs-2xs);font-weight:800;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* карет на мобиле: постоянная подложка + крупнее, чтобы был видно */
+  .tile .caret{flex:0 0 auto;width:24px;height:24px;border-radius:8px;display:grid;place-items:center;
+    color:var(--muted);background:var(--bg);transition:transform .25s,background .15s,color .15s}
+  .tile .caret .ic{width:16px;height:16px}
+  .tile-main:hover .caret{color:var(--text);background:var(--line)}
+  .tile.open .caret{transform:rotate(180deg)}
+
+  /* красный = только панель строки (не расходы внутри) */
+  .tile.ok .v-spent,.tile.ok .status{color:var(--green)} .tile.ok .bar i{background:var(--green)}
+  .tile.warn .v-spent,.tile.warn .status{color:var(--amber)} .tile.warn .bar i{background:var(--amber)}
+  .tile.over .v-spent,.tile.over .status{color:var(--red)} .tile.over .bar i{background:var(--red)}
+  .tile.over{background:var(--red-bg)}
+
+  /* спойлер деталей (мобила, аккордеон 0fr->1fr); чистый фон — расходы не краснеют */
+  .tile-detail{display:grid;grid-template-rows:0fr;transition:grid-template-rows .32s cubic-bezier(.22,.61,.36,1)}
+  .tile.open .tile-detail{grid-template-rows:1fr}
+  .tile-detail-inner{overflow:hidden;min-height:0;background:var(--card);border-radius:0 0 10px 10px}
+  .ops{padding:6px 8px 4px;display:flex;flex-direction:column;gap:1px}
+  .op{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 0;
+    border-top:1px solid var(--line);font-size:var(--fs-xs)}
+  .op:first-child{border-top:0}
+  .op .o-l{display:flex;flex-direction:column;min-width:0}
+  .op .o-note{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .op .o-date{color:var(--muted);font-size:var(--fs-2xs)}
+  .op .o-amt{font-weight:800;font-variant-numeric:tabular-nums;color:var(--text);flex:0 0 auto}
+  .detail-foot{display:flex;gap:8px;padding:4px 8px 10px}
+  .detail-foot .mini-btn{flex:1;justify-content:center}
+
+  .empty{padding:26px 14px;text-align:center;color:var(--muted)}
+  .empty b{display:block;color:var(--text);font-size:var(--fs-md);font-weight:800;margin-bottom:6px}
+  .empty p{margin:0 0 14px;font-size:var(--fs-sm);line-height:1.4}
+
+  /* ===== правая панель деталей (десктоп) ===== */
+  .dp-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+    min-height:140px;color:var(--muted);font-size:var(--fs-sm);font-weight:700;text-align:center}
+  .dp-empty .ic{width:26px;height:26px;opacity:.5}
+  /* padding-right резервирует зону под увеличенную absolute-иконку, чтобы текст/бейдж не наезжали */
+  .dp-head{display:flex;align-items:center;gap:8px;min-width:0;padding-right:62px}
+  .dp-head .dot{width:12px;height:12px;border-radius:3px;flex:0 0 auto}
+  /* без flex:1 → название по содержимому, бейдж встаёт СРАЗУ после него, по центру строки */
+  .dp-nm{font-size:var(--fs-md);font-weight:800;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dp-badge{flex:0 0 auto;font-size:var(--fs-2xs);font-weight:800;padding:4px 10px;border-radius:999px;white-space:nowrap}
+  .dp-badge.ok{background:var(--green-bg);color:var(--green)}
+  .dp-badge.warn{background:var(--amber-bg);color:var(--amber)}
+  .dp-badge.over{background:var(--red-bg);color:var(--red)}
+  /* иконка категории крупнее (46px), absolute вправо-вверх, вне потока строки заголовка */
+  .dp-cat-icon{position:absolute;top:8px;right:8px;width:46px;height:46px;z-index:0;pointer-events:none}
+  .dp-figures{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+  .dp-spent{font-size:clamp(20px,6cqi,26px);font-weight:800;letter-spacing:-.6px;line-height:1;font-variant-numeric:tabular-nums}
+  .dp-spent.ok-txt{color:var(--green)} .dp-spent.warn-txt{color:var(--amber)} .dp-spent.over-txt{color:var(--red)}
+  .dp-limit{font-size:var(--fs-sm);font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+  .dp-bar{height:8px;border-radius:999px;background:var(--line);overflow:hidden}
+  .dp-bar i{display:block;height:100%;border-radius:999px;transition:width .45s cubic-bezier(.22,.61,.36,1),background .25s}
+  .dp-bar.ok i{background:var(--green)} .dp-bar.warn i{background:var(--amber)} .dp-bar.over i{background:var(--red)}
+  .dp-ops{display:flex;flex-direction:column;gap:1px}
+  .dp-ops .op{padding:7px 0}
+  .dp-edit{align-self:flex-start;margin-top:2px}
+
+  dialog{background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:16px;
+    width:min(420px,92vw);padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+  dialog::backdrop{background:rgba(0,0,0,.5);backdrop-filter:blur(4px)}
+  dialog h3{margin:0 0 4px;font-size:var(--fs-lg);font-weight:800}
+  dialog .d-sub{color:var(--muted);font-size:var(--fs-sm);margin:0 0 14px}
+  .preset-row{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+  .preset-row .mini-btn{flex:0 0 auto}
+  input[type=number]{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);
+    background:var(--bg);color:var(--text);font:inherit;font-size:var(--fs-md);font-weight:800}
+  input[type=number]:focus{outline:none;border-color:var(--muted);box-shadow:0 0 0 3px var(--accent-soft)}
+  .auto-list{display:flex;flex-direction:column;gap:2px;max-height:46vh;overflow:auto;margin:0 -4px;padding:0 4px}
+  .auto-row{display:flex;align-items:center;gap:10px;padding:9px 6px;border-radius:10px;cursor:pointer}
+  .auto-row:hover{background:var(--bg)}
+  .auto-row .dot{width:10px;height:10px;border-radius:2px;flex:0 0 auto}
+  .auto-row .ic{color:var(--muted)}
+  .auto-row .nm{flex:1;min-width:0;font-weight:700;font-size:var(--fs-sm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .auto-row .rec{font-weight:800;font-variant-numeric:tabular-nums;color:var(--text)}
+  .auto-row input{width:18px;height:18px;flex:0 0 auto;accent-color:var(--accent)}
+  .dlg-foot{display:flex;gap:8px;margin-top:14px}
+  .dlg-foot .mini-btn{flex:1;justify-content:center;height:42px}
+
+  #toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(14px);
+    background:var(--text);color:var(--card);padding:11px 16px;border-radius:12px;font-size:13px;font-weight:800;
+    opacity:0;pointer-events:none;transition:.22s;z-index:50;white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  @media (max-width:560px){ .ov-pct{font-size:22px} }
+
+  /* ===== DESKTOP master-detail ===== */
+  @media (min-width:720px){
+    .bd-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+    .detail-pane{display:flex;flex-direction:column;gap:12px;
+      border-left:1px solid var(--line);padding-left:16px;min-height:160px}
+    .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;align-content:start}
+    .tile{background:var(--bg)}
+    .tile:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.06)}
+    /* выделение БЕЗ цвета — нейтральный контур + тень + «приподнятие» белым */
+    .tile.active{background:var(--card);box-shadow:0 0 0 1.5px var(--ring),0 8px 22px rgba(0,0,0,.10)}
+    .tile.over{background:var(--red-bg)}
+    .tile.over.active{background:var(--red-bg);box-shadow:0 0 0 1.5px var(--ring),0 8px 22px rgba(0,0,0,.10)}
+    .tile-main{display:flex;flex-direction:column;align-items:stretch;gap:7px;padding:11px 12px}
+    .tile-main:hover{background:transparent}
+    .t-head{gap:7px}
+    .vals{flex-direction:row;align-items:baseline;gap:5px;text-align:left}
+    .tile .bar{margin:0}
+    .tile .foot{margin:0}
+    .tile .caret{display:none}          /* на десктопе карет не нужен — панель справа */
+    .tile-detail{display:none}
+    /* увеличить ТОЛЬКО подпись «Общий лимит месяца»; процент наследует базовый clamp */
+    .ov-k{font-size:17px}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .ov-bar i,.tile .bar i,.tile-detail,.tile .caret,.tile,.dp-bar i{transition:none}
+  }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="topline">
+      <div><b>Домкнига</b> <span>· BudgetCard демо</span></div>
+      <div class="acts">
+        <button class="icon-btn" id="hideBtn" title="Скрыть суммы">🙈</button>
+        <button class="icon-btn" id="themeBtn" title="Тема">◐</button>
+      </div>
+    </div>
+
+    <section class="card" id="card">
+      <div class="section-head">
+        <div class="l">
+          <h2 class="section-title">Бюджеты</h2>
+          <span class="section-note" id="monthNote">окт</span>
+        </div>
+        <div class="head-actions">
+          <button class="mini-btn" id="autoBtn" title="Авто‑настройка по средним"><i class="ic" id="icAuto"></i>Авто</button>
+          <button class="mini-btn" id="addBtn" title="Добавить бюджет"><i class="ic" id="icAdd"></i></button>   <!-- без .accent => серая -->
+        </div>
+      </div>
+
+      <div class="overall" id="overall"></div>
+
+      <div class="bd-grid">
+        <div class="tiles" id="tiles"></div>
+        <aside class="detail-pane" id="detailPane"></aside>
+      </div>
+    </section>
+  </div>
+
+  <dialog id="limitDialog">
+    <h3>Лимит по категории</h3>
+    <p class="d-sub" id="ldCat"></p>
+    <input type="number" id="ldInput" min="100" step="100" inputmode="numeric">
+    <div class="preset-row">
+      <button class="mini-btn" data-preset="-10">−10%</button>
+      <button class="mini-btn" data-preset="10">+10%</button>
+      <button class="mini-btn" data-preset="mul1.5">×1.5</button>
+      <button class="mini-btn" data-preset="round">≈ 500</button>
+    </div>
+    <div class="dlg-foot">
+      <button class="mini-btn" id="ldCancel">Отмена</button>
+      <button class="mini-btn accent" id="ldSave">Сохранить</button>
+    </div>
+  </dialog>
+
+  <dialog id="autoDialog">
+    <h3>Рекомендуемые лимиты</h3>
+    <p class="d-sub">По вашим средним расходам за 3 месяца (+10% запас). Отметьте, что добавить.</p>
+    <div class="auto-list" id="autoList"></div>
+    <div class="dlg-foot">
+      <button class="mini-btn" id="adCancel">Отмена</button>
+      <button class="mini-btn accent" id="adApply">Применить выбранное</button>
+    </div>
+  </dialog>
+
+  <div id="toast"></div>
+
+<script>
+  const $ = s => document.querySelector(s);
+  const fmt = n => new Intl.NumberFormat('ru-RU',{maximumFractionDigits:0}).format(n);
+
+  // ---- иконки (Iconify, СЛЭШ; fallback категорий = эмодзи). опц. color для окраски mask ----
+  const icUrl = name => { const [p,...r]=name.split(':'); return `https://api.iconify.design/${p}/${r.join(':')}.svg`; };
+  function setIcon(el, iconName, fb, color){
+    if(!el) return;
+    const url = icUrl(iconName);
+    if(color) el.style.backgroundColor = color;          // окрас mask-заливки в цвет категории
+    el.style.webkitMaskImage = `url("${url}")`; el.style.maskImage = `url("${url}")`;
+    const probe = new Image();
+    probe.onerror = () => { el.style.webkitMaskImage='none'; el.style.maskImage='none';
+      el.style.backgroundColor=''; el.textContent = fb||''; el.classList.add('ic-fb'); };
+    probe.src = url;
+  }
+  setIcon($('#icAuto'),'lucide:sparkles','✨');
+  setIcon($('#icAdd'),'lucide:plus','+');
+
+  // ---- справочник категорий расходов ----
+  const CATS = {
+    food:{name:'Продукты',icon:'lucide:shopping-cart',emoji:'🛒',color:'#00b894'},
+    market:{name:'Маркетплейсы',icon:'lucide:store',emoji:'🏪',color:'#6c5ce7'},
+    transport:{name:'Транспорт',icon:'lucide:car',emoji:'🚗',color:'#74b9ff'},
+    cafe:{name:'Кафе',icon:'lucide:coffee',emoji:'☕',color:'#e17055'},
+    work:{name:'Работа',icon:'lucide:book-open',emoji:'📚',color:'#a29bfe'},
+    housing:{name:'Жильё',icon:'lucide:home',emoji:'🏠',color:'#fdcb6e'},
+    health:{name:'Здоровье',icon:'lucide:pill',emoji:'💊',color:'#ff7675'},
+    fun:{name:'Развлечения',icon:'lucide:gamepad-2',emoji:'🎮',color:'#fd79a8'},
+    cloth:{name:'Одежда',icon:'lucide:shirt',emoji:'👕',color:'#00cec9'},
+    subs:{name:'Подписки',icon:'lucide:refresh-cw',emoji:'🔄',color:'#0984e3'},
+    comms:{name:'Связь',icon:'lucide:smartphone',emoji:'📱',color:'#636e72'},
+    internet:{name:'Интернет',icon:'lucide:wifi',emoji:'🌐',color:'#00b894'},
+    gifts:{name:'Подарки',icon:'lucide:gift',emoji:'🎁',color:'#ff9f7f'},
+    other:{name:'Прочее',icon:'lucide:ellipsis',emoji:'📦',color:'#b2bec3'},
+  };
+
+  // ---- мок: бюджеты + последние траты категории (spent = сумма ops) ----
+  const OPS = {
+    market:[['28.10','Ozon, электроника',3200],['24.10','WB, одежда',2800],['19.10','Яндекс.Маркет',1900],['12.10','Ozon, дом',1500]],
+    fun:[['27.10','Steam, игра',2400],['21.10','Кино 2 зала',1800],['15.10','Подписка PlayStation',1200],['08.10','Аркадия',500]],
+    cafe:[['29.10','Кофе с собой',290],['28.10','Обед, Столовая №1',450],['26.10','Кофе',380],['22.10','Ужин с друзьями',1200],['18.10','Завтрак',650],['14.10','Доставка еды',980],['09.10','Кофе',750]],
+    food:[['28.10','Пятёрочка',2590],['25.10','Магнит',1840],['22.10','Перекрёсток, закупка',3120],['17.10','Ашан',1450],['11.10','Лента',1420]],
+    transport:[['29.10','Такси',690],['25.10','Метро/автобус',540],['20.10','Такси',420],['13.10','Бензин (доля)',450]],
+    work:[['26.10','Zoom, подписка',990],['20.10','Учебник ЕГЭ',1200],['10.10','Печать материалов',800]],
+    health:[['16.10','Аптека',1200]],
+    subs:[['27.10','Яндекс.Плюс',990],['15.10','Canva Pro',560],['05.10','ChatGPT',300]],
+  };
+  const sum = id => (OPS[id]||[]).reduce((s,o)=>s+o[2],0);
+
+  let budgets = [
+    {id:'market',limit:8000},{id:'fun',limit:6000},{id:'cafe',limit:5000},
+    {id:'subs',limit:2000},{id:'food',limit:15000},{id:'transport',limit:4000},
+    {id:'work',limit:6000},{id:'health',limit:4000},
+  ].map(b=>({...b,spent:sum(b.id)}));
+
+  const RECOMMEND = {housing:25000,cloth:5000,comms:1000,internet:800,gifts:3000,other:2000};
+
+  const state = { hidden:false, editing:null, selected:null };
+
+  const statusOf = pct => pct>100 ? 'over' : pct>=80 ? 'warn' : 'ok';
+  const priority = st => st==='over'?0 : st==='warn'?1 : 2;
+  const pctOf = b => b.limit>0 ? (b.spent/b.limit)*100 : 0;
+  const statusText = (st,overAmt,pct) =>
+    st==='over' ? `Превышен на ${state.hidden?'•••':fmt(overAmt)+' ₽'} · ${Math.round(pct)}%`
+    : st==='warn' ? `На грани · ${Math.round(pct)}% лимита`
+    : `В норме · ${Math.round(pct)}% лимита`;
+  const badgeText = st => st==='over'?'превышен':st==='warn'?'на грани':'в норме';
+
+  const mqDesktop = window.matchMedia('(min-width:720px)');
+  const isDesktop = () => mqDesktop.matches;
+
+  function sorted(){
+    return [...budgets].sort((a,b)=>{
+      const pa=priority(statusOf(pctOf(a))), pb=priority(statusOf(pctOf(b)));
+      return pa!==pb ? pa-pb : pctOf(b)-pctOf(a);
+    });
+  }
+
+  // ---- плитки/строки создаём ОДИН РАЗ ----
+  const tileEls = {};
+  function buildTile(b){
+    const c = CATS[b.id];
+    const tile = document.createElement('div');
+    tile.className = 'tile'; tile.dataset.id = b.id;
+    const ops = (OPS[b.id]||[]).map(o=>`
+      <div class="op"><div class="o-l"><span class="o-note">${o[1]}</span><span class="o-date">${o[0]}</span></div>
+      <span class="o-amt" data-amt="${o[2]}">−${fmt(o[2])} ₽</span></div>`).join('')
+      || `<div class="op"><span class="o-date">Нет операций за месяц</span></div>`;
+    tile.innerHTML = `
+      <button class="tile-main" type="button" aria-expanded="false">
+        <span class="t-head">
+          <i class="dot" style="background:${c.color}"></i>
+          <span class="ic" data-ic="${c.icon}" data-emoji="${c.emoji}"></span>
+          <span class="nm">${c.name}</span>
+        </span>
+        <span class="vals"><span class="v-spent" data-spent></span><span class="v-limit" data-limit></span></span>
+        <span class="bar"><i data-fill></i></span>
+        <span class="foot">
+          <span class="status" data-status></span>
+          <span class="caret" aria-hidden="true"><i class="ic" data-ic="lucide:chevron-down" data-emoji="▾"></i></span>
+        </span>
+      </button>
+      <div class="tile-detail"><div class="tile-detail-inner">
+        <div class="ops">${ops}</div>
+        <div class="detail-foot">
+          <button class="mini-btn btn-tonal" data-edit="${b.id}"><i class="ic" data-ic="lucide:pencil" data-emoji="✎"></i> Изменить лимит</button>
+        </div>
+      </div></div>`;
+    tile.querySelector('.tile-main').addEventListener('click', e=>{
+      if(e.target.closest('[data-edit]')) return;
+      if(isDesktop()) selectTile(b.id); else toggleRow(b.id);
+    });
+    tile.querySelector('[data-edit]').addEventListener('click', e=>{ e.stopPropagation(); openLimit(b.id); });
+    tileEls[b.id] = tile;
+    tile.querySelectorAll('.ic[data-ic]').forEach(el=>setIcon(el, el.dataset.ic, el.dataset.emoji));
+    return tile;
+  }
+
+  function ensureTiles(){
+    const tiles = $('#tiles');
+    budgets.forEach(b=>{ if(!tileEls[b.id]) tiles.appendChild(buildTile(b)); });
+  }
+
+  // ---- мобила: аккордеон ----
+  function toggleRow(id){
+    const tile = tileEls[id]; const willOpen = !tile.classList.contains('open');
+    document.querySelectorAll('.tile.open').forEach(t=>{
+      t.classList.remove('open'); t.querySelector('.tile-main').setAttribute('aria-expanded','false');
+    });
+    if(willOpen){ tile.classList.add('open'); tile.querySelector('.tile-main').setAttribute('aria-expanded','true'); }
+    haptic('light');
+  }
+
+  // ---- десктоп: выбор для правой панели ----
+  function selectTile(id, silent){
+    state.selected = id;
+    document.querySelectorAll('.tile.active').forEach(t=>t.classList.remove('active'));
+    if(tileEls[id]) tileEls[id].classList.add('active');
+    renderDetailPane(id);
+    if(!silent) haptic('light');
+  }
+
+  function renderTile(b){
+    const tile = tileEls[b.id]; const pct = pctOf(b); const st = statusOf(pct);
+    tile.classList.remove('ok','warn','over'); tile.classList.add(st);
+    tile.querySelector('[data-spent]').textContent = state.hidden ? '•••' : fmt(b.spent)+' ₽';
+    tile.querySelector('[data-limit]').textContent = state.hidden ? '/ •••' : '/ '+fmt(b.limit)+' ₽';
+    tile.querySelector('[data-fill]').style.width = Math.min(pct,100)+'%';
+    tile.querySelector('[data-status]').textContent = statusText(st, Math.round(b.spent-b.limit), pct);
+    tile.querySelectorAll('.o-amt[data-amt]').forEach(el=>{
+      el.textContent = state.hidden ? '−••• ₽' : '−'+fmt(+el.dataset.amt)+' ₽';
+    });
+  }
+
+  function renderDetailPane(id){
+    const pane = $('#detailPane');
+    if(!id || !tileEls[id] || !budgets.find(x=>x.id===id)){
+      pane.innerHTML = `<div class="dp-empty"><i class="ic" data-ic="lucide:mouse-pointer-click" data-emoji="👆"></i>
+        ${budgets.length?'Выберите категорию слева, чтобы увидеть траты':'Бюджеты не заданы'}</div>`;
+      pane.querySelectorAll('.ic[data-ic]').forEach(el=>setIcon(el, el.dataset.ic, el.dataset.emoji));
+      return;
+    }
+    const b = budgets.find(x=>x.id===id); const c = CATS[id];
+    const pct = pctOf(b); const st = statusOf(pct);
+    const ops = (OPS[id]||[]).map(o=>`
+      <div class="op"><div class="o-l"><span class="o-note">${o[1]}</span><span class="o-date">${o[0]}</span></div>
+      <span class="o-amt">${state.hidden?'−••• ₽':'−'+fmt(o[2])+' ₽'}</span></div>`).join('')
+      || `<div class="op"><span class="o-date">Нет операций за месяц</span></div>`;
+    pane.innerHTML = `
+      <span class="ic dp-cat-icon" data-ic="${c.icon}" data-emoji="${c.emoji}" data-color="${c.color}"></span>
+      <div class="dp-head">
+        <i class="dot" style="background:${c.color}"></i>
+        <span class="dp-nm">${c.name}</span>
+        <span class="dp-badge ${st}">${badgeText(st)}</span>
+      </div>
+      <div class="dp-figures">
+        <span class="dp-spent ${st}-txt">${state.hidden?'•••':fmt(b.spent)+' ₽'}</span>
+        <span class="dp-limit">${state.hidden?'из •••':'из '+fmt(b.limit)+' ₽'} · ${Math.round(pct)}%</span>
+      </div>
+      <div class="dp-bar ${st}"><i style="width:${Math.min(pct,100)}%"></i></div>
+      <div class="dp-ops">${ops}</div>
+      <button class="mini-btn btn-tonal dp-edit"><i class="ic" data-ic="lucide:pencil" data-emoji="✎"></i> Изменить лимит</button>`;
+    pane.querySelectorAll('.ic[data-ic]').forEach(el=>setIcon(el, el.dataset.ic, el.dataset.emoji, el.dataset.color));
+    pane.querySelector('.dp-edit').addEventListener('click', ()=>openLimit(id));
+  }
+
+  function renderOverall(){
+    const totalLimit = budgets.reduce((s,b)=>s+b.limit,0);
+    const totalSpent = budgets.reduce((s,b)=>s+b.spent,0);
+    const pct = totalLimit>0 ? (totalSpent/totalLimit)*100 : 0;
+    const over = budgets.filter(b=>statusOf(pctOf(b))==='over').length;
+    const warn = budgets.filter(b=>statusOf(pctOf(b))==='warn').length;
+    const tone = over>0 ? 'red' : warn>0 ? 'amber' : 'green';
+    const chips = [];
+    if(over>0) chips.push(`<span class="chip red"><i class="cd"></i>превышено: ${over}</span>`);
+    if(warn>0) chips.push(`<span class="chip amber"><i class="cd"></i>на грани: ${warn}</span>`);
+    const ok = budgets.length-over-warn;
+    if(ok>0) chips.push(`<span class="chip green"><i class="cd"></i>в норме: ${ok}</span>`);
+    if(!budgets.length) chips.push(`<span class="chip mute">лимитов пока нет</span>`);
+    $('#overall').innerHTML = `
+      <div class="ov-top">
+        <span class="ov-k">Общий лимит месяца</span>
+        <span class="ov-pct" style="color:var(--${tone})">${Math.round(pct)}%</span>
+      </div>
+      <div class="ov-bar"><i style="width:${Math.min(pct,100)}%;background:var(--${tone})"></i></div>
+      <div class="ov-chips">${chips.join('')}
+        <span class="chip mute">${state.hidden?'•••':fmt(totalSpent)} / ${state.hidden?'•••':fmt(totalLimit)} ₽</span>
+      </div>`;
+  }
+
+  function orderTiles(){
+    const tiles = $('#tiles');
+    sorted().forEach(b=> tiles.appendChild(tileEls[b.id]));   // перестановка существующих узлов
+  }
+
+  function render(){
+    ensureTiles();
+    if(!budgets.length){
+      $('#tiles').innerHTML = `<div class="empty"><b>Бюджеты не заданы</b>
+        <p>Установите лимиты по категориям — или доверьтесь авто‑настройке по вашим средним за 3 месяца.</p>
+        <button class="mini-btn accent" id="emptyAuto" style="margin:0 auto">✨ Авто‑настройка</button></div>`;
+      $('#emptyAuto').addEventListener('click', openAuto);
+      if(isDesktop()) renderDetailPane(null);
+    } else {
+      if($('#tiles .empty')) $('#tiles').innerHTML='';
+      budgets.forEach(renderTile);
+      orderTiles();
+      if(isDesktop()){
+        if(!state.selected || !budgets.find(b=>b.id===state.selected))
+          selectTile(sorted()[0].id, true);
+        else renderDetailPane(state.selected);
+      }
+    }
+    renderOverall();
+  }
+
+  // ---- модалка изменения лимита ----
+  function openLimit(id){
+    const b = budgets.find(x=>x.id===id); if(!b) return;
+    state.editing = id;
+    $('#ldCat').textContent = CATS[id].name;
+    $('#ldInput').value = b.limit;
+    $('#limitDialog').showModal();
+  }
+  $('#limitDialog').addEventListener('click', e=>{
+    const p = e.target.closest('[data-preset]'); if(!p) return;
+    const inp = $('#ldInput'); let v = +inp.value||0; const cmd = p.dataset.preset;
+    if(cmd==='-10') v = Math.round(v*0.9);
+    else if(cmd==='10') v = Math.round(v*1.1);
+    else if(cmd==='mul1.5') v = Math.round(v*1.5);
+    else if(cmd==='round') v = Math.round(v/500)*500;
+    inp.value = Math.max(100, v);
+  });
+  $('#ldSave').addEventListener('click', ()=>{
+    const b = budgets.find(x=>x.id===state.editing); if(!b) return;
+    const v = Math.max(100, Math.round(+$('#ldInput').value||b.limit));
+    b.limit = v; $('#limitDialog').close(); render(); haptic('success'); toast('Лимит обновлён');
+  });
+  $('#ldCancel').addEventListener('click', ()=> $('#limitDialog').close());
+
+  // ---- авто-настройка ----
+  function openAuto(){
+    const have = new Set(budgets.map(b=>b.id));
+    const items = Object.entries(RECOMMEND).filter(([id])=>!have.has(id));
+    if(!items.length){ toast('Все рекомендуемые категории уже с лимитом'); return; }
+    $('#autoList').innerHTML = items.map(([id,rec])=>{
+      const c = CATS[id];
+      return `<label class="auto-row"><input type="checkbox" data-id="${id}" checked>
+        <i class="dot" style="background:${c.color}"></i>
+        <span class="ic" data-ic="${c.icon}" data-emoji="${c.emoji}"></span>
+        <span class="nm">${c.name}</span><span class="rec">${fmt(rec)} ₽</span></label>`;
+    }).join('');
+    $('#autoList').querySelectorAll('.ic[data-ic]').forEach(el=>setIcon(el, el.dataset.ic, el.dataset.emoji));
+    $('#autoDialog').showModal();
+  }
+  $('#adApply').addEventListener('click', ()=>{
+    const ids = [...$('#autoList').querySelectorAll('input:checked')].map(i=>i.dataset.id);
+    ids.forEach(id=>{
+      const limit = RECOMMEND[id];
+      const spent = Math.round(limit*(0.45 + (hashStr(id)%30)/100));
+      budgets.push({id, limit, spent});
+      if(!OPS[id]) OPS[id] = [['сегодня','Пример траты',spent]];
+    });
+    $('#autoDialog').close(); render(); haptic('success');
+    toast(ids.length ? `Добавлено лимитов: ${ids.length}` : 'Ничего не выбрано');
+  });
+  $('#adCancel').addEventListener('click', ()=> $('#autoDialog').close());
+  $('#autoBtn').addEventListener('click', openAuto);
+  $('#addBtn').addEventListener('click', ()=>{
+    const have = new Set(budgets.map(b=>b.id));
+    const next = Object.keys(CATS).find(id=>!have.has(id));
+    if(!next){ toast('Бюджеты есть по всем категориям'); return; }
+    budgets.push({id:next, limit:5000, spent:0});
+    render(); haptic('light'); toast(`Добавлен бюджет: ${CATS[next].name}`);
+  });
+
+  function hashStr(s){ let h=2166136261; for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);} return h>>>0; }
+
+  // ---- пересборка при смене режима (ресайз / поворот) ----
+  mqDesktop.addEventListener('change', ()=>{
+    document.querySelectorAll('.tile.open').forEach(t=>{
+      t.classList.remove('open'); t.querySelector('.tile-main').setAttribute('aria-expanded','false');
+    });
+    if(isDesktop() && budgets.length && !state.selected) selectTile(sorted()[0].id, true);
+    render();
+  });
+
+  // ---- прочее ----
+  function toast(t){ const el=$('#toast'); el.textContent=t; el.classList.add('show');
+    clearTimeout(window.__tt); window.__tt=setTimeout(()=>el.classList.remove('show'),1900); }
+  function haptic(type='light'){
+    try{ const tg=window.Telegram?.WebApp; if(tg?.HapticFeedback){
+      if(type==='success')tg.HapticFeedback.notificationOccurred('success');
+      else tg.HapticFeedback.impactOccurred(type); return; } }catch(_){}
+    if(navigator.vibrate) navigator.vibrate(type==='success'?20:10);
+  }
+  $('#hideBtn').addEventListener('click', ()=>{ state.hidden=!state.hidden; render(); haptic('light');
+    toast(state.hidden?'Суммы скрыты':'Суммы показаны'); });
+  $('#themeBtn').addEventListener('click', ()=>{
+    const r=document.documentElement; r.dataset.theme = r.dataset.theme==='dark'?'light':'dark'; haptic('light'); });
+  (function initTG(){ const tg=window.Telegram?.WebApp; if(!tg)return;
+    try{ tg.ready(); tg.expand(); if(tg.colorScheme) document.documentElement.dataset.theme=tg.colorScheme; }catch(_){} })();
+
+  render();
+  if(isDesktop() && budgets.length) selectTile(sorted()[0].id, true);
+</script>
+</body>
+</html>

@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Домкнига — Топ учеников + Должники</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5f6fa; --card:#fff; --text:#172033; --muted:#7b8496; --line:#e7eaf2;
+    --accent:#6c5ce7; --accent-soft:rgba(108,92,231,.12);
+    --green:#00b894; --amber:#e6a700; --red:#ff6b6b;
+    --green-bg:rgba(0,184,148,.12); --amber-bg:rgba(230,167,0,.14); --red-bg:rgba(255,107,107,.12);
+    --shadow:0 10px 28px rgba(0,0,0,.05); --radius:14px;
+    --ring:color-mix(in srgb, var(--text) 28%, transparent);
+  }
+  [data-theme="dark"]{
+    --bg:#0f1220; --card:#191e30; --text:#eef0ff; --muted:#8b93ad; --line:#262d45;
+    --accent:#8b7cff; --accent-soft:rgba(139,124,255,.16);
+    --green:#2ee6c0; --amber:#ffd93d; --red:#ff8080;
+    --green-bg:rgba(46,230,192,.14); --amber-bg:rgba(255,217,61,.16); --red-bg:rgba(255,128,128,.14);
+    --shadow:0 10px 28px rgba(0,0,0,.25);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:'Manrope',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    display:grid;place-items:start center;min-height:100dvh;padding:24px 16px;transition:background .2s,color .2s}
+  .stage{width:100%;max-width:760px}
+  .topline{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .topline b{font-size:18px;font-weight:800}
+  .topline span{color:var(--muted);font-size:12px}
+  .topline .acts{display:flex;gap:8px}
+  .icon-btn{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);
+    background:var(--card);color:var(--text);font-size:16px;cursor:pointer;display:grid;place-items:center}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px;box-shadow:var(--shadow);container-type:inline-size;container-name:card;
+    --fs-sm:13px;--fs-md:15px;--fs-lg:17px;--fs-xs:12px;--fs-2xs:10px}
+  @supports (width:1cqi){
+    .card{--fs-sm:clamp(11px,2.4cqi,15px);--fs-md:clamp(13px,2.8cqi,18px);
+      --fs-lg:clamp(15px,3.2cqi,21px);--fs-xs:clamp(11px,2.2cqi,14px);--fs-2xs:clamp(9px,1.8cqi,12px)}
+  }
+  .section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+  .section-title{margin:0;font-size:var(--fs-lg);font-weight:800;letter-spacing:-.2px}
+  .section-note{color:var(--muted);font-size:var(--fs-sm);font-weight:700;white-space:nowrap;text-transform:capitalize}
+
+  .mini-btn{height:34px;min-width:34px;padding:0 10px;border-radius:10px;border:1px solid var(--line);
+    background:var(--bg);color:var(--text);font:inherit;font-size:var(--fs-xs);font-weight:800;cursor:pointer;
+    display:inline-flex;align-items:center;gap:6px;transition:background .15s,transform .1s,color .15s}
+  .mini-btn:active{transform:scale(.96)}
+  .mini-btn.accent{background:var(--accent);color:#fff;border-color:transparent}
+  .mini-btn .ic{width:15px;height:15px}
+  .mini-btn.btn-tonal{border:none;background:var(--bg);color:var(--text)}
+  .mini-btn.btn-tonal .ic{color:var(--muted)}
+  .mini-btn.btn-tonal:hover{background:var(--line)}
+  .mini-btn.btn-tonal:focus-visible{outline:2px solid var(--muted);outline-offset:2px}
+  .btn-t{white-space:nowrap}
+
+  .ic{display:inline-block;width:16px;height:16px;flex:0 0 auto;background-color:currentColor;
+    -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;
+    -webkit-mask-size:contain;mask-size:contain}
+  .ic.ic-fb{-webkit-mask-image:none!important;mask-image:none!important;background:none!important;
+    display:inline-flex;align-items:center;justify-content:center;line-height:1;font-size:16px}
+
+  /* мобильный переключатель между дашбордами */
+  .dash-tabs{display:none;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:12px}
+  .dash-tabs button{flex:1;border:0;background:transparent;color:var(--muted);padding:9px 8px;border-radius:9px;
+    font:inherit;font-size:var(--fs-xs);font-weight:800;cursor:pointer;min-height:36px;white-space:nowrap;
+    transition:background .18s,color .18s,box-shadow .18s}
+  .dash-tabs button.on{background:var(--card);color:var(--text);box-shadow:0 3px 10px rgba(0,0,0,.06)}
+  .dash-tabs button:focus-visible{outline:2px solid var(--muted);outline-offset:1px}
+  .dash-pane{display:block;margin-bottom:12px}
+
+  /* ===== тулбар: БАЗОВО = мобила (п.3: всё на всю ширину, отцентровано, равные высоты) ===== */
+  .toolbar{display:flex;flex-direction:column;gap:8px;align-items:stretch;margin-bottom:12px}
+  .segmented{display:flex;width:100%;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:3px;gap:3px;margin:0}
+  .segmented button{flex:1;justify-content:center;border:0;background:transparent;color:var(--muted);
+    padding:0 12px;border-radius:8px;font:inherit;font-size:var(--fs-xs);font-weight:800;cursor:pointer;
+    min-height:40px;white-space:nowrap;display:inline-flex;align-items:center;
+    transition:background .18s,color .18s,box-shadow .18s}
+  .segmented button.on{background:var(--card);color:var(--text);box-shadow:0 3px 10px rgba(0,0,0,.06)}
+  .segmented button:focus-visible{outline:2px solid var(--muted);outline-offset:1px}
+  .insight{display:flex;flex-direction:column;gap:8px;width:100%}
+  .ins-chip{display:inline-flex;align-items:center;justify-content:center;gap:7px;width:100%;
+    font-size:var(--fs-2xs);font-weight:800;padding:0 10px;min-height:40px;border-radius:999px;
+    background:var(--bg);color:var(--text);white-space:nowrap}
+  .ins-chip .ic{width:14px;height:14px;color:var(--muted)}
+  .ins-chip .k{color:var(--muted);font-weight:700}
+  .ins-chip.due{background:var(--amber-bg)}
+  .ins-chip.due .ic{color:var(--amber)}
+  .ins-chip.due.zero{background:var(--green-bg)}
+  .ins-chip.due.zero .ic{color:var(--green)}
+
+  /* master-detail контейнер */
+  .bd-grid{display:block}
+  .detail-pane{display:none;position:relative}
+  .dp-anim{will-change:opacity,transform}
+
+  /* список учеников */
+  .rows{display:flex;flex-direction:column;gap:2px}
+  .srow{border-radius:10px;transition:background .15s,box-shadow .15s,transform .12s}
+  .srow-main{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"av name amt" "bar bar bar";
+    align-items:center;gap:9px 10px;width:100%;text-align:left;border:0;background:transparent;color:inherit;font:inherit;
+    padding:9px 8px;cursor:pointer;border-radius:10px;transition:background .15s}
+  .srow-main:hover{background:var(--bg)}
+  .srow-main:focus-visible{outline:2px solid var(--muted);outline-offset:-2px}
+  .avatar{grid-area:av;width:30px;height:30px;border-radius:10px;display:grid;place-items:center;
+    font-weight:800;font-size:12px;flex:0 0 auto;border:2px solid transparent;line-height:1}
+  .avatar.st-paid{border-color:var(--green)}
+  .avatar.st-pending{border-color:var(--amber)}
+  .avatar.st-overdue{border-color:var(--red)}
+  .s-namecol{grid-area:name;min-width:0;display:flex;flex-direction:column;gap:1px}
+  .s-nm{font-weight:800;font-size:var(--fs-sm);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .s-sub{color:var(--muted);font-size:var(--fs-2xs);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .s-amt{grid-area:amt;text-align:right;font-weight:800;font-size:var(--fs-sm);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .hbar{grid-area:bar;height:7px;border-radius:999px;background:var(--line);overflow:hidden;margin:1px 8px 3px}
+  .hbar i{display:block;height:100%;border-radius:999px;transition:width .45s cubic-bezier(.22,.61,.36,1)}
+  .srow.overdue{background:var(--red-bg)}
+
+  /* спойлер (мобила) */
+  .s-detail{display:grid;grid-template-rows:0fr;transition:grid-template-rows .32s cubic-bezier(.22,.61,.36,1)}
+  .srow.open .s-detail{grid-template-rows:1fr}
+  .s-detail-inner{overflow:hidden;min-height:0;position:relative;background:var(--card);border-radius:0 0 10px 10px}
+
+  /* панель/спойлер содержимое ученика */
+  .su-pad{padding:10px 10px 12px;display:flex;flex-direction:column;gap:10px;position:relative}
+  .su-head{display:flex;align-items:center;gap:9px;min-width:0}
+  .su-nm{font-size:var(--fs-md);font-weight:800;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .su-badge{flex:0 0 auto;font-size:var(--fs-2xs);font-weight:800;padding:4px 10px;border-radius:999px;white-space:nowrap}
+  .su-badge.paid{background:var(--green-bg);color:var(--green)}
+  .su-badge.pending{background:var(--amber-bg);color:var(--amber)}
+  .su-badge.overdue{background:var(--red-bg);color:var(--red)}
+  /* п.4: небольшой отступ после имени до строки «предмет · тип» (было -4px) */
+  .su-sub{color:var(--muted);font-size:var(--fs-xs);font-weight:700;margin-top:4px}
+  .su-figs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .su-fig{display:flex;flex-direction:column;gap:2px}
+  .su-fig .fk{font-size:var(--fs-2xs);color:var(--muted);font-weight:700}
+  .su-fig .fv{font-size:var(--fs-sm);font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .spark-wrap{display:flex;flex-direction:column;gap:4px}
+  .spark-cap{font-size:var(--fs-2xs);color:var(--muted);font-weight:700}
+  .spark{width:100%;height:54px;display:block;overflow:visible}
+  .spark-x{display:flex;justify-content:space-between;font-size:var(--fs-2xs);color:var(--muted);font-weight:700}
+
+  /* вложенный collapsible списка занятий */
+  .sub-collapse{border-top:1px solid var(--line);padding-top:4px}
+  .sub-head{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;
+    border:0;background:transparent;color:var(--muted);font:inherit;font-size:var(--fs-2xs);font-weight:800;
+    padding:4px 0;cursor:pointer;transition:color .15s}
+  .sub-head:hover{color:var(--text)}
+  .sub-head:focus-visible{outline:2px solid var(--muted);outline-offset:2px;border-radius:6px}
+  .sub-head .caret{flex:0 0 auto;width:22px;height:22px;border-radius:7px;display:grid;place-items:center;
+    background:var(--bg);color:var(--muted);transition:transform .25s,background .15s,color .15s}
+  .sub-head .caret .ic{width:14px;height:14px}
+  .sub-head:hover .caret{color:var(--text);background:var(--line)}
+  .sub-collapse.open .sub-head .caret{transform:rotate(180deg)}
+  .sub-body{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s cubic-bezier(.22,.61,.36,1)}
+  .sub-collapse.open .sub-body{grid-template-rows:1fr}
+  .sub-body-inner{overflow:hidden;min-height:0}
+
+  .sess-list{display:flex;flex-direction:column;gap:1px;padding-top:2px}
+  .sess{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid var(--line);font-size:var(--fs-xs)}
+  .sess:first-child{border-top:0}
+  .sess .sl{display:flex;flex-direction:column;min-width:0}
+  .sess .sn{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sess .sd{color:var(--muted);font-size:var(--fs-2xs)}
+  .sess .sa{font-weight:800;font-variant-numeric:tabular-nums;color:var(--text);flex:0 0 auto}
+  .sess .sa.unpaid{color:var(--red)}
+  .su-foot{display:flex;flex-wrap:wrap;gap:8px}
+  .su-foot .mini-btn{flex:1 1 auto;justify-content:center;min-width:0}
+
+  .empty{padding:26px 14px;text-align:center;color:var(--muted)}
+  .empty b{display:block;color:var(--text);font-size:var(--fs-md);font-weight:800;margin-bottom:6px}
+  .empty p{margin:0;font-size:var(--fs-sm);line-height:1.4}
+
+  /* ===== карточка «Должники»: БАЗОВО = мобила (п.1: два ряда) ===== */
+  .debt-summary{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:var(--red-bg);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+  .ds-left{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .ds-k{font-size:var(--fs-2xs);font-weight:700;color:var(--muted)}
+  .ds-v{font-size:clamp(18px,5.4cqi,22px);font-weight:800;color:var(--red);letter-spacing:-.5px;
+    font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .debt-rows{display:flex;flex-direction:column;gap:2px}
+  .debt-row{display:flex;flex-direction:column;gap:9px;padding:11px 10px;border-radius:10px;transition:background .15s}
+  .d-main{min-width:0;display:flex;flex-direction:column;gap:3px}
+  .d-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;min-width:0}
+  .d-nm{font-weight:800;font-size:var(--fs-sm);flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .d-amt{font-weight:800;font-size:var(--fs-sm);color:var(--red);font-variant-numeric:tabular-nums;flex:0 0 auto;white-space:nowrap}
+  .d-sub{color:var(--muted);font-size:var(--fs-2xs);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .d-actions{display:flex;gap:8px}
+  .d-actions .mini-btn{flex:1 1 0;min-width:0;justify-content:center;overflow:hidden}
+  .d-actions .btn-t{overflow:hidden;text-overflow:ellipsis}
+  .debt-empty{display:flex;align-items:center;justify-content:center;gap:8px;padding:24px 12px;
+    color:var(--muted);font-weight:700;font-size:var(--fs-sm)}
+  .debt-empty .ic{width:18px;height:18px;color:var(--green)}
+
+  #toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(14px);
+    background:var(--text);color:var(--card);padding:11px 16px;border-radius:12px;font-size:13px;font-weight:800;
+    opacity:0;pointer-events:none;transition:.22s;z-index:50;white-space:nowrap;max-width:90vw;overflow:hidden;text-overflow:ellipsis}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  @media (max-width:560px){ .su-figs{gap:6px} }
+
+  /* мобильный режим: переключатель + одна карточка */
+  @media (max-width:719px){
+    .dash-tabs{display:flex}
+    .dash-pane{display:none}
+    .dash-pane.active{display:block}
+  }
+
+  /* ===== DESKTOP (>=720px): тулбар в ряд + равные компактные высоты (п.3); должники в компактную строку (п.2) ===== */
+  @media (min-width:720px){
+    /* тулбар: сегмент inline-компакт, чипы в ряд, высоты выровжены и уменьшены */
+    .toolbar{flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px}
+    .segmented{width:auto}
+    .segmented button{flex:0 0 auto;min-height:30px;padding:0 14px}
+    .insight{display:contents}
+    .ins-chip{width:auto;min-height:30px;padding:0 10px}
+
+    /* должники: одна строка, имя+сумма слиплены слева, кнопки прижаты вправо */
+    .debt-row{flex-direction:row;align-items:center;gap:14px;padding:9px 10px}
+    .debt-row:hover{background:var(--bg)}
+    .d-main{flex:0 1 auto}
+    .d-top{justify-content:flex-start;gap:10px}
+    .d-actions{margin-left:auto;flex:0 0 auto}
+    .d-actions .mini-btn{flex:0 0 auto;overflow:visible}
+    .d-actions .btn-t{overflow:visible}
+
+    /* master-detail топа */
+    .bd-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+    .detail-pane{display:flex;flex-direction:column;border-left:1px solid var(--line);padding-left:16px;min-height:160px}
+    .detail-pane .su-pad{padding:4px 0 0}
+    .rows{gap:3px}
+    .srow{background:var(--bg)}
+    .srow:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.06)}
+    .srow.active{background:var(--card);box-shadow:0 0 0 1.5px var(--ring),0 8px 22px rgba(0,0,0,.10)}
+    .srow.overdue{background:var(--red-bg)}
+    .srow.overdue.active{background:var(--red-bg);box-shadow:0 0 0 1.5px var(--ring),0 8px 22px rgba(0,0,0,.10)}
+    .srow-main:hover{background:transparent}
+    .s-detail{display:none}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .hbar i,.s-detail,.srow,.segmented button,.sub-body,.sub-head .caret{transition:none}
+  }
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="topline">
+      <div><b>Домкнига</b> <span>· Топ учеников + Должники</span></div>
+      <div class="acts">
+        <button class="icon-btn" id="hideBtn" title="Скрыть суммы">🙈</button>
+        <button class="icon-btn" id="themeBtn" title="Тема">◐</button>
+      </div>
+    </div>
+
+    <div class="dash-tabs" id="dashTabs">
+      <button data-tab="students" class="on">Топ учеников</button>
+      <button data-tab="debtors">Должники</button>
+    </div>
+
+    <!-- ===== карточка 1: Топ учеников ===== -->
+    <div class="dash-pane active" data-pane="students">
+      <section class="card" id="card">
+        <div class="section-head">
+          <h2 class="section-title">Топ учеников</h2>
+          <span class="section-note" id="monthNote"></span>
+        </div>
+
+        <div class="toolbar">
+          <div class="segmented" id="seg">
+            <button data-period="month" class="on">Месяц</button>
+            <button data-period="year">Год</button>
+            <button data-period="all">Всё время</button>
+          </div>
+          <div class="insight" id="insight"></div>
+        </div>
+
+        <div class="bd-grid">
+          <div class="rows" id="rows"></div>
+          <aside class="detail-pane" id="detailPane"><div class="dp-anim" id="dpAnim"></div></aside>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===== карточка 2: Должники ===== -->
+    <div class="dash-pane" data-pane="debtors">
+      <section class="card" id="debtCard">
+        <div class="section-head">
+          <h2 class="section-title">Должники</h2>
+          <span class="section-note" id="debtMonthNote"></span>
+        </div>
+        <div class="debt-summary" id="debtSummary"></div>
+        <div class="debt-rows" id="debtRows"></div>
+      </section>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+<script>
+  const $ = s => document.querySelector(s);
+  const fmt = n => new Intl.NumberFormat('ru-RU',{maximumFractionDigits:0}).format(n);
+  const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---- иконки (Iconify, СЛЭШ; ч/б глиф-fallback) ----
+  const icUrl = name => { const [p,...r]=name.split(':'); return `https://api.iconify.design/${p}/${r.join(':')}.svg`; };
+  function setIcon(el, iconName, glyph){
+    if(!el) return;
+    const url = icUrl(iconName);
+    el.style.webkitMaskImage = `url("${url}")`; el.style.maskImage = `url("${url}")`;
+    const probe = new Image();
+    probe.onerror = () => { el.style.webkitMaskImage='none'; el.style.maskImage='none';
+      el.style.backgroundColor=''; el.textContent = glyph||''; el.classList.add('ic-fb'); };
+    probe.src = url;
+  }
+
+  // ---- месячный календарь ----
+  const pad = n => String(n).padStart(2,'0');
+  const ym  = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}`;
+  const now = new Date();
+  const currentKey = ym(now);
+  const MONTHS = [];
+  { const d = new Date(now.getFullYear(), now.getMonth()-23, 1);
+    for(let i=0;i<26;i++){ MONTHS.push(ym(d)); d.setMonth(d.getMonth()+1); } }
+  let selIdx = Math.max(0, MONTHS.indexOf(currentKey));
+  const selKey = () => MONTHS[selIdx];
+  function shortMonth(key){ const [y,m]=key.split('-').map(Number);
+    return new Date(y,m-1,1).toLocaleDateString('ru-RU',{month:'short'}).replace('.',''); }
+  function monthName(key){ const [y,m]=key.split('-').map(Number);
+    const mn = new Date(y,m-1,1).toLocaleDateString('ru-RU',{month:'long'});
+    return `${mn.charAt(0).toUpperCase()+mn.slice(1)} ${y}`; }
+  function daysInMonth(key){ const [y,m]=key.split('-').map(Number); return new Date(y,m,0).getDate(); }
+
+  function hash(str){ let h=2166136261; for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);} return h>>>0; }
+  const rnd = (k,s)=>(hash(`${k}:${s}`)%10000)/10000;
+
+  const STUDENTS = [
+    {id:'maria',  name:'Иванова Мария',  subject:'Математика', cls:'ЕГЭ профиль', rate:1600, base:10, color:'#6c5ce7', pay:'overdue',  priorIncome:168000, priorSessions:112},
+    {id:'petr',   name:'Петров Пётр',    subject:'Математика', cls:'9 класс',     rate:1200, base:8,  color:'#0984e3', pay:'paid',     priorIncome:112000, priorSessions:104},
+    {id:'volkova',name:'Волкова Анна',   subject:'Русский яз.',cls:'11 класс',    rate:1300, base:5,  color:'#fd79a8', pay:'pending',  priorIncome:72000,  priorSessions:60},
+    {id:'darya',  name:'Кузнецова Дарья',subject:'Математика', cls:'ОГЭ',         rate:1000, base:7,  color:'#e17055', pay:'paid',     priorIncome:88000,  priorSessions:96},
+    {id:'aleksey',name:'Сидоров Алексей',subject:'Шахматы',    cls:'взрослый',    rate:900,  base:6,  color:'#00b894', pay:'pending',  priorIncome:58000,  priorSessions:72},
+  ];
+  const byId = Object.fromEntries(STUDENTS.map(s=>[s.id,s]));
+  const initials = name => name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+
+  function sessionsIn(key, s){
+    if(key > currentKey) return 0;
+    return Math.max(1, Math.round(s.base * (0.7 + rnd(key, s.id) * 0.6)));
+  }
+  function incomeIn(key, s){ return sessionsIn(key, s) * s.rate; }
+  function agg(s, from, to){
+    let income=0, sess=0;
+    for(let i=from;i<=to;i++){ const k=MONTHS[i]; income+=incomeIn(k,s); sess+=sessionsIn(k,s); }
+    return {income, sess};
+  }
+  function periodRange(period){
+    if(period==='month') return [selIdx, selIdx];
+    if(period==='year')  return [Math.max(0, selIdx-11), selIdx];
+    return [0, selIdx];
+  }
+  function valueFor(s, period){
+    const [a,b] = periodRange(period);
+    const {income, sess} = agg(s, a, b);
+    if(period==='all'){ return {income: income + s.priorIncome, sess: sess + s.priorSessions}; }
+    return {income, sess};
+  }
+  function dueAmount(s){
+    if(s.pay==='paid') return 0;
+    if(s.pay==='pending') return s.rate;
+    return s.rate * 2;
+  }
+
+  const state = { hidden:false, period:'month', selected:null };
+  const mqDesktop = window.matchMedia('(min-width:720px)');
+  const isDesktop = () => mqDesktop.matches;
+
+  function sorted(){
+    return [...STUDENTS].sort((a,b)=> valueFor(b,state.period).income - valueFor(a,state.period).income);
+  }
+
+  // ---- строки топа создаём ОДИН РАЗ ----
+  const rowEls = {};
+  function buildRow(s){
+    const row = document.createElement('div');
+    row.className='srow'; row.dataset.id=s.id;
+    row.innerHTML = `
+      <button class="srow-main" type="button" aria-expanded="false">
+        <span class="avatar" data-av></span>
+        <span class="s-namecol"><span class="s-nm">${s.name}</span><span class="s-sub">${s.subject} · ${s.cls}</span></span>
+        <span class="s-amt" data-amt></span>
+        <span class="hbar"><i data-fill></i></span>
+      </button>
+      <div class="s-detail"><div class="s-detail-inner"><div class="su-pad" data-pad></div></div></div>`;
+    row.querySelector('.srow-main').addEventListener('click', e=>{
+      if(isDesktop()) selectRow(s.id); else toggleRow(s.id);
+    });
+    rowEls[s.id]=row;
+    return row;
+  }
+  function ensureRows(){
+    const rows=$('#rows');
+    STUDENTS.forEach(s=>{ if(!rowEls[s.id]) rows.appendChild(buildRow(s)); });
+  }
+
+  function paintAvatar(el, s){
+    el.textContent = initials(s.name);
+    el.style.background = `color-mix(in srgb, ${s.color} 16%, transparent)`;
+    el.style.color = s.color;
+    el.classList.remove('st-paid','st-pending','st-overdue');
+    el.classList.add('st-'+s.pay);
+  }
+
+  function closeAllOpen(){
+    document.querySelectorAll('.srow.open').forEach(r=>{
+      r.classList.remove('open'); r.querySelector('.srow-main').setAttribute('aria-expanded','false');
+    });
+  }
+  function toggleRow(id){
+    const row=rowEls[id]; const willOpen=!row.classList.contains('open');
+    closeAllOpen();
+    if(willOpen){ row.classList.add('open'); row.querySelector('.srow-main').setAttribute('aria-expanded','true');
+      renderPad(rowEls[id].querySelector('[data-pad]'), id, false); }
+    haptic('light');
+  }
+  function selectRow(id){
+    state.selected=id;
+    document.querySelectorAll('.srow.active').forEach(r=>r.classList.remove('active'));
+    if(rowEls[id]) rowEls[id].classList.add('active');
+    renderPad($('#dpAnim'), id, true);
+    haptic('light');
+  }
+  function selectRowSilent(id){ state.selected=id;
+    document.querySelectorAll('.srow.active').forEach(r=>r.classList.remove('active'));
+    if(rowEls[id]) rowEls[id].classList.add('active'); renderPad($('#dpAnim'), id, false); }
+
+  function renderRow(s, max){
+    const row=rowEls[s.id]; const v=valueFor(s,state.period);
+    row.querySelector('[data-amt]').textContent = state.hidden ? '•••' : fmt(v.income)+' ₽';
+    row.querySelector('[data-fill]').style.width = (max>0 ? Math.max(4,(v.income/max)*100) : 0)+'%';
+    row.querySelector('[data-fill]').style.background = s.color;
+    row.classList.toggle('overdue', s.pay==='overdue');
+    paintAvatar(row.querySelector('[data-av]'), s);
+  }
+
+  function sparkline(s){
+    const start=Math.max(0, selIdx-5); const pts=[]; const labels=[];
+    for(let i=start;i<=selIdx;i++){ pts.push(incomeIn(MONTHS[i],s)); labels.push(shortMonth(MONTHS[i])); }
+    const W=300,H=54,p=4; const mx=Math.max(1,...pts); const n=pts.length;
+    const xs = i => n===1 ? W/2 : p + (i*(W-2*p))/(n-1);
+    const ys = v => H-p - (v/mx)*(H-2*p);
+    const line = pts.map((v,i)=>`${xs(i)},${ys(v)}`).join(' ');
+    const area = `M${xs(0)},${H-p} L${line.replace(/ /g,' L')} L${xs(n-1)},${H-p} Z`;
+    const dots = pts.map((v,i)=>`<circle cx="${xs(i)}" cy="${ys(v)}" r="2.6" fill="${s.color}"/>`).join('');
+    return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+      <path d="${area}" fill="color-mix(in srgb, ${s.color} 14%, transparent)"/>
+      <polyline points="${line}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      ${dots}
+    </svg>
+    <div class="spark-x">${labels.map(l=>`<span>${l}</span>`).join('')}</div>`;
+  }
+
+  function lastSessions(s){
+    const dim=daysInMonth(selKey()); const days=[28,21,14,7].filter(d=>d<=dim).slice(0,3);
+    return days.map((d,i)=>{
+      const status = (i===0 && s.pay!=='paid') ? 'unpaid' : 'paid';
+      return {date:`${pad(d)}.${pad(Number(selKey().split('-')[1]))}`, note:s.subject+' · занятие', amount:s.rate, status};
+    });
+  }
+
+  function renderPad(container, id, animate){
+    const s=byId[id]; const v=valueFor(s,state.period);
+    const avg = v.sess>0 ? Math.round(v.income/v.sess) : 0;
+    const badgeTxt = s.pay==='paid'?'оплачен':s.pay==='pending'?'ждёт оплату':'просрочен';
+    const sess = lastSessions(s).map(x=>`
+      <div class="sess"><div class="sl"><span class="sn">${x.note}</span><span class="sd">${x.date}</span></div>
+      <span class="sa ${x.status==='unpaid'?'unpaid':''}">${state.hidden?'•••':(x.status==='unpaid'?'не опл. ':'')+fmt(x.amount)+' ₽'}</span></div>`).join('')
+      || `<div class="sess"><span class="sd">Нет занятий в этом месяце</span></div>`;
+    const html = `
+      <div class="su-head">
+        <span class="su-nm">${s.name}</span>
+        <span class="su-badge ${s.pay}">${badgeTxt}</span>
+      </div>
+      <div class="su-sub">${s.subject} · ${s.cls}</div>
+      <div class="su-figs">
+        <div class="su-fig"><span class="fk">Доход</span><span class="fv">${state.hidden?'•••':fmt(v.income)+' ₽'}</span></div>
+        <div class="su-fig"><span class="fk">Занятий</span><span class="fv">${state.hidden?'•••':fmt(v.sess)}</span></div>
+        <div class="su-fig"><span class="fk">Средний чек</span><span class="fv">${state.hidden?'•••':fmt(avg)+' ₽'}</span></div>
+      </div>
+      <div class="spark-wrap"><span class="spark-cap">Динамика за 6 месяцев</span>${sparkline(s)}</div>
+      <div class="sub-collapse open" data-sc>
+        <button class="sub-head" type="button" aria-expanded="true">
+          <span>Последние занятия</span>
+          <span class="caret" aria-hidden="true"><i class="ic" data-ic="lucide:chevron-down" data-glyph="▾"></i></span>
+        </button>
+        <div class="sub-body"><div class="sub-body-inner"><div class="sess-list">${sess}</div></div></div>
+      </div>
+      <div class="su-foot">
+        <button class="mini-btn btn-tonal" data-all="${s.id}"><i class="ic" data-ic="lucide:calendar-days" data-glyph="▦"></i><span class="btn-t">Все занятия</span></button>
+        <button class="mini-btn btn-tonal" data-chat="${s.id}"><i class="ic" data-ic="lucide:message-square" data-glyph="≡"></i><span class="btn-t">Написать</span></button>
+      </div>`;
+
+    container.innerHTML = html;
+
+    if(animate && !reduced() && container.animate){
+      container.getAnimations().forEach(a=>a.cancel());
+      container.animate(
+        [{opacity:0, transform:'translateY(14px)'}, {opacity:1, transform:'none'}],
+        {duration:300, easing:'cubic-bezier(.16,1,.3,1)', fill:'none'}
+      );
+    }
+
+    container.querySelectorAll('.ic[data-ic]').forEach(el=>setIcon(el, el.dataset.ic, el.dataset.glyph));
+    const sc=container.querySelector('[data-sc]'), sh=container.querySelector('.sub-head');
+    if(sh) sh.addEventListener('click', e=>{ e.stopPropagation();
+      const open=sc.classList.toggle('open'); sh.setAttribute('aria-expanded', open?'true':'false'); haptic('light'); });
+    const ab=container.querySelector('[data-all]');
+    if(ab) ab.addEventListener('click', e=>{ e.stopPropagation(); haptic('light'); toast(`История занятий: ${s.name}`); });
+    const cb=container.querySelector('[data-chat]');
+    if(cb) cb.addEventListener('click', e=>{ e.stopPropagation(); haptic('light'); toast(`Чат с учеником: ${s.name}`); });
+  }
+
+  function renderInsight(){
+    const [a,b]=periodRange(state.period);
+    let inc=0, ses=0, due=0;
+    STUDENTS.forEach(s=>{ const v=valueFor(s,state.period); inc+=v.income; ses+=v.sess; due+=dueAmount(s); });
+    const avg = ses>0 ? Math.round(inc/ses) : 0;
+    const dueZero = due===0;
+    $('#insight').innerHTML = `
+      <span class="ins-chip"><i class="ic" data-ic="lucide:receipt" data-glyph="≡"></i><span class="k">Средний чек</span> ${state.hidden?'•••':fmt(avg)+' ₽'}/занятие</span>
+      <span class="ins-chip due ${dueZero?'zero':''}"><i class="ic" data-ic="${dueZero?'lucide:check-circle-2':'lucide:alert-circle'}" data-glyph="${dueZero?'✓':'!'}"></i>
+        <span class="k">К получению</span> ${state.hidden?'•••':fmt(due)+' ₽'}${dueZero?' · всё оплачено':''}</span>`;
+    $('#insight').querySelectorAll('.ic[data-ic]').forEach(el=>setIcon(el, el.dataset.ic, el.dataset.glyph));
+  }
+
+  function orderRows(){
+    const rows=$('#rows'); const list=sorted(); const max=list[0]?valueFor(list[0],state.period).income:1;
+    list.forEach(s=>{ renderRow(s, max); rows.appendChild(rowEls[s.id]); });
+  }
+
+  function render(){
+    ensureRows();
+    $('#monthNote').textContent = monthName(selKey());
+    if(!STUDENTS.length){
+      $('#rows').innerHTML=`<div class="empty"><b>Учеников пока нет</b><p>Добавьте первого ученика, чтобы видеть рейтинг по доходу.</p></div>`;
+      if(isDesktop()) $('#dpAnim').innerHTML='';
+    } else {
+      if($('#rows .empty')) $('#rows').innerHTML='';
+      orderRows();
+      renderInsight();
+      if(isDesktop()){
+        if(!state.selected || !byId[state.selected]) selectRowSilent(sorted()[0].id);
+        else renderPad($('#dpAnim'), state.selected, true);
+      } else {
+        const open=$('#rows .srow.open');
+        if(open) renderPad(open.querySelector('[data-pad]'), open.dataset.id, false);
+      }
+    }
+    document.querySelectorAll('#seg button').forEach(b=>b.classList.toggle('on', b.dataset.period===state.period));
+  }
+
+  // ===== карточка «Должники» (структура совпадает с новым CSS: d-main[d-top(d-nm,d-amt)+d-sub] + d-actions) =====
+  function renderDebt(){
+    $('#debtMonthNote').textContent = monthName(selKey());
+    const list = STUDENTS.filter(s=>s.pay!=='paid').sort((a,b)=>dueAmount(b)-dueAmount(a));
+    const total = list.reduce((s,x)=>s+dueAmount(x),0);
+    const rows = $('#debtRows');
+    if(!list.length){
+      $('#debtSummary').innerHTML = '';
+      rows.innerHTML = `<div class="debt-empty"><i class="ic" data-ic="lucide:check-circle-2" data-glyph="✓"></i> Все ученики рассчитались</div>`;
+      const e=rows.querySelector('.ic'); if(e) setIcon(e,'lucide:check-circle-2','✓');
+      return;
+    }
+    rows.innerHTML = list.map(s=>{
+      const due=dueAmount(s); const last=lastSessions(s)[0];
+      return `<div class="debt-row" data-id="${s.id}">
+        <div class="d-main">
+          <div class="d-top"><span class="d-nm">${s.name}</span><span class="d-amt">${state.hidden?'•••':fmt(due)+' ₽'}</span></div>
+          <div class="d-sub">${s.subject} · ${s.cls}${last?` · посл. ${last.date}`:''}</div>
+        </div>
+        <div class="d-actions">
+          <button class="mini-btn btn-tonal" data-card="${s.id}" aria-label="Открыть карточку ученика"><span class="btn-t">Карточка</span></button>
+          <button class="mini-btn btn-tonal" data-remind="${s.id}"><i class="ic" data-ic="lucide:bell-ring" data-glyph="!"></i><span class="btn-t">Напомнить</span></button>
+        </div>
+      </div>`;
+    }).join('');
+    rows.querySelectorAll('.ic[data-ic]').forEach(el=>setIcon(el, el.dataset.ic, el.dataset.glyph));
+    $('#debtSummary').innerHTML = `
+      <div class="ds-left"><span class="ds-k">Итого к получению</span><span class="ds-v">${state.hidden?'•••':fmt(total)+' ₽'}</span></div>
+      <button class="mini-btn btn-tonal" id="debtRemindAll"><i class="ic" data-ic="lucide:send" data-glyph="➤"></i><span class="btn-t">Напомнить всем</span></button>`;
+    $('#debtSummary').querySelectorAll('.ic[data-ic]').forEach(el=>setIcon(el, el.dataset.ic, el.dataset.glyph));
+    $('#debtRemindAll').addEventListener('click', ()=>{ haptic('success'); toast(`Напоминания отправлены (${list.length})`); });
+    rows.querySelectorAll('[data-remind]').forEach(b=> b.addEventListener('click', e=>{ e.stopPropagation(); haptic('success'); toast(`Напоминание: ${byId[b.dataset.remind].name}`); }));
+    rows.querySelectorAll('[data-card]').forEach(b=> b.addEventListener('click', e=>{ e.stopPropagation(); openStudentCard(b.dataset.card); }));
+  }
+
+  function switchDash(pane){
+    document.querySelectorAll('.dash-pane').forEach(p=>p.classList.toggle('active', p.dataset.pane===pane));
+    document.querySelectorAll('#dashTabs button').forEach(x=>x.classList.toggle('on', x.dataset.tab===pane));
+  }
+  function openStudentCard(id){
+    if(isDesktop()){
+      selectRow(id);
+      $('#card').scrollIntoView({behavior: reduced()?'auto':'smooth', block:'nearest'});
+    } else {
+      switchDash('students');
+      requestAnimationFrame(()=>{
+        closeAllOpen();
+        const row=rowEls[id];
+        if(row){ row.classList.add('open'); row.querySelector('.srow-main').setAttribute('aria-expanded','true');
+          renderPad(row.querySelector('[data-pad]'), id, false);
+          row.scrollIntoView({behavior: reduced()?'auto':'smooth', block:'nearest'}); }
+      });
+    }
+    haptic('light');
+  }
+
+  $('#seg').addEventListener('click', e=>{
+    const btn=e.target.closest('[data-period]'); if(!btn) return;
+    state.period=btn.dataset.period; haptic('light'); render();
+  });
+  $('#dashTabs').addEventListener('click', e=>{
+    const b=e.target.closest('[data-tab]'); if(!b) return;
+    switchDash(b.dataset.tab); haptic('light');
+  });
+  mqDesktop.addEventListener('change', ()=>{
+    closeAllOpen();
+    if(isDesktop() && STUDENTS.length && !state.selected) selectRowSilent(sorted()[0].id);
+    render();
+  });
+
+  function toast(t){ const el=$('#toast'); el.textContent=t; el.classList.add('show');
+    clearTimeout(window.__tt); window.__tt=setTimeout(()=>el.classList.remove('show'),1900); }
+  function haptic(type='light'){
+    try{ const tg=window.Telegram?.WebApp; if(tg?.HapticFeedback){
+      if(type==='success')tg.HapticFeedback.notificationOccurred('success');
+      else tg.HapticFeedback.impactOccurred(type); return; } }catch(_){}
+    if(navigator.vibrate) navigator.vibrate(type==='success'?20:10);
+  }
+  $('#hideBtn').addEventListener('click', ()=>{ state.hidden=!state.hidden; render(); renderDebt(); haptic('light');
+    toast(state.hidden?'Суммы скрыты':'Суммы показаны'); });
+  $('#themeBtn').addEventListener('click', ()=>{
+    const r=document.documentElement; r.dataset.theme=r.dataset.theme==='dark'?'light':'dark'; haptic('light'); });
+  (function initTG(){ const tg=window.Telegram?.WebApp; if(!tg)return;
+    try{ tg.ready(); tg.expand(); if(tg.colorScheme) document.documentElement.dataset.theme=tg.colorScheme; }catch(_){} })();
+
+  render();
+  renderDebt();
+</script>
+</body>
+</html>

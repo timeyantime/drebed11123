@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Домкнига — TrendBarCard (доходы и расходы по месяцам)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5f6fa; --card:#fff; --text:#172033; --muted:#7b8496; --line:#e7eaf2;
+    --accent:#6c5ce7; --accent-soft:rgba(108,92,231,.12);
+    --green:#00b894; --red:#ff6b6b;
+    --shadow:0 10px 28px rgba(0,0,0,.05); --radius:14px;
+  }
+  [data-theme="dark"]{
+    --bg:#0f1220; --card:#191e30; --text:#eef0ff; --muted:#8b93ad; --line:#262d45;
+    --accent:#8b7cff; --accent-soft:rgba(139,124,255,.16);
+    --green:#2ee6c0; --red:#ff8080;
+    --shadow:0 10px 28px rgba(0,0,0,.25);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:'Manrope',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    display:grid;place-items:start center;min-height:100dvh;padding:24px 16px;transition:background .2s,color .2s}
+  .stage{width:100%;max-width:760px}
+  .topline{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .topline b{font-size:18px;font-weight:800}
+  .topline span{color:var(--muted);font-size:12px}
+  .icon-btn{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);
+    background:var(--card);color:var(--text);font-size:16px;cursor:pointer}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px;box-shadow:var(--shadow);container-type:inline-size;container-name:card;
+    --fs-sm:13px;--fs-md:15px;--fs-lg:17px;--fs-xs:12px;--fs-2xs:10px;
+    user-select:none;touch-action:pan-y}
+  @supports (width:1cqi){
+    .card{--fs-sm:clamp(11px,2.4cqi,15px);--fs-md:clamp(13px,2.8cqi,18px);
+      --fs-lg:clamp(15px,3.2cqi,21px);--fs-xs:clamp(11px,2.2cqi,14px);--fs-2xs:clamp(9px,1.8cqi,12px)}
+  }
+  .section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+  .section-title{margin:0;font-size:var(--fs-lg);font-weight:800;letter-spacing:-.2px}
+  .section-note{color:var(--muted);font-size:var(--fs-sm);font-weight:700;white-space:nowrap}
+
+  /* монохромные иконки: mask + currentColor, монохромный глиф-fallback */
+  .ic{display:inline-block;width:14px;height:14px;flex:0 0 auto;background-color:currentColor;
+    -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;
+    -webkit-mask-size:contain;mask-size:contain;vertical-align:-2px}
+  .ic.ic-fb{-webkit-mask-image:none!important;mask-image:none!important;background:none!important;
+    display:inline-flex;align-items:center;justify-content:center;line-height:1}
+
+  /* ряд: стрелка | лента | стрелка (стрелки видны только на десктопе) */
+  .chart-row{display:grid;grid-template-columns:40px 1fr 40px;align-items:center;gap:4px}
+  .nav-btn{position:relative;width:40px;height:40px;border:0;border-radius:10px;
+    background:transparent;color:var(--muted);display:grid;place-items:center;cursor:pointer;
+    transition:color .15s,transform .1s,opacity .15s}
+  .nav-btn .ic{width:20px;height:20px}
+  .nav-btn::before{content:"";position:absolute;inset:-2px}      /* зона нажатия ≥44px */
+  .nav-btn:hover{color:var(--text)}
+  .nav-btn:active{transform:scale(.9)}
+  .nav-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .nav-btn[disabled]{opacity:.28;cursor:default;pointer-events:none}
+
+  /* окно-обрезка + лента */
+  .bars{position:relative;overflow:hidden;height:clamp(150px,30cqi,210px);padding-top:6px}
+  .baseline{position:absolute;left:0;right:0;bottom:22px;height:1px;background:var(--line);z-index:1}
+  .gridline{position:absolute;left:0;right:0;height:1px;background:var(--line);opacity:.6;z-index:1}
+  .track{display:flex;align-items:flex-end;height:100%;will-change:transform;
+    transition:transform .38s cubic-bezier(.22,.61,.36,1)}
+
+  .grp{position:relative;flex:0 0 calc(100%/6);height:100%;display:flex;flex-direction:column;
+    justify-content:flex-end;align-items:center;cursor:pointer;border:0;background:transparent;
+    padding:0 4px;font:inherit;color:inherit}
+  .grp:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:10px}
+  .pair{display:flex;align-items:flex-end;gap:4px;width:100%;justify-content:center;height:100%;position:relative;z-index:1}
+  .bar{width:46%;max-width:22px;border-radius:5px 5px 2px 2px;transition:opacity .2s}
+  .bar.in{background:var(--green)}
+  .bar.ex{background:var(--red)}
+  .grp:not(.sel) .bar{opacity:.45}
+  .grp.sel .bar{opacity:1}
+  .mlabel{position:relative;z-index:1;margin-top:6px;height:16px;font-size:var(--fs-2xs);
+    color:var(--muted);font-weight:700;white-space:nowrap;transition:color .18s,font-weight .18s}
+  .grp.sel .mlabel{color:var(--text);font-weight:800}
+
+  .empty{position:absolute;inset:0;z-index:2;display:grid;place-items:center;background:var(--card);
+    color:var(--muted);font-size:var(--fs-sm);font-weight:700}
+
+  /* ---- плашки сводки: Доход / Расход, иконки чёрно-белые ---- */
+  .summary{margin-top:14px;display:grid;gap:10px}
+  .pair-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .metric{display:flex;flex-direction:column;gap:8px;padding:2px}
+  .metric-top{display:flex;align-items:center;gap:8px}
+  .m-ic{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex:0 0 auto;
+    background:var(--bg);color:var(--muted)}                 /* нейтральный квадрат + ч/б иконка */
+  .m-ic .ic{width:15px;height:15px}
+  .m-k{font-size:var(--fs-xs);font-weight:600;color:var(--muted)}
+  .m-v{font-size:clamp(17px,5.4cqi,22px);font-weight:800;letter-spacing:-.5px;line-height:1.05;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .m-bar{height:4px;border-radius:999px;background:var(--line);overflow:hidden}
+  .m-bar i{display:block;height:100%;border-radius:999px;transition:width .42s cubic-bezier(.22,.61,.36,1)}
+
+  .t-green{--tone:var(--green)}
+  .t-red{--tone:var(--red)}
+  .metric .m-v{color:var(--tone)}
+  .metric .m-bar i{background:var(--tone)}
+
+  .legend{display:flex;gap:14px;justify-content:center;color:var(--muted);
+    font-size:var(--fs-xs);font-weight:700;margin-top:12px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend .swatch{width:10px;height:10px;border-radius:3px}
+  .hint{margin-top:10px;color:var(--muted);font-size:var(--fs-2xs);text-align:center}
+
+  @media (max-width:560px){
+    .chart-row{grid-template-columns:1fr;gap:0}   /* стрелки не занимают место */
+    .nav-btn{display:none}                        /* на мобиле листаем свайпом */
+    .grp{padding:0 3px}
+    .bar{max-width:16px}
+    .pair-row{gap:8px}
+  }
+  @media (prefers-reduced-motion:reduce){.track,.bar,.mlabel,.m-bar i{transition:none}}
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="topline">
+      <div><b>Домкнига</b> <span>· TrendBarCard демо</span></div>
+      <button class="icon-btn" id="themeBtn" title="Тема">◐</button>
+    </div>
+
+    <section class="card" id="card">
+      <div class="section-head">
+        <h2 class="section-title">Доходы и расходы</h2>
+        <div class="section-note" id="selMonth"></div>
+      </div>
+
+      <div class="chart-row">
+        <button class="nav-btn" id="prevBtn" aria-label="Предыдущий месяц"><i class="ic" id="icPrev"></i></button>
+        <div class="bars" id="bars">
+          <div class="baseline"></div>
+          <div class="gridline" style="bottom:calc(22px + 33%)"></div>
+          <div class="gridline" style="bottom:calc(22px + 66%)"></div>
+          <div class="track" id="track"><!-- все месяцы создаются в JS один раз --></div>
+        </div>
+        <button class="nav-btn" id="nextBtn" aria-label="Следующий месяц"><i class="ic" id="icNext"></i></button>
+      </div>
+
+      <div class="summary" id="summary"></div>
+
+      <div class="legend">
+        <span><i class="swatch" style="background:var(--green)"></i><i class="ic" id="icIn"></i> Доходы</span>
+        <span><i class="swatch" style="background:var(--red)"></i><i class="ic" id="icEx"></i> Расходы</span>
+      </div>
+
+      <div class="hint">стрелки / свайп листают ленту · тап по столбцу выбирает месяц, лента не сдвигается</div>
+    </section>
+  </div>
+
+<script>
+  const $ = s => document.querySelector(s);
+  const fmt = n => new Intl.NumberFormat('ru-RU',{maximumFractionDigits:0}).format(n);
+
+  // ---- иконки (Iconify, СЛЭШ в URL, монохромный глиф-fallback) ----
+  const icUrl = name => { const [p,...r]=name.split(':'); return `https://api.iconify.design/${p}/${r.join(':')}.svg`; };
+  function setIcon(el, iconName, glyph){
+    if(!el) return;
+    const url = icUrl(iconName);
+    el.style.webkitMaskImage = `url("${url}")`; el.style.maskImage = `url("${url}")`;
+    const probe = new Image();
+    probe.onerror = () => { el.style.webkitMaskImage='none'; el.style.maskImage='none';
+      el.style.backgroundColor=''; el.textContent = glyph||'•'; el.classList.add('ic-fb'); };
+    probe.src = url;
+  }
+  setIcon($('#icIn'),'lucide:trending-up','↑');
+  setIcon($('#icEx'),'lucide:trending-down','↓');
+  setIcon($('#icPrev'),'lucide:chevron-left','‹');
+  setIcon($('#icNext'),'lucide:chevron-right','›');
+
+  // ---- месячный календарь ----
+  const pad = n => String(n).padStart(2,'0');
+  const ym  = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}`;
+  const now = new Date();
+  const currentKey = ym(now);
+  const MONTHS = [];
+  { const d = new Date(now.getFullYear(), now.getMonth()-23, 1);
+    for(let i=0;i<26;i++){ MONTHS.push(ym(d)); d.setMonth(d.getMonth()+1); } }
+  const LEN = MONTHS.length;
+  const MAX_WIN = Math.max(0, LEN-6);
+
+  // ---- данные по месяцу; будущее = пусто ----
+  function hash(str){ let h=2166136261; for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);} return h>>>0; }
+  const rnd = (k,s)=>(hash(`${k}:${s}`)%10000)/10000;
+  const statsCache = {};
+  function getStats(key){
+    if(statsCache[key]) return statsCache[key];
+    if(key > currentKey) return statsCache[key] = { income:0, expense:0, future:true };
+    const income  = Math.round(92000 + rnd(key,'income')*46000);
+    const expense = Math.round(54000 + rnd(key,'expense')*34000);
+    return statsCache[key] = { income, expense, future:false };
+  }
+  function monthName(key){ const [y,m]=key.split('-').map(Number);
+    const mn = new Date(y,m-1,1).toLocaleDateString('ru-RU',{month:'long'});
+    return `${mn.charAt(0).toUpperCase()+mn.slice(1)} ${y}`; }   // без «г.»
+  function shortMonth(key){ const [y,m]=key.split('-').map(Number);
+    return new Date(y,m-1,1).toLocaleDateString('ru-RU',{month:'short'}).replace('.',''); }
+
+  // ---- глобальный масштаб высот (стабильный при любом окне) ----
+  const ALL = MONTHS.map(getStats);
+  const GMAX = Math.max(1, ...ALL.flatMap(v => [v.income, v.expense]));
+
+  // ---- состояние: лента (winStart) + курсор (selIdx); инвариант selIdx в окне ----
+  let selIdx = Math.max(0, MONTHS.indexOf(currentKey));
+  let winStart = Math.min(MAX_WIN, Math.max(0, selIdx-5));
+  const state = { lastSwipeAt:0, colW:0 };
+
+  // ---- строим ленту из ВСЕХ месяцев ОДИН РАЗ; высоты фиксируем ----
+  const groups = [];
+  (function buildTrack(){
+    const track = $('#track');
+    MONTHS.forEach((key,i)=>{
+      const v = ALL[i];
+      const g = document.createElement('button');
+      g.className='grp'; g.type='button'; g.dataset.idx=i;
+      g.innerHTML = `<span class="pair">
+          <span class="bar in" style="height:${(v.income/GMAX)*100}%"></span>
+          <span class="bar ex" style="height:${(v.expense/GMAX)*100}%"></span>
+        </span>
+        <span class="mlabel">${shortMonth(key)}</span>`;
+      g.addEventListener('click', ()=>{ if(Date.now()-state.lastSwipeAt>320) selectMonth(i); });
+      g.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); selectMonth(i);} });
+      track.appendChild(g); groups.push(g);
+    });
+  })();
+
+  function applyTransform(animate){
+    const bars = $('#bars');
+    state.colW = bars.clientWidth / 6;
+    const track = $('#track');
+    if(!animate) track.style.transition = 'none';
+    track.style.transform = `translateX(${ -winStart * state.colW }px)`;
+    if(!animate) requestAnimationFrame(()=>{ track.style.transition=''; });
+  }
+
+  function render(animate){
+    groups.forEach((g,i)=> g.classList.toggle('sel', i===selIdx));
+    applyTransform(animate);
+
+    $('#prevBtn').disabled = winStart <= 0;
+    $('#nextBtn').disabled = winStart >= MAX_WIN;
+
+    const allEmpty = ALL.every(v => v.income===0 && v.expense===0);
+    let empty = $('#bars .empty');
+    if(allEmpty){
+      if(!empty){ empty=document.createElement('div'); empty.className='empty';
+        empty.textContent='Нет данных'; $('#bars').appendChild(empty); }
+    } else if(empty){ empty.remove(); }
+
+    renderSummary(MONTHS[selIdx]);
+  }
+
+  function renderSummary(key){
+    const s = getStats(key);
+    $('#selMonth').textContent = monthName(key);
+
+    const pairMax = Math.max(1, s.income, s.expense);
+    const metric = (tone, icName, glyph, k, val, share) => `
+      <div class="metric ${tone}">
+        <div class="metric-top">
+          <span class="m-ic"><i class="ic" data-ic="${icName}" data-glyph="${glyph}"></i></span>
+          <span class="m-k">${k}</span>
+        </div>
+        <div class="m-v">${val}</div>
+        <div class="m-bar"><i style="width:${share}%"></i></div>
+      </div>`;
+
+    $('#summary').innerHTML = `
+      <div class="pair-row">
+        ${metric('t-green','lucide:arrow-up-right','↑','Доход',  s.future?'—':fmt(s.income)+' ₽',  s.future?0:(s.income/pairMax*100))}
+        ${metric('t-red',  'lucide:arrow-down-right','↓','Расход', s.future?'—':fmt(s.expense)+' ₽', s.future?0:(s.expense/pairMax*100))}
+      </div>`;
+
+    $('#summary').querySelectorAll('.ic[data-ic]').forEach(el => setIcon(el, el.dataset.ic, el.dataset.glyph));
+  }
+
+  // ---- тап по столбцу: только курсор, ленту не трогаем ----
+  function selectMonth(i){
+    if(i===selIdx) return;
+    selIdx = i; haptic('light'); render(true);
+  }
+
+  // ---- листание ленты: окно и курсор едут вместе (позиция курсора в окне сохраняется) ----
+  function changeMonth(delta){
+    const newWin = Math.max(0, Math.min(MAX_WIN, winStart + delta));
+    const realDelta = newWin - winStart;
+    if(realDelta === 0) return;          // уперлись в край
+    winStart = newWin;
+    selIdx  += realDelta;                // курсор следует за лентой
+    haptic('light'); render(true);
+  }
+
+  // ---- свайп по карточке (единственный способ листания на мобиле) ----
+  (function attachSwipe(){
+    const el = $('#card'); let sx=0, sy=0, track=false;
+    el.addEventListener('pointerdown', e=>{ if(e.pointerType==='mouse'&&e.button!==0)return; sx=e.clientX; sy=e.clientY; track=true; });
+    el.addEventListener('pointerup', e=>{ if(!track)return; track=false;
+      const dx=e.clientX-sx, dy=e.clientY-sy;
+      if(Math.abs(dx)>48 && Math.abs(dx)>Math.abs(dy)*1.15){ state.lastSwipeAt=Date.now(); dx<0?changeMonth(-1):changeMonth(1); } });
+    el.addEventListener('pointercancel', ()=>{ track=false; });
+  })();
+
+  $('#prevBtn').addEventListener('click', ()=>changeMonth(-1));
+  $('#nextBtn').addEventListener('click', ()=>changeMonth(1));
+
+  // ---- ресайз: пересчёт ширины колонки без анимации ----
+  if(window.ResizeObserver){
+    new ResizeObserver(()=> applyTransform(false)).observe($('#bars'));
+  }
+
+  function haptic(type='light'){
+    try{ const tg=window.Telegram?.WebApp; if(tg?.HapticFeedback){
+      if(type==='success')tg.HapticFeedback.notificationOccurred('success');
+      else tg.HapticFeedback.impactOccurred(type); return; } }catch(_){}
+    if(navigator.vibrate) navigator.vibrate(10);
+  }
+
+  $('#themeBtn').addEventListener('click', ()=>{
+    const r=document.documentElement; r.dataset.theme = r.dataset.theme==='dark'?'light':'dark';
+  });
+
+  (function initTG(){ const tg=window.Telegram?.WebApp; if(!tg)return;
+    try{ tg.ready(); tg.expand(); if(tg.colorScheme) document.documentElement.dataset.theme=tg.colorScheme; }catch(_){} })();
+
+  render(false);   // первый кадр без анимации прилёта
+</script>
+</body>
+</html>

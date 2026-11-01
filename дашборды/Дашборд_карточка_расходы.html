@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Домкнига — BigPie структура расходов</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5f6fa; --card:#fff; --text:#172033; --muted:#7b8496; --line:#e7eaf2;
+    --accent:#6c5ce7; --accent-soft:rgba(108,92,231,.12);
+    --shadow:0 10px 28px rgba(0,0,0,.05); --radius:14px;
+  }
+  [data-theme="dark"]{
+    --bg:#0f1220; --card:#191e30; --text:#eef0ff; --muted:#8b93ad; --line:#262d45;
+    --accent:#8b7cff; --accent-soft:rgba(139,124,255,.16); --shadow:0 10px 28px rgba(0,0,0,.25);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:'Manrope',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    display:grid;place-items:start center;min-height:100dvh;padding:24px 16px;transition:background .2s,color .2s}
+  .stage{width:100%;max-width:760px}
+  .topline{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .topline b{font-size:18px;font-weight:800}
+  .topline span{color:var(--muted);font-size:12px}
+  .icon-btn{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);
+    background:var(--card);color:var(--text);font-size:16px;cursor:pointer}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px;box-shadow:var(--shadow);container-type:inline-size;container-name:card;
+    --fs-sm:13px;--fs-md:15px;--fs-lg:17px;--fs-xs:12px;--fs-2xs:10px}
+  @supports (width:1cqi){
+    .card{--fs-sm:clamp(11px,2.4cqi,15px);--fs-md:clamp(13px,2.8cqi,18px);
+      --fs-lg:clamp(15px,3.2cqi,21px);--fs-xs:clamp(11px,2.2cqi,14px);--fs-2xs:clamp(9px,1.8cqi,12px)}
+  }
+  .section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+  .section-title{margin:0;font-size:var(--fs-lg);font-weight:800;letter-spacing:-.2px}
+  .section-note{color:var(--muted);font-size:var(--fs-sm);font-weight:700}
+
+  /* монохромные иконки: цвет = currentColor (тема), форма = mask-image из Iconify */
+  .ic{display:inline-block;width:16px;height:16px;flex:0 0 auto;background-color:currentColor;
+    -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;
+    -webkit-mask-size:contain;mask-size:contain}
+  .ic-lg{width:clamp(24px,9cqi,40px);height:clamp(24px,9cqi,40px)}
+  /* fallback, если API недоступен: снимаем маску и показываем эмодзи */
+  .ic.ic-fb{-webkit-mask-image:none!important;mask-image:none!important;background:none!important;
+    display:inline-flex;align-items:center;justify-content:center;line-height:1}
+
+  .pie-body{display:grid;grid-template-columns:1.5fr 1fr;column-gap:16px;align-items:stretch;min-height:280px}
+  @supports (width:1cqi){.pie-body{min-height:clamp(260px,40cqi,360px)}}
+
+  .pie-zone{position:relative;min-width:0;display:flex;align-items:center;justify-content:center}
+  .pie-svg{display:block;margin:0 auto;width:100%;max-width:380px;aspect-ratio:1/1;height:auto;overflow:visible}
+  .seg{cursor:pointer;transform-box:view-box;transform-origin:50% 50%;
+    transition:transform .26s cubic-bezier(.2,.8,.2,1),opacity .22s,filter .22s}
+  .seg.dim{opacity:.4}
+  .seg.sel{transform:scale(1.06);filter:drop-shadow(0 4px 10px rgba(0,0,0,.22))}
+  .hole{cursor:pointer}
+
+  .pie-center{position:absolute;inset:0;display:grid;place-items:center;text-align:center;
+    pointer-events:none;padding:13%;transition:opacity .14s ease;line-height:1.15}
+  .pie-center.fade{opacity:0}
+  .pc-name{color:var(--muted);font-size:var(--fs-2xs);font-weight:800;margin-top:4px;
+    max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pc-sum{display:block;font-size:var(--fs-md);font-weight:800;letter-spacing:-.5px;white-space:nowrap;margin-top:3px}
+  .pc-sub{display:block;color:var(--muted);font-size:var(--fs-2xs);margin-top:2px}
+
+  .cat-list{min-width:0;display:flex;flex-direction:column;justify-content:center;gap:4px}
+  .cat-row{display:grid;grid-template-columns:12px 18px 1fr auto auto;align-items:center;gap:8px;
+    width:100%;text-align:left;border:0;border-left:3px solid transparent;background:transparent;
+    color:var(--text);border-radius:8px;padding:7px 9px;cursor:pointer;font:inherit;
+    font-size:var(--fs-xs);transition:background .15s,border-color .15s,transform .1s}
+  .cat-row:active{transform:scale(.99)}
+  .cat-row .dot{width:10px;height:10px;border-radius:2px}
+  .cat-row .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}
+  .cat-row .amt{color:var(--muted);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .cat-row .pc{font-weight:800;font-variant-numeric:tabular-nums;min-width:34px;text-align:right}
+  .cat-row.on{background:var(--accent-soft);font-weight:800}
+  .cat-row.more{border-left-color:transparent;color:var(--muted);font-weight:800;
+    grid-template-columns:1fr;justify-content:center;padding:8px}
+  .cat-row.more:hover{background:var(--bg)}
+
+  .tail{display:grid;grid-template-rows:0fr;transition:grid-template-rows .34s cubic-bezier(.22,.61,.36,1)}
+  .tail[data-open="1"]{grid-template-rows:1fr}
+  .tail-inner{overflow:hidden;min-height:0;display:flex;flex-direction:column;gap:4px}
+
+  .hint{margin-top:12px;color:var(--muted);font-size:var(--fs-2xs);text-align:center}
+
+  @media (max-width:560px){
+    .pie-body{grid-template-columns:1fr;row-gap:14px;min-height:0}
+    .pie-svg{max-width:340px}
+    .cat-list{justify-content:flex-start}
+  }
+  @media (prefers-reduced-motion:reduce){.seg,.tail,.pie-center,.cat-row{transition:none}}
+</style>
+</head>
+<body>
+  <div class="stage">
+    <div class="topline">
+      <div><b>Домкнига</b> <span>· BigPie + Iconify</span></div>
+      <button class="icon-btn" id="themeBtn" title="Тема">◐</button>
+    </div>
+
+    <section class="card">
+      <div class="section-head">
+        <h2 class="section-title">Структура расходов</h2>
+        <div class="section-note">окт</div>
+      </div>
+
+      <div class="pie-body">
+        <div class="pie-zone">
+          <svg class="pie-svg" id="svg" viewBox="0 0 300 300" aria-label="Диаграмма расходов по категориям"></svg>
+          <div class="pie-center" id="center"></div>
+        </div>
+        <div class="cat-list" id="list"></div>
+      </div>
+
+      <div class="hint">тапни по сегменту кольца или по строке — категория подсветится с обеих сторон</div>
+    </section>
+  </div>
+
+<script>
+  const $ = s => document.querySelector(s);
+  const NS = 'http://www.w3.org/2000/svg';
+  const fmt = n => new Intl.NumberFormat('ru-RU',{maximumFractionDigits:0}).format(n);
+
+  // ВАЖНО: SVG-эндпоинт Iconify = {prefix}/{name}.svg (слэш, НЕ двоеточие)
+  const icUrl = name => {
+    const [prefix, ...rest] = name.split(':');
+    return `https://api.iconify.design/${prefix}/${rest.join(':')}.svg`;
+  };
+
+  // icon = Lucide через Iconify; emoji = fallback при недоступности API
+  const DATA = [
+    {id:'food',      name:'Продукты',     icon:'lucide:shopping-cart', emoji:'🛒', color:'#00b894', value:25900},
+    {id:'market',    name:'Маркетплейсы', icon:'lucide:store',         emoji:'🏪', color:'#6c5ce7', value:6200},
+    {id:'transport', name:'Транспорт',    icon:'lucide:car',           emoji:'🚗', color:'#74b9ff', value:14800},
+    {id:'cafe',      name:'Кафе',         icon:'lucide:coffee',        emoji:'☕', color:'#e17055', value:10400},
+    {id:'work',      name:'Работа',       icon:'lucide:book-open',     emoji:'📚', color:'#a29bfe', value:9200},
+    {id:'housing',   name:'Жильё',        icon:'lucide:home',          emoji:'🏠', color:'#fdcb6e', value:8100},
+    {id:'health',    name:'Здоровье',     icon:'lucide:pill',          emoji:'💊', color:'#ff7675', value:5300},
+    {id:'fun',       name:'Развлечения',  icon:'lucide:gamepad-2',     emoji:'🎮', color:'#fd79a8', value:4200},
+    {id:'gifts',     name:'Подарки',      icon:'lucide:gift',          emoji:'🎁', color:'#ff9f7f', value:3800},
+    {id:'cloth',     name:'Одежда',       icon:'lucide:shirt',         emoji:'👕', color:'#00cec9', value:3100},
+    {id:'subs',      name:'Подписки',     icon:'lucide:refresh-cw',    emoji:'🔄', color:'#0984e3', value:2400},
+    {id:'comms',     name:'Связь',        icon:'lucide:smartphone',    emoji:'📱', color:'#636e72', value:900},
+    {id:'internet',  name:'Интернет',     icon:'lucide:wifi',          emoji:'🌐', color:'#00b894', value:700},
+    {id:'other',     name:'Прочее',       icon:'lucide:ellipsis',      emoji:'📦', color:'#b2bec3', value:1500},
+  ].sort((a,b)=>b.value-a.value);
+
+  const TOTAL = DATA.reduce((s,x)=>s+x.value,0);
+  const CX=150, CY=150, R=134, RI=80, GAP=1.2;
+  const SHOW_LIMIT = window.matchMedia('(max-width:560px)').matches ? 6 : 9;
+
+  let acc=0;
+  const SEG = DATA.map(d=>{
+    const sweep=(d.value/TOTAL)*360;
+    const start=acc, end=acc+sweep; acc=end;
+    return {...d, start, end, percent:(d.value/TOTAL)*100};
+  });
+  const byId = Object.fromEntries(SEG.map(s=>[s.id,s]));
+  const HEAD = SEG.slice(0, SHOW_LIMIT);
+  const TAIL = SEG.slice(SHOW_LIMIT);   // из SEG => percent есть, NaN нет
+  const REST = TAIL.length;
+
+  const rad = g => (g-90)*Math.PI/180;
+  const pt = (ang,r)=>[CX+r*Math.cos(rad(ang)), CY+r*Math.sin(rad(ang))];
+  function arcPath(a0,a1,rOut,rIn){
+    a0+=GAP/2; a1-=GAP/2; if(a1<=a0) a1=a0+0.01;
+    const [x0,y0]=pt(a0,rOut),[x1,y1]=pt(a1,rOut),[x2,y2]=pt(a1,rIn),[x3,y3]=pt(a0,rIn);
+    const large=(a1-a0)>180?1:0;
+    return `M${x0} ${y0}A${rOut} ${rOut} 0 ${large} 1 ${x1} ${y1}L${x2} ${y2}A${rIn} ${rIn} 0 ${large} 0 ${x3} ${y3}Z`;
+  }
+
+  const state = { active:null, userExpanded:false };
+
+  // ставим маску напрямую в inline-style + проба на случай ошибки сети
+  function setIcon(el, iconName, emoji, color){
+    const url = icUrl(iconName);
+    el.dataset.emoji = emoji;
+    if(color) el.style.backgroundColor = color;
+    el.style.webkitMaskImage = `url("${url}")`;
+    el.style.maskImage = `url("${url}")`;
+    const probe = new Image();
+    probe.onerror = () => {
+      el.style.webkitMaskImage = 'none';
+      el.style.maskImage = 'none';
+      el.style.backgroundColor = '';   // вернём currentColor из класса
+      el.textContent = emoji || '•';
+      el.classList.add('ic-fb');
+    };
+    probe.src = url;
+  }
+
+  /* кольцо строим один раз */
+  const segEls = {};
+  function buildRing(){
+    const svg=$('#svg'); svg.innerHTML='';
+    SEG.forEach(s=>{
+      const p=document.createElementNS(NS,'path');
+      p.setAttribute('d',arcPath(s.start,s.end,R,RI));
+      p.setAttribute('fill',s.color);
+      p.setAttribute('class','seg'); p.dataset.id=s.id;
+      svg.appendChild(p); segEls[s.id]=p;
+    });
+    const hole=document.createElementNS(NS,'circle');
+    hole.setAttribute('cx',CX);hole.setAttribute('cy',CY);hole.setAttribute('r',RI-2);
+    hole.setAttribute('fill','transparent');hole.setAttribute('class','hole');
+    svg.appendChild(hole);
+  }
+  function updateRing(){
+    SEG.forEach(s=>{
+      segEls[s.id].classList.toggle('sel', state.active===s.id);
+      segEls[s.id].classList.toggle('dim', !!state.active && state.active!==s.id);
+    });
+  }
+
+  function updateCenter(){
+    const c=$('#center'); c.classList.add('fade');
+    setTimeout(()=>{
+      if(state.active){
+        const s=byId[state.active];
+        c.innerHTML=`<div><span class="ic ic-lg" id="centerIc"></span>
+          <div class="pc-name">${s.name}</div>
+          <span class="pc-sum">${fmt(s.value)} ₽</span>
+          <span class="pc-sub">${Math.round(s.percent)}% от расходов</span></div>`;
+        setIcon($('#centerIc'), s.icon, s.emoji, s.color);
+      }else{
+        c.innerHTML=`<div><span class="pc-sum">${fmt(TOTAL)} ₽</span>
+          <span class="pc-sub">за месяц · ${SEG.length} категорий</span></div>`;
+      }
+      c.classList.remove('fade');
+    },120);
+  }
+
+  const rowEls = {};
+  function makeRow(s){
+    const b=document.createElement('button');
+    b.className='cat-row'; b.dataset.id=s.id;
+    b.innerHTML=`<i class="dot" style="background:${s.color}"></i>
+      <span class="ic"></span>
+      <span class="nm">${s.name}</span>
+      <span class="amt">${fmt(s.value)} ₽</span>
+      <span class="pc">${Math.round(s.percent)}%</span>`;
+    setIcon(b.querySelector('.ic'), s.icon, s.emoji);   // без цвета => currentColor (тема)
+    rowEls[s.id]=b; return b;
+  }
+  function buildList(){
+    const list=$('#list'); list.innerHTML='';
+    HEAD.forEach(s=>list.appendChild(makeRow(s)));
+    const tail=document.createElement('div'); tail.className='tail'; tail.dataset.open='0';
+    const inner=document.createElement('div'); inner.className='tail-inner';
+    TAIL.forEach(s=>inner.appendChild(makeRow(s)));
+    tail.appendChild(inner); list.appendChild(tail);
+    if(REST>0){
+      const more=document.createElement('button'); more.className='cat-row more'; more.dataset.more='1';
+      more.textContent=`+${REST} ещё ↓`; list.appendChild(more);
+    }
+  }
+  function updateList(){
+    const tail=$('#list .tail'); if(tail) tail.dataset.open = state.userExpanded ? '1':'0';
+    const more=$('#list .cat-row.more');
+    if(more){ more.textContent = state.userExpanded ? 'свернуть ↑' : `+${REST} ещё ↓`;
+              more.dataset.more = state.userExpanded ? '0':'1'; }
+    SEG.forEach(s=>{
+      const on = state.active===s.id;
+      rowEls[s.id].classList.toggle('on', on);
+      rowEls[s.id].style.borderLeftColor = on ? s.color : 'transparent';
+    });
+  }
+
+  function select(id){
+    state.active = (state.active===id) ? null : id;
+    if(state.active && SEG.findIndex(s=>s.id===state.active) >= SHOW_LIMIT)
+      state.userExpanded = true;
+    updateRing(); updateCenter(); updateList();
+    if(state.active){
+      const row=rowEls[state.active];
+      if(row) setTimeout(()=>row.scrollIntoView({block:'nearest'}), 360);
+    }
+  }
+
+  $('#svg').addEventListener('click',e=>{
+    const seg=e.target.closest('.seg');
+    if(seg){ select(seg.dataset.id); return; }
+    if(e.target.classList.contains('hole') && state.active) select(state.active);
+  });
+  $('#list').addEventListener('click',e=>{
+    const more=e.target.closest('[data-more]');
+    if(more){ state.userExpanded = more.dataset.more==='1'; updateList(); return; }
+    const row=e.target.closest('.cat-row[data-id]');
+    if(row) select(row.dataset.id);
+  });
+  $('#themeBtn').addEventListener('click',()=>{
+    const r=document.documentElement; r.dataset.theme = r.dataset.theme==='dark'?'light':'dark';
+  });
+
+  buildRing(); buildList(); updateRing(); updateCenter(); updateList();
+</script>
+</body>
+</html>
