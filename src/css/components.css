@@ -912,5 +912,8 @@ body.framed .sheet-backdrop { z-index: 260 !important; }
 .decl-name { font-size:13px; font-weight:600; }
 .decl-sum { font-size:13px; color:var(--text-2, inherit); }
 
-/* Этап 15: тост поверх контента — z-index выше app-слоёв (см. layout-base .toast) */
-.toast { z-index: 9999 !important; }
+/* Этап 15: тост — прямой ребёнок body (JS выносит его из рамки),
+   z-index выше всех слоёв (модалки 190, выход из рамки 999) и обязательно
+   pointer-events:auto, чтобы кнопка «Отменить» была кликабельной. */
+.toast { z-index: 1200 !important; pointer-events: auto; }
+.toast-undo { position: relative; z-index: 1; cursor: pointer; pointer-events: auto; }

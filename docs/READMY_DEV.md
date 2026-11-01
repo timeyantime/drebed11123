@@ -198,3 +198,20 @@ Smoke: заменён устаревший селектор .progress → .budge
 - Если на https://timeyantime.github.io/drebed11123 «ничего не изменилось» — это кэш браузера/CDN (cache-control: max-age=600). Решение: Ctrl+Shift+R, приватное окно или ?v=2 в URL.
 - Тесты зелёные: t14c.py=T14C OK, smoke.py=UNDO TEST OK, global-audit.py=AUDIT OK.
 - Заголовок раздела рендерится в #page-title/#page-subtitle внутри header (класса hd-title в index.html нет — не искать).
+
+## Этап 15 — Инвестиции v2 / Налоги v2 / тосты (В РАБОТЕ, ветка feature/etap-15)
+Сделано:
+- Инвестиции v2: line-график динамики портфеля (.pf-line), строки позиций (.inv-row) с долей (.inv-share span). Тест docs/t15.py.
+- Налоги v2: карточка накопления (.tax-save-card), чипы деклараций (.decl-chip), действия tax-pay («Отложено») и tax-decl-pay («Уплачено» + badge--paid) с undo-тостами.
+- FIX бага «кнопка Отменить в тостах не кликабельна»:
+  1. Причина: в режиме dev-frame .device-frame имеет transform+overflow:hidden — любой fixed-элемент внутри неё позиционируется относительно рамки; тост лежал внутри .app и перекрывался слоями рамки.
+  2. Решение: applyFrame()/removeFrame() выносят #toast прямым ребёнком document.body (вне transform-контекста); CSS: .toast z-index:1200 !important + pointer-events:auto, .toast-undo position:relative+z-index:1.
+  3. Шкала z-index (единая, соблюдать при правках): fan-backdrop 90 < toolbar/header 50-100 < sheet-backdrop 120 < modal-backdrop 190 < модалка 200 < frame-exit-btn 999 < toast 1200. В framed-режиме fan/sheet backdrop принудительно 250/260 (!important в components.css).
+  4. Регрессия: конец docs/t15.py — mobile preview + рамка ON -> tx-pay -> wait .toast.show .toast-undo -> assert parentElement===body -> click undo. Зелёно.
+Проверено локально: node --check OK; t15.py ETAP15 TEST OK + FRAME TOAST OK; smoke.py UNDO TEST OK; global-audit.py AUDIT OK.
+Осталось в 15 (следующие заходы):
+- Ученики: группировки (активные/долги/архив) + чип-фильтр.
+- Мобильная полировка: safe-area у sheet/тостов, горизонтальный скролл чипов с градиентными масками.
+- Onboarding-модалка при первом запуске (localStorage mono-onboarded).
+- Техдолг: Store __v=2 миграция, ISO-даты вместо «сегодня/DD.MM».
+Публикация: штатный цикл (см. выше) — push -> PR -> squash merge -> CI -> grep Pages. Не коммитить platform snapshot-коммиты в PR-ветку без проверки diff.

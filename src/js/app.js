@@ -688,6 +688,9 @@
     const size = FRAME_SIZES[mode];
     if (!size) return false; // desktop не оборачиваем
     if (app.parentElement !== deviceFrame) deviceFrame.appendChild(app);
+    /* Этап 15: тост живёт ВНЕ рамки — иначе transform/overflow рамки
+       делают его position:fixed относительно телефона и он перекрывается. */
+    if (toast && toast.parentElement !== document.body) document.body.appendChild(toast);
     deviceFrame.classList.add("active");
     deviceFrame.style.width = size.w + "px";
     deviceFrame.style.height = Math.min(size.h, window.innerHeight - 96) + "px";
@@ -699,6 +702,8 @@
 
   function removeFrame() {
     if (app.parentElement !== document.body) document.body.insertBefore(app, deviceFrame);
+    /* Этап 15: тост всегда остаётся прямым ребёнком body (вне transform-контекста рамки) */
+    if (toast && toast.parentElement !== document.body) document.body.appendChild(toast);
     deviceFrame.classList.remove("active");
     deviceFrame.style.width = "";
     deviceFrame.style.height = "";
