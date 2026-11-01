@@ -191,7 +191,8 @@
     const meta = routesMeta[route];
     pageTitle.textContent = meta.title;
     const isStudentDetail = route === "teacher" && state.detail && state.detail.kind === "student";
-    pageSubtitle.textContent = isStudentDetail ? "Карточка ученика" : meta.subtitle;
+    const isAccountDetail = route === "accounts" && state.detail && state.detail.kind === "account";
+    pageSubtitle.textContent = isStudentDetail ? "Карточка ученика" : isAccountDetail ? "Детали счёта" : meta.subtitle;
     document.title = `${meta.title} — Mono`;
   }
 
@@ -852,6 +853,16 @@
       event.preventDefault();
       const params = rowLink.dataset.goParams ? rowLink.dataset.goParams.split("/") : [];
       goTo(rowLink.dataset.goRoute, params);
+      return;
+    }
+
+    /* переход «детали счёта → все операции по счёту» */
+    const opsJump = event.target.closest('[data-go-route="operations"][data-go-params^="account:"]');
+    if (opsJump) {
+      event.preventDefault();
+      state.operations.account = decodeURIComponent(opsJump.dataset.goParams.slice("account:".length));
+      state.operations.limit = 8;
+      goTo("operations", []);
       return;
     }
 

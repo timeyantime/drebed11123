@@ -118,7 +118,66 @@ window.Views = window.Views || {};
   };
 
   /* ---------- Счета ---------- */
+  /* ---------- Счета (с детальной страницей #/accounts/account/:id) ---------- */
+  function sparkline(values, color) {
+    if (!values || values.length < 2) return "";
+    const w = 72, h = 26, min = Math.min(...values), max = Math.max(...values);
+    const span = max - min || 1;
+    const pts = values.map((v, i) => `${(i / (values.length - 1)) * w},${h - ((v - min) / span) * (h - 4) - 2}`).join(" ");
+    return `<svg class="acct-spark" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true">
+      <polyline points="${pts}" fill="none" stroke="${color || "var(--blue)"}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline>
+    </svg>`;
+  }
+
   Views.accounts = function (ctx) {
+    const det = ctx.state.detail && ctx.state.detail.kind === "account";
+    if (det) {
+      const acc = ctx.DB.accounts.find((a) => a.id === Number(ctx.state.detail.id));
+      if (!acc) { page(`<div class="panel"><h2>Счёт не найден</h2><p class="muted">Вернитесь к списку счетов.</p><button class="secondary-btn" data-go-route="accounts" style="margin-top:10px">← Все счета</button></div>`); return; }
+      const txs = ctx.DB.transactions.filter((t) => t.account === acc.name);
+      const income = txs.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0);
+      const expense = txs.filter((t) => t.amount < 0).reduce((s, t) => s + t.amount, 0);
+      const hist = acc.history || [];
+      const maxH = Math.max(...hist, 1);
+      page(`
+        <button class="link-btn back-link" data-go-route="accounts">← Все счета</button>
+        <section class="detail-hero acct-hero" style="--hero-c:${acc.color || "var(--blue)"}">
+          <span class="quick-icon hero-icon" data-icon="${acc.kind === "cash" ? "wallet" : "accounts"}"></span>
+          <div class="hero-copy">
+            <h2>${esc(acc.name)}</h2>
+            <p class="hero-sub">${acc.kind === "card" ? "Дебетовая карта" : acc.kind === "savings" ? "Накопительный счёт" : "Наличные"}</p>
+            <div class="hero-balance">${money(acc.balance)}</div>
+          </div>
+        </section>
+        <div class="kpi-grid">
+          <div class="kpi"><span class="kpi-label">Поступления</span><span class="kpi-value t-income">${money(income)}</span></div>
+          <div class="kpi"><span class="kpi-label">Расходы</span><span class="kpi-value t-expense">${money(expense)}</span></div>
+          <div class="kpi"><span class="kpi-label">Операций</span><span class="kpi-value">${txs.length}</span></div>
+        </div>
+        <section class="panel">
+          <div class="panel-head"><h2>Баланс за 6 месяцев</h2><span class="note">июнь — ноябрь</span></div>
+          ${hist.length >= 2 ? `
+          <div class="area-chart" role="img" aria-label="График баланса">
+            <svg viewBox="0 0 300 90" preserveAspectRatio="none">
+              ${(() => {
+                const min = Math.min(...hist), max = Math.max(...hist), span = max - min || 1;
+                const pts = hist.map((v, i) => [ (i / (hist.length - 1)) * 300, 86 - ((v - min) / span) * 76 ]);
+                const line = pts.map((p) => p.join(",")).join(" ");
+                return `<polygon points="0,90 ${line} 300,90" class="area-fill"></polygon>
+                        <polyline points="${line}" class="area-line" fill="none"></polyline>`;
+              })()}
+            </svg>
+            <div class="area-labels"><span>мин. ${money(Math.min(...hist))}</span><span>макс. ${money(maxH)}</span></div>
+          </div>` : `<div class="muted">Недостаточно данных для графика.</div>`}
+        </section>
+        <section class="panel" style="margin-top:16px">
+          <div class="panel-head"><h2>Операции по счёту</h2><button class="link-btn" data-go-route="operations" data-go-params="account:${encodeURIComponent(acc.name)}">Все операции →</button></div>
+          ${txs.length ? `<div class="list">${txs.map(u.partials.transactionRow).join("")}</div>` : `<div class="muted" style="padding:12px">Пока нет операций на этом счёте.</div>`}
+        </section>
+      `);
+      return;
+    }
+
     const total = ctx.DB.accounts.reduce((s, a) => s + a.balance, 0);
     page(`
       <div class="kpi-grid">
@@ -127,13 +186,15 @@ window.Views = window.Views || {};
       </div>
       <div class="list">
         ${ctx.DB.accounts.map((a, i) => `
-          <div class="row">
-            <span class="avatar" style="--c:${u.chartColor(i)}"><span data-icon="${a.kind === "cash" ? "wallet" : "accounts"}"></span></span>
+          <div class="row row-link" tabindex="0" role="button" data-go-route="accounts" data-go-params="account:${a.id}" aria-label="${esc(a.name)}, открыть детали">
+            <span class="avatar" style="--c:${a.color || u.chartColor(i)}"><span data-icon="${a.kind === "cash" ? "wallet" : "accounts"}"></span></span>
             <div class="row-main">
               <div class="row-title">${esc(a.name)}</div>
               <div class="row-meta">${a.kind === "card" ? "Дебетовая карта" : a.kind === "savings" ? "Накопительный счёт" : "Наличные"}</div>
             </div>
+            ${sparkline(a.history, a.color)}
             <div class="amount">${money(a.balance)}</div>
+            <span class="chev" data-icon="chevron"></span>
           </div>`).join("")}
       </div>
       <section class="panel import-panel" style="margin-top:16px">
