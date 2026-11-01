@@ -31,11 +31,11 @@ window.DB = {
   ],
 
   budgets: [
-    { name: "Продукты", plan: 15000, fact: 12400 },
-    { name: "Транспорт", plan: 5000, fact: 5850 },
-    { name: "Работа / кабинет", plan: 18000, fact: 15700 },
-    { name: "Развлечения", plan: 8000, fact: 3200 },
-    { name: "Развитие", plan: 6000, fact: 6000 }
+    { name: "Продукты", plan: 15000, fact: 12400, limit: 18000 },
+    { name: "Транспорт", plan: 5000, fact: 5850, limit: 7000 },
+    { name: "Работа / кабинет", plan: 18000, fact: 15700, limit: 22000 },
+    { name: "Развлечения", plan: 8000, fact: 3200, limit: 10000 },
+    { name: "Развитие", plan: 6000, fact: 6000, limit: 8000 }
   ],
 
   months: [
@@ -48,9 +48,9 @@ window.DB = {
   ],
 
   accounts: [
-    { name: "Карта Т-Банк", balance: 84200, kind: "card" },
-    { name: "Накопительный счёт", balance: 210000, kind: "savings" },
-    { name: "Наличные", balance: 6500, kind: "cash" }
+    { id: 1, name: "Карта Т-Банк", balance: 84200, kind: "card", color: "var(--blue)", history: [72000, 78500, 69000, 81200, 76400, 84200] },
+    { id: 2, name: "Накопительный счёт", balance: 210000, kind: "savings", color: "var(--green)", history: [150000, 162000, 175000, 188000, 199000, 210000] },
+    { id: 3, name: "Наличные", balance: 6500, kind: "cash", color: "var(--amber)", history: [9000, 7200, 8400, 5100, 7800, 6500] }
   ],
 
   planned: [
@@ -80,9 +80,9 @@ window.DB = {
   ],
 
   goals: [
-    { name: "Подушка безопасности", target: 300000, saved: 214000, deadline: "Март 2027" },
-    { name: "Ноутбук для работы", target: 120000, saved: 45000, deadline: "Декабрь 2026" },
-    { name: "Отпуск", target: 90000, saved: 9000, deadline: "Июнь 2027" }
+    { name: "Подушка безопасности", target: 300000, saved: 214000, deadline: "Март 2027", history: [120000, 150000, 172000, 190000, 205000, 214000] },
+    { name: "Ноутбук для работы", target: 120000, saved: 45000, deadline: "Декабрь 2026", history: [5000, 12000, 21000, 30000, 38000, 45000] },
+    { name: "Отпуск", target: 90000, saved: 9000, deadline: "Июнь 2027", history: [0, 1500, 3000, 5000, 7000, 9000] }
   ]
 };
 

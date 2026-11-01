@@ -6,26 +6,59 @@
 window.Views = window.Views || {};
 
 (function () {
-  const { money, donutSVG, legendHTML } = u;
+  const { money, donutSVG, legendHTML, esc } = u;
 
   function budgetRows(DB) {
     return DB.budgets.map((b, i) => {
-      const ratio = b.plan ? Math.min(b.fact / b.plan, 1.35) : 0;
-      const cls = b.fact > b.plan ? "over" : ratio > 0.8 ? "warn" : "ok";
+      const limit = b.limit || Math.round(b.plan * 1.25);
+      const denom = Math.max(limit, b.fact, 1);
+      const planW = Math.min((b.plan / denom) * 100, 100);
+      const factW = Math.min((b.fact / denom) * 100, 100);
+      const cls = b.fact > limit ? "over" : b.fact > b.plan ? "warn" : "ok";
       const rest = b.plan - b.fact;
+      const status = b.fact > limit
+        ? `<span class="budget-flag over">превышен лимит на ${money(b.fact - limit)}</span>`
+        : b.fact > b.plan
+          ? `<span class="budget-flag warn">план исчерпан, резерв ${money(limit - b.fact)}</span>`
+          : `<span class="budget-flag ok">осталось ${money(rest)} из плана</span>`;
       return `
-        <div class="budget-row">
+        <div class="budget-row" tabindex="0" role="button" aria-label="${esc(b.name)}: ${money(b.fact)} из ${money(b.plan)}">
           <div class="head">
             <span class="name"><span class="cat-dot" style="--c:${u.chartColor(i)}"></span>${b.name}</span>
-            <span class="sum ${rest < 0 ? "t-expense" : ""}">${money(b.fact)} / ${money(b.plan)}</span>
+            <span class="sum ${rest < 0 ? "t-expense" : ""}">${money(b.fact)} <span class="of">/ ${money(b.plan)}</span></span>
           </div>
-          <div class="progress ${cls}"><span style="width:${Math.min(ratio * 100, 100)}%"></span></div>
+          <div class="dual-bar ${cls}">
+            <span class="db-fill" style="width:${factW}%"></span>
+            <span class="db-plan-mark" style="left:${planW}%" title="План: ${money(b.plan)}"></span>
+          </div>
           <div class="foot">
-            <span>${rest >= 0 ? "осталось " + money(rest) : "перерасход " + money(-rest)}</span>
-            <span>${u.pct(b.fact, b.plan)}</span>
+            ${status}
+            <span class="muted-num">${u.pct(b.fact, b.plan)}</span>
           </div>
         </div>`;
     }).join("");
+  }
+
+  function budgetSummary(DB) {
+    const plan = DB.budgets.reduce((s, b) => s + b.plan, 0);
+    const fact = DB.budgets.reduce((s, b) => s + b.fact, 0);
+    const left = plan - fact;
+    const pctv = plan ? Math.round((fact / plan) * 100) : 0;
+    const dayOfMonth = 2; // ноябрь, демо-режим: 2-е число
+    const expected = Math.round((plan / 30) * dayOfMonth);
+    const pace = fact <= expected * 3 ? "ahead" : fact > plan ? "over" : "behind";
+    const paceText = pace === "ahead" ? "Темп в норме — расходуете медленнее календаря бюджета."
+      : pace === "over" ? "Перерасход месячного плана. Проверьте категории с флагом."
+      : "Расход быстрее плана месяца — следите за категориями «в резерве».";
+    return `
+      <div class="budget-summary panel">
+        <div class="bs-ring">${u.ringSVG(pctv / 100, pctv + "%", 78)}</div>
+        <div class="bs-copy">
+          <h3>Бюджет ноября</h3>
+          <p>${money(fact)} из ${money(plan)} · ${left >= 0 ? "свободно " + money(left) : "перерасход " + money(-left)}</p>
+          <span class="bs-pace ${pace}">${paceText}</span>
+        </div>
+      </div>`;
   }
 
   function monthBars(months) {
@@ -97,6 +130,7 @@ window.Views = window.Views || {};
       </div>
 
       <div class="dash-grid">
+        ${budgetSummary(DB)}
         <section class="panel">
           <div class="panel-head">
             <h2>Бюджеты по категориям</h2>
