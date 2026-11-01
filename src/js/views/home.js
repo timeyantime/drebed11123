@@ -65,7 +65,7 @@ window.Views = window.Views || {};
 
   u.partials = { lessonRow, studentRow, transactionRow, statPanel, avatarHue };
 
-  /* ---- hub-плитки разделов (Этап 2 — IA) ---- */
+  /* ---- hub-плитки разделов (Этап 2 — IA). Экспортировано для sheet «Ещё» ---- */
   const HUB = [
     { route: "operations", icon: "operations", title: "Операции", sub: "Все транзакции", tone: "var(--accent)", tint: "var(--accent-soft)" },
     { route: "accounts", icon: "accounts", title: "Счета", sub: "Банки и кошельки", tone: "var(--blue)", tint: "var(--blue-bg)" },
@@ -75,6 +75,7 @@ window.Views = window.Views || {};
     { route: "goals", icon: "goals", title: "Цели", sub: "Накопления", tone: "var(--accent)", tint: "var(--accent-soft)" },
     { route: "dashboards", icon: "dashboards", title: "Дашборды", sub: "Аналитика", tone: "var(--blue)", tint: "var(--blue-bg)" }
   ];
+  u.HUB = HUB; // sheet «Ещё» (Этап 7) строит сетку из этого же списка — единый источник IA
 
   function quickCardHTML(a) {
     return `

@@ -158,7 +158,7 @@
           <span class="tab-label">Бюджет</span>
         </button>
 
-        <button class="tab" data-action="more">
+        <button class="tab" data-action="more" aria-haspopup="dialog" aria-expanded="false">
           <span class="tab-icon" data-icon="dashboards"></span>
           <span class="tab-label">Ещё</span>
         </button>
@@ -267,6 +267,14 @@
 
   <!-- Help modal -->
   <div class="modal-backdrop" id="helpBackdrop"></div>
+  <!-- Bottom sheet «Ещё» — мобильная IA (Этап 7) -->
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="moreSheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-handle"></div>
+    <h3 class="sheet-title" id="sheetTitle">Все разделы</h3>
+    <div class="sheet-grid" id="sheetGrid"><!-- заполняет app.js из u.HUB --></div>
+  </section>
+
   <section class="modal" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="modal-head">
       <h2 id="helpTitle">Помощь</h2>

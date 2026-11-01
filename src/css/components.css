@@ -405,6 +405,7 @@
   transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.25, 1), visibility 0s linear 0.3s;
 }
 .sheet.open { transform: translateY(0); visibility: visible; transition-delay: 0s; }
+body.sheet-open { overflow: hidden; }
 .sheet-handle {
   width: 42px; height: 5px; border-radius: 3px;
   background: var(--selected); margin: 4px auto 12px;
