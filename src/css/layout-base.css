@@ -588,17 +588,17 @@
 
       .toolbar {
         display: flex;
-        position: sticky; /* Этап 10: был fixed — налезал на хедер; sticky + top под хедером */
-        left: auto;
+        position: fixed; /* Этап 10b: fixed — панель прижата к краю и НЕ «налезает» на хедер: top ниже хедера */
+        left: var(--edge);
         top: calc(var(--edge) * 2 + var(--header-h) + var(--safe-top));
-        bottom: auto;
-        max-height: calc(100dvh - (var(--edge) * 3 + var(--header-h) + var(--safe-top) + var(--safe-bottom)));
+        bottom: calc(var(--edge) + var(--safe-bottom));
         overflow-y: auto;
+        overscroll-behavior: contain;
         scrollbar-width: none;
         z-index: 40;
 
         width: var(--rail-w);
-        margin-left: var(--edge);
+        margin-left: 0;
         padding: 10px 8px;
         flex-direction: column;
         gap: 4px;
@@ -622,14 +622,14 @@
         width: var(--rail-expanded-w);
       }
 
-      /* Этап 10: тулбар — sticky; базовые правила (position/top/max-height)
-         уже заданы в @media выше, здесь только синхронизация с превью-режимами */
+      /* Этап 10b: toolbar — fixed (left/top/bottom заданы в @media выше);
+         здесь синхронизация с превью-режимами */
       .app.rail-expanded .content {
         margin-left: calc(var(--rail-expanded-w) + var(--edge) * 2);
       }
 
       .bottom-nav {
-        display: none !important;
+        display: none;
       }
 
       .desktop-fab {
@@ -684,6 +684,11 @@
       display: flex;
       flex-direction: column;
       gap: 4px;
+    }
+
+    /* Этап 10b: тулбар теперь fixed на всю высоту — FAB-веер прижимаем к низу рейла */
+    @media (min-width: 768px) {
+      .rail-fab { margin-top: auto; }
     }
 
     .tool-item {
@@ -1001,16 +1006,16 @@
 :root[data-preview="tablet"] .nav-history { display: grid; }
 :root[data-preview="tablet"] .toolbar {
   display: flex;
-  position: sticky;
-  left: auto;
+  position: fixed;
+  left: var(--edge);
   top: calc(var(--edge) * 2 + var(--header-h) + var(--safe-top));
-  bottom: auto;
-  max-height: calc(100dvh - (var(--edge) * 3 + var(--header-h) + var(--safe-top) + var(--safe-bottom)));
+  bottom: calc(var(--edge) + var(--safe-bottom));
   overflow-y: auto;
+  overscroll-behavior: contain;
   scrollbar-width: none;
   z-index: 40;
   width: var(--rail-w);
-  margin-left: var(--edge);
+  margin-left: 0;
   padding: 10px 8px;
   flex-direction: column;
   gap: 4px;
@@ -1033,16 +1038,16 @@
 :root[data-preview="desktop"] .nav-history { display: grid; }
 :root[data-preview="desktop"] .toolbar {
   display: flex;
-  position: sticky;
-  left: auto;
+  position: fixed;
+  left: var(--edge);
   top: calc(var(--edge) * 2 + var(--header-h) + var(--safe-top));
-  bottom: auto;
-  max-height: calc(100dvh - (var(--edge) * 3 + var(--header-h) + var(--safe-top) + var(--safe-bottom)));
+  bottom: calc(var(--edge) + var(--safe-bottom));
   overflow-y: auto;
+  overscroll-behavior: contain;
   scrollbar-width: none;
   z-index: 40;
   width: var(--rail-w);
-  margin-left: var(--edge);
+  margin-left: 0;
   padding: 10px 8px;
   flex-direction: column;
   gap: 4px;
