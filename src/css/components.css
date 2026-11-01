@@ -438,3 +438,102 @@ body.sheet-open { overflow: hidden; }
 .fab { touch-action: manipulation; }
 .row-link { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .list .row { -webkit-tap-highlight-color: transparent; }
+
+/* ============================================================
+   ЭТАП 8 — rail-FAB, рамка устройства (dev-frame), backdrop-фикс
+   ============================================================ */
+
+/* ---- FAB в рейле (rail): кнопка + компактные круги-подсказки справа ---- */
+.rail-fab {
+  --rf-size: 40px;
+  width: var(--rf-size);
+  height: var(--rf-size);
+  margin: 0 auto 10px;
+}
+.app.rail-expanded .rail-fab { margin: 0 6px 10px auto; }
+.fab--sm { width: var(--rf-size, 40px); height: var(--rf-size, 40px); }
+.fab--sm svg { width: 18px; height: 18px; }
+.fan--rail { position: fixed; z-index: 130; pointer-events: none; }
+.fan--rail .fan-item {
+  /* переопределяем дефолты layout-base (--tx/--ty из inline задают дугу вверх — для рейла не годится) */
+  right: auto; bottom: auto; top: 0; left: 0;
+  min-width: 0; padding: 0;
+  width: var(--pill-h); height: var(--pill-h);
+  border-radius: 50%;
+  justify-content: center;
+  transform-origin: 50% 50%;
+}
+.fan--rail .fan-item span:last-child { display: none; } /* только иконка; подпись — title/aria */
+.fan--rail .fan-item [data-icon], .fan--rail .fan-item svg { width: 17px; height: 17px; }
+body.fan-open .fan--rail .fan-item {
+  transform: translate(var(--rx), var(--ry)) scale(1);
+}
+.rail-fan-pos { position: absolute; opacity: 0; pointer-events: none; } /* якорь для расчёта координат */
+
+/* ---- переключатель «Рамка» в шапке ---- */
+.frame-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-left: 8px; padding: 5px 10px;
+  font-size: 12px; font-weight: 700; color: var(--muted);
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px;
+  cursor: pointer; user-select: none; white-space: nowrap;
+}
+.frame-toggle input { accent-color: var(--accent); cursor: pointer; }
+.frame-toggle:hover { color: var(--text); }
+.frame-toggle.disabled { opacity: 0.45; pointer-events: none; }
+@media (max-width: 900px) { .frame-toggle span:last-child { display: none; } }
+
+/* ---- рамка устройства ---- */
+.device-frame { display: none; }
+.device-frame.active {
+  display: block;
+  position: relative;
+  margin: 24px auto 40px;
+  padding: 14px;
+  background: #101013;
+  border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 44px;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.5), inset 0 0 0 2px rgba(255,255,255,0.03);
+  transform: translateZ(0); /* создаёт containing block для fixed-детей (bottom-nav, toolbar, модалки) */
+  overflow: hidden;
+}
+html[data-theme="light"] .device-frame.active { background: #d9dade; border-color: rgba(0,0,0,0.12); }
+.frame-notch {
+  position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+  width: 120px; height: 22px; border-radius: 0 0 14px 14px;
+  background: #101013; z-index: 5; pointer-events: none;
+}
+html[data-theme="light"] .frame-notch { background: #d9dade; }
+.frame-caption {
+  position: absolute; top: -26px; left: 50%; transform: translateX(-50%);
+  font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+  color: var(--muted); white-space: nowrap;
+}
+.frame-exit-btn {
+  position: fixed; top: 12px; right: 16px; z-index: 999;
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 14px; border-radius: 999px;
+  background: var(--accent); color: var(--accent-text);
+  font-size: 13px; font-weight: 800;
+  box-shadow: var(--shadow);
+}
+.frame-exit-btn:hover { filter: brightness(1.08); }
+.frame-exit-btn [data-icon], .frame-exit-btn svg { width: 16px; height: 16px; }
+body.framed { overflow: auto; }
+body.framed .app { min-height: 100%; height: 100%; }
+
+/* модалки внутри рамки: уменьшение через --modal-scale (ставит JS) */
+#genericModal.open { transform: translate(-50%, -50%) scale(calc(1 * var(--modal-scale, 1))); }
+#genericModal { transform: translate(-50%, -48%) scale(calc(0.98 * var(--modal-scale, 1))); }
+
+/* ---- затемняющие оверлеи поверх всего (кроме превью-панели и выхода из рамки) ---- */
+.fan-backdrop, .sheet-backdrop, .modal-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+}
+.fan-backdrop { z-index: 90 !important; }
+.sheet-backdrop { z-index: 120 !important; }
+.modal-backdrop { z-index: 190 !important; }

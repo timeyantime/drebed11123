@@ -314,6 +314,9 @@
       </div>`;
     genericForm.dataset.key = key;
     lastFocused = document.activeElement;
+    // модалки внутри рамки устройства (Этап 8): уменьшаем, чтобы влезали в экран рамки
+    const mScale = frameOn() ? Math.min(1, (deviceFrame.clientHeight - 48) / 560) : 1;
+    genericModal.style.setProperty("--modal-scale", String(mScale));
     genericModal.classList.add("open");
     genericBackdrop.classList.add("open");
     genericModal.dataset.form = key;
@@ -402,11 +405,24 @@
   /* ---------- FAB-веер ---------- */
   function setFanState(wrap, open) {
     const fan = wrap.querySelector("[data-fan]");
-    const fab = wrap.querySelector("[data-fab]");
+    const fab = wrap.querySelector("[data-fab]") || wrap.querySelector(".fab");
     wrap.classList.toggle("open", open);
     fab?.setAttribute("aria-expanded", open ? "true" : "false");
     fan?.setAttribute("aria-hidden", open ? "false" : "true");
     wrap.querySelectorAll(".fan-item").forEach((b) => (b.tabIndex = open ? 0 : -1));
+    if (open && fan?.classList.contains("fan--rail")) positionRailFan(fan, fab);
+  }
+
+  /* рейловый веер: выносим за overflow:hidden тулбара и расставляем круги справа дугой */
+  function positionRailFan(fan, fab) {
+    if (!fab) return;
+    const r = fab.getBoundingClientRect();
+    fan.style.top = r.top + r.height / 2 + "px";
+    fan.style.left = r.right + 8 + "px";
+    fan.querySelectorAll(".fan-item").forEach((it, i) => {
+      it.style.setProperty("--rx", (i % 2) * 46 + "px");
+      it.style.setProperty("--ry", Math.floor(i / 2) * 46 + "px");
+    });
   }
 
   function closeAllFans() {
@@ -508,7 +524,11 @@
   })();
 
   /* ---------- помощь ---------- */
-  function openHelp() { helpModal.classList.add("open"); helpBackdrop.classList.add("open"); helpClose.focus(); }
+  function openHelp() {
+    const hScale = frameOn() ? Math.min(1, (deviceFrame.clientHeight - 48) / 560) : 1;
+    helpModal.style.setProperty("--modal-scale", String(hScale));
+    helpModal.classList.add("open"); helpBackdrop.classList.add("open"); helpClose.focus();
+  }
   function closeHelp() { helpModal.classList.remove("open"); helpBackdrop.classList.remove("open"); }
 
   /* ---------- мутации данных из view-кнопок (Этап 5A/5B, undo — Этап 6) ---------- */
@@ -559,9 +579,10 @@
     if (name === "more") { isDesktopLayout() ? openFan(document.querySelector(".desktop-fab") || fabWraps[0]) : openSheet(); return; }
     if (name === "fan-toggle") {
       const w = document.getElementById("railFab");
-      if (w) { toggleFan(w); const b = w.querySelector("[data-fab]"); b?.setAttribute("aria-expanded", w.classList.contains("open") ? "true" : "false"); }
+      if (w) toggleFan(w); // setFanState уже ставит aria-expanded
       return;
     }
+    if (name === "frame-exit") { setFrame(false); return; }
     if (name === "reset-demo") {
       const prev = snapshot();
       window.Store.reset();
@@ -592,7 +613,82 @@
   /* ---------- rail expand ---------- */
   /* ---------- dev-preview: телефон / планшет / веб (Этап 7) ---------- */
   const PREVIEW_KEY = "mono-preview";
+  const FRAME_KEY = "mono-frame";
   const previewNames = { mobile: "Телефон", tablet: "Планшет", desktop: "Веб" };
+
+  /* ---------- dev-frame: рамка устройства (Этап 8) ----------
+     app переносится внутрь .device-frame; fixed-элементы (bottom-nav, toolbar,
+     FAB, модалки) позиционируются относительно рамки (transform её «создаёт»
+     containing block). Выход — кнопка ✕ над рамкой. */
+  const deviceFrame = document.getElementById("deviceFrame");
+  const frameCaption = document.getElementById("frameCaption");
+  const frameToggleEl = document.getElementById("frameToggle");
+  const FRAME_SIZES = {
+    mobile:  { w: 390, h: 844, label: "Телефон · iPhone 14" },
+    tablet:  { w: 820, h: 1180, label: "Планшет · iPad Air" }
+  };
+  let frameExitBtn = null;
+
+  function frameOn() { return root.dataset.frame === "on"; }
+
+  function ensureFrameExitBtn() {
+    if (frameExitBtn) return frameExitBtn;
+    frameExitBtn = document.createElement("button");
+    frameExitBtn.className = "frame-exit-btn";
+    frameExitBtn.type = "button";
+    frameExitBtn.setAttribute("aria-label", "Выйти из рамки устройства");
+    frameExitBtn.innerHTML = `<span data-icon="close"></span><span>Выйти из рамки</span>`;
+    frameExitBtn.addEventListener("click", () => setFrame(false));
+    document.body.appendChild(frameExitBtn);
+    u.fillIcons();
+    return frameExitBtn;
+  }
+
+  function applyFrame(mode) {
+    const size = FRAME_SIZES[mode];
+    if (!size) return false; // desktop не оборачиваем
+    if (app.parentElement !== deviceFrame) deviceFrame.appendChild(app);
+    deviceFrame.classList.add("active");
+    deviceFrame.style.width = size.w + "px";
+    deviceFrame.style.height = Math.min(size.h, window.innerHeight - 96) + "px";
+    if (frameCaption) frameCaption.textContent = `${size.label} · ${size.w} × ${Math.round(deviceFrame.getBoundingClientRect().height)}`;
+    ensureFrameExitBtn().style.display = "";
+    document.body.classList.add("framed");
+    return true;
+  }
+
+  function removeFrame() {
+    if (app.parentElement !== document.body) document.body.insertBefore(app, deviceFrame);
+    deviceFrame.classList.remove("active");
+    deviceFrame.style.width = "";
+    deviceFrame.style.height = "";
+    if (frameExitBtn) frameExitBtn.style.display = "none";
+    document.body.classList.remove("framed");
+  }
+
+  function setFrame(on, silent) {
+    const mode = previewMode();
+    const want = on && mode !== "desktop";
+    if (want) {
+      if (!applyFrame(mode)) { setFrameToggle(false); return; }
+    } else {
+      removeFrame();
+    }
+    root.dataset.frame = want ? "on" : "off";
+    try { localStorage.setItem(FRAME_KEY, want ? "on" : "off"); } catch (_) {}
+    setFrameToggle(want);
+    if (!silent) showToast(want ? `Рамка: ${FRAME_SIZES[mode].label}` : "Рамка выключена", "info");
+  }
+
+  function setFrameToggle(on) {
+    if (frameToggleEl) frameToggleEl.checked = !!on;
+    const wrap = document.querySelector(".frame-toggle");
+    if (wrap) {
+      wrap.classList.toggle("disabled", previewMode() === "desktop");
+      wrap.title = previewMode() === "desktop" ? "Недоступно в режиме «Веб»" : "Рамка устройства";
+    }
+  }
+
   function applyPreview(mode) {
     if (mode === "desktop") delete root.dataset.preview; else root.dataset.preview = mode;
     try { localStorage.setItem(PREVIEW_KEY, mode); } catch (_) {}
@@ -603,6 +699,13 @@
     });
     collapseRail();
     if (mode !== "mobile") app.classList.add("rail-expanded"); // показать подпись пунктов в превью
+    setFrameToggle(false);
+    if (frameOn()) {
+      // режим сменился — перестроить рамку под новый макет (или выйти из неё)
+      const ok = mode !== "desktop" && applyFrame(mode);
+      if (!ok) { removeFrame(); root.dataset.frame = "off"; try { localStorage.setItem(FRAME_KEY, "off"); } catch (_) {} }
+      setFrameToggle(!!ok);
+    }
     showToast(`Режим предпросмотра: ${previewNames[mode]}`, "info");
   }
   let savedPreview = "auto";
@@ -624,6 +727,16 @@
   u.fillIcons();
   setTheme(root.dataset.theme || "dark", false);
   applyPreview(initialPreview);
+
+  /* восстановление рамки устройства из localStorage (Этап 8) */
+  let savedFrame = "off";
+  try { savedFrame = localStorage.getItem(FRAME_KEY) || "off"; } catch (_) {}
+  if (savedFrame === "on" && previewMode() !== "desktop") setFrame(true, true);
+  else setFrameToggle(false);
+
+  frameToggleEl?.addEventListener("change", () => setFrame(frameToggleEl.checked));
+
+  window.addEventListener("resize", () => { if (frameOn()) applyFrame(previewMode()); });
 
   window.matchMedia("(prefers-color-scheme: light)").addEventListener?.("change", (e) => {
     let saved = null; try { saved = localStorage.getItem("mono-theme"); } catch (_) {}
