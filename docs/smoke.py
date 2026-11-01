@@ -56,3 +56,12 @@ with sync_playwright() as p:
 print("CONSOLE ERRORS:", errors if errors else "none")
 assert not errors, f"console/page errors: {errors}"
 print("SMOKE OK")
+
+
+# --- Этап 6: undo через формы (отдельный скрипт, тот же сервер) ---
+import subprocess, sys
+r = subprocess.run([sys.executable, "docs/undotest.py"], capture_output=True, text=True)
+print(r.stdout[-400:])
+if r.returncode != 0:
+    print(r.stderr[-800:]); raise SystemExit("UNDO TEST FAILED")
+print("UNDO TEST OK")

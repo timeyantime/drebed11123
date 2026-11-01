@@ -4,6 +4,15 @@ name: Deploy preview to GitHub Pages
 # После push в main: Actions → Deploy preview → ссылка в описании job "Deploy"
 # и во вкладке Environments → github.io. Дизайн доступен по
 # https://<владелец>.github.io/<репозиторий>/ (hash-роутинг работает без сервера).
+#
+# ── ОДИНОЧНАЯ НАСТРОЙКА (иначе build падает с «Get Pages site failed / Not Found») ──
+# GITHUB_TOKEN не умеет включать Pages через REST API — это делается вручную один раз:
+#   Вариант 1 (веб): Settings → Pages → Build and deployment → Source: «Deploy from a branch»
+#            затем выбрать workflow «Deploy preview to GitHub Pages» (GitHub сам переключит на Actions-источник)
+#            ИЛИ сразу: gh api repos/{owner}/{repo}/pages -X POST -f build_type=workflow
+#   Вариант 2 (CLI): gh api repos/{owner}/{repo}/pages -X POST -f build_type=workflow
+# Проверка: gh api repos/{owner}/{repo}/pages  → должен вернуть HTTP 200.
+# После этого пуш — и все три job (smoke → build → deploy) проходят зелёными.
 
 on:
   push:
@@ -20,40 +29,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  setup-pages:
-    name: Включить GitHub Pages (enablement)
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Enable Pages via REST API (идемпотентно — если уже включено, пропускаем)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -e
-          OWNER="${GITHUB_REPOSITORY_OWNER}"
-          REPO="${GITHUB_REPOSITORY#*/}"
-          API="https://api.github.com/repos/${OWNER}/${REPO}/pages"
-          CODE=$(curl -s -o /tmp/pages-get.json -w "%{http_code}" -H "Authorization: Bearer ${GH_TOKEN}" "${API}")
-          if [ "$CODE" = "200" ]; then
-            echo "Pages уже включён — ничего не делаем."
-            exit 0
-          fi
-          echo "Pages не найден (HTTP $CODE) — создаём с source=github-actions"
-          curl -sS -X POST -H "Authorization: Bearer ${GH_TOKEN}" \
-            -H "Accept: application/vnd.github+json" \
-            "${API}" \
-            -d '{"build_type":"workflow"}'
-
+  # ВАЖНО: отдельный job «включить Pages через API» удалён намеренно.
+  # GITHUB_TOKEN в GitHub Actions НЕ имеет права Pages:write для REST API
+  # управления Pages — POST /repos/.../pages всегда отвечает 404 Not Found.
+  # Включение Pages выполняется ОДИН РАЗ вручную:
+  #   Settings → Pages → Source: Deploy from a branch → выбрать workflow «Deploy preview…»
+  #   (или gh api repos/{owner}/{repo}/pages -X POST -f build_type=workflow -f sources[github-actions][path]=/)
+  # После этого configure-pages работает без ошибок.
   smoke:
     name: Smoke test (Playwright)
-    needs: setup-pages
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-          # cache убран: в репозитории нет requirements.txt/pyproject.toml —
-          # setup-python падает с "No file ... matched to [**/requirements.txt]"
+          cache: pip
+          cache-dependency-path: requirements.txt
       - name: Install deps
         run: |
           pip install -r requirements.txt
@@ -72,7 +64,7 @@ jobs:
 
   build:
     name: Build static site
-    needs: [setup-pages, smoke]
+    needs: smoke
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
