@@ -24,6 +24,12 @@
   <link rel="stylesheet" href="src/css/components.css" />
 </head>
 
+  <!-- Dev-preview: рамка устройства (Этап 8). app переносится внутрь при включённой рамке -->
+  <div class="device-frame" id="deviceFrame" aria-hidden="true">
+    <div class="frame-notch"></div>
+    <div class="frame-caption" id="frameCaption">Телефон · 390 × 844</div>
+  </div>
+
   <div class="app" id="app">
     <!-- Header -->
     <header class="header">
@@ -74,17 +80,17 @@
 
       <!-- FAB-веер в рейле: быстрый доступ к действиям на десктопе/планшете (Этап 8) -->
       <div class="fab-wrap rail-fab" id="railFab" data-fab-wrap>
-        <div class="fan fan--rail" data-fan aria-hidden="true">
-          <button class="fan-item" data-quick="lesson" aria-label="Запланировать занятие" style="--tx: 46px; --ty: -4px; --d: 0ms">
+        <div class="fan fan--rail" id="railFan" data-fan aria-hidden="true">
+          <button class="fan-item" data-quick="lesson" aria-label="Запланировать занятие" title="Запланировать занятие" style="--tx: 46px; --ty: -4px; --d: 0ms">
             <span data-icon="calendar"></span><span>Занятие</span>
           </button>
-          <button class="fan-item" data-quick="student" aria-label="Добавить ученика" style="--tx: 46px; --ty: -50px; --d: 35ms">
+          <button class="fan-item" data-quick="student" aria-label="Добавить ученика" title="Добавить ученика" style="--tx: 46px; --ty: -50px; --d: 35ms">
             <span data-icon="userPlus"></span><span>Ученик</span>
           </button>
-          <button class="fan-item" data-quick="transaction" aria-label="Новая операция" style="--tx: 46px; --ty: -96px; --d: 70ms">
+          <button class="fan-item" data-quick="transaction" aria-label="Новая операция" title="Новая операция" style="--tx: 46px; --ty: -96px; --d: 70ms">
             <span data-icon="card"></span><span>Операция</span>
           </button>
-          <button class="fan-item" data-quick="statement" aria-label="Загрузить выписку" style="--tx: 46px; --ty: -142px; --d: 105ms">
+          <button class="fan-item" data-quick="statement" aria-label="Загрузить выписку" title="Загрузить выписку" style="--tx: 46px; --ty: -142px; --d: 105ms">
             <span data-icon="upload"></span><span>Выписка</span>
           </button>
         </div>
