@@ -95,49 +95,6 @@
 
     .header-spacer {
       flex: 1;
-      min-width: 0;
-    }
-
-    /* Этап 14c: название + комментарий раздела в хедере */
-    .head-titles {
-      flex: 0 1 auto;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      gap: 1px;
-      margin-right: 8px;
-      text-align: right;
-      pointer-events: none; /* клики проходят сквозь заголовки к кнопкам под ними */
-    }
-
-    .head-titles h1 {
-      margin: 0;
-      font-size: 15px;
-      font-weight: 750;
-      letter-spacing: -0.01em;
-      line-height: 1.2;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      color: var(--text);
-    }
-
-    .head-titles p {
-      margin: 0;
-      font-size: 11.5px;
-      line-height: 1.3;
-      color: var(--muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 46vw;
-    }
-
-    /* на мобильной ширине комментарий скрываем — остаётся только название */
-    @media (max-width: 767px) {
-      .head-titles p { display: none; }
-      .head-titles h1 { font-size: 14px; max-width: 34vw; }
     }
 
     .header-actions {
@@ -1128,11 +1085,4 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-}
-
-/* ===== Этап 14c: состояние disabled для кнопок истории в хедере ===== */
-.icon-btn.nav-history[disabled] {
-  opacity: 0.35;
-  cursor: default;
-  pointer-events: auto; /* чтобы не «проваливалось», но визуально было ясно */
 }

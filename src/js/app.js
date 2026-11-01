@@ -64,15 +64,6 @@
 
   /* глобальный хелпер для вьюх */
   window.page = function (html) {
-    /* Этап 14c: скелетон показываем ТОЛЬКО при смене раздела.
-       Перерисовка того же раздела (фильтры/сортировки/мутации/формы) —
-       мгновенная, без fadeUp-анимаций, чтобы не было ощущения «переключения вкладки.» */
-    const routeChanged = pageBody.dataset.route !== state.route;
-    if (!routeChanged) {
-      pageBody.innerHTML = html;
-      u.fillIcons(pageBody);
-      return;
-    }
     pageBody.innerHTML = html;
     u.fillIcons(pageBody);
     animateIn();
@@ -212,7 +203,6 @@
   }
 
   function showSkeleton() {
-    pageBody.dataset.route = ""; // сбрасываем флаг: следующая отрисовка — новая страница (с анимацией)
     pageBody.innerHTML = `
       <div class="skeleton sk-hero"></div>
       <div class="skeleton sk-card"></div>
@@ -221,36 +211,16 @@
       <div class="skeleton sk-row"></div>`;
   }
 
-  /* Этап 14c: быстрая перерисовка без skeleton и fadeUp — для фильтров,
-     сортировок, поиска, load-more. Skeleton+анимация входа остаются только
-     при реальной СМЕНЕ раздела/страницы (renderWithSkeleton). */
-  function softRender(route) {
-    clearTimeout(renderTimer);
-    pageBody.dataset.route = route; // не сбрасываем → view-анимация не перезапускается
-    renderRoute(route);
-  }
-
   function renderWithSkeleton() {
     const { route, params } = parseHash();
     clearTimeout(renderTimer);
     setActiveRoute(route);
-    /* если тот же роут и те же params (например клик по активному табу или
-       хеш-навигация back/forward на текущую запись) — не устраиваем «загрузку» */
-    if (state.route === route && sameParams(params) && pageBody.dataset.route === route) {
-      renderRoute(route, params);
-      return;
-    }
     showSkeleton();
     closeAllFans();
     scrollToTop(false); // при смене раздела — наверх (fixed-хедер остаётся видимым)
     lastY = 0;
     bottomNav.classList.remove("nav-hidden");
     renderTimer = setTimeout(() => renderRoute(route, params), 360);
-  }
-
-  function sameParams(params) {
-    const cur = parseHash().params;
-    return cur.length === params.length && cur.every((p, i) => p === params[i]);
   }
 
   function emptyHTML(title, text, quickKey, quickLabel) {
@@ -263,7 +233,11 @@
       </section>`;
   }
 
-  function renderRoute(route, params) {
+  /* softRender: true — без скелетона и без перезапуска fadeUp-анимаций
+     (используется для фильтров/табов/сортировок в пределах одного раздела). */
+  function renderRoute(route, params, opts) {
+    opts = opts || {};
+    if (opts.soft) root.classList.add("no-anim");
     const view = window.Views[route] || window.Views.home;
     /* detail-контекст берём из ФАКТИЧЕСКОГО hash, а не из args:
        - renderRoute(route, params) из роутера → params есть всегда (возможно [])
@@ -271,16 +245,18 @@
          если остаёмся на том же роуте — сохраняем state.detail (детальная страница
          не должна терять контекст и подзаголовок после tx-pay/planned-done),
          при смене роута — сбрасываем. */
-    if (params === undefined) params = parseHash().params; // ← Этап 14c-fix2: params всегда актуальны из hash
     if (params !== undefined) {
       state.detail = params.length ? { kind: params[0], id: Number(params[1]) || params[1] } : null;
     } else if (state.route !== route) {
       state.detail = null;
     }
     view({ DB: window.DB, state, quickActions, emptyHTML, showToast, goTo, save: window.Store.save });
-    pageBody.dataset.route = route; // запоминаем отрисованный раздел (для diff в window.page)
     setActiveRoute(route); // синхронизируем заголовок/подзаголовок с фактическим состоянием detail
+    if (opts.soft) requestAnimationFrame(() => root.classList.remove("no-anim"));
   }
+
+  /* быстрый мягкий перерендер текущего раздела (фильтры/табы/сортировки) */
+  function softRender(route) { renderRoute(route || state.route, undefined, { soft: true }); }
 
   /* ---------- сортировки / циклы ---------- */
   function cycleSort(scope) {
@@ -354,12 +330,6 @@
   function openForm(key, extra) {
     const f = buildForms()[key];
     if (!f) return;
-    /* Этап 14c-fix2: если открыт FAB-веер или sheet «Ещё» — закрыть их.
-       Иначе backdrop (z-index 90/120) перекрывает модалку (200) и все её
-       кнопки становятся недоступны для клика (жалоба пользователя). */
-    closeAllFans();
-    if (isSheetOpen()) closeSheet();
-    ensureTopLayer(genericModal); ensureTopLayer(genericBackdrop);
     genericTitle.textContent = f.title;
     genericForm.dataset.extra = extra ? JSON.stringify(extra) : "";
     genericForm.innerHTML = `
@@ -440,12 +410,7 @@
       mutateForm((db) => db.students.push({ id: Date.now(), name: data.name.trim(), subject: data.subject, next: "Нет записи", balance: "Ожидает", status: "unpaid", debt: 0, rate: Number(data.rate) || 0, monthIncome: 0 }), `Ученик добавлен: ${data.name.trim()}`);
     } else if (key === "transaction" && data.title) {
       const amount = Number(String(data.amount).replace(/\s/g, "").replace(",", "."));
-      /* тип операции определяем по знаку суммы; если пользователь ввёл положительную
-         сумму и выбрал категорию-расход — считаем это расходом (Этап 14c: тосты теперь
-         отражают реальное действие) */
-      const isExpense = amount < 0 || /расход|покупк|платёж|налог/i.test(String(data.category || ""));
-      const type = isExpense ? "expense" : "income";
-      mutateForm((db) => db.transactions.unshift({ id: Date.now(), date: "сегодня", title: data.title.trim(), amount: isExpense ? -Math.abs(amount) : Math.abs(amount), type, category: data.category, status: "pending", account: data.account || "Карта" }), type === "expense" ? `Расход добавлен: ${data.title.trim()}` : `Доход добавлен: ${data.title.trim()}`);
+      mutateForm((db) => db.transactions.unshift({ id: Date.now(), date: "сегодня", title: data.title.trim(), amount, type: amount < 0 ? "expense" : "income", category: data.category, status: "pending", account: data.account || "Карта" }), "Операция добавлена");
     } else if (key === "lesson" && data.student) {
       mutateForm((db) => db.lessons.unshift({ id: Date.now(), student: data.student, subject: (db.students.find((s) => s.name === data.student) || {}).subject || "—", when: data.when || "—", duration: data.duration || "60 мин", status: "upcoming" }), `Занятие запланировано: ${data.student}`);
     } else if (key === "contribute" && extra.goalName) {
@@ -541,7 +506,6 @@
 
   function openSheet() {
     renderSheet();
-    ensureTopLayer(moreSheet); ensureTopLayer(sheetBackdrop); // Этап 14c-fix2
     sheetBackdrop.classList.add("open");
     moreSheet.classList.add("open");
     document.body.classList.add("sheet-open");
@@ -582,16 +546,7 @@
   })();
 
   /* ---------- помощь ---------- */
-  /* Этап 14c-fix2: перенос модалок в конец body при ПЕРВОМ открытии.
-     Внутри .device-frame у них transform → fixed-потомки позиционируются от
-    рамки; вне рамки — от viewport, и backdrop больше не может перекрыть
-     кнопки диалога (жалоба «кнопки в модалке не работают»). */
-  function ensureTopLayer(el) {
-    if (el && el.parentElement !== document.body) document.body.appendChild(el);
-  }
-
   function openHelp() {
-    ensureTopLayer(helpModal); ensureTopLayer(document.getElementById("helpBackdrop"));
     const hScale = frameOn() ? Math.min(1, (deviceFrame.clientHeight - 48) / 560) : 1;
     helpModal.style.setProperty("--modal-scale", String(hScale));
     helpModal.classList.add("open"); helpBackdrop.classList.add("open"); helpClose.focus();
@@ -602,21 +557,6 @@
   function mutate(fn, msg) {
     mutateWithUndo(fn, msg);
   }
-
-  /* Этап 14c-fix: глобальный реестр обработчиков data-action.
-     Делегат кликов живёт в app.js, но кнопки рендерятся views-файлами,
-     которые грузятся ПОСЛЕДНИМИ и не имеют доступа к локальным функциям
-     ядра. window.AppActions позволяет любому view зарегистрировать свой
-     обработчик без правки ядра. */
-  window.AppActions = window.AppActions || {};
-
-  /* мост ядро→views: mutate/openForm/pushToast/goTo доступны всем view-файлам
-     через window.u (утилиты core.js). Views вызывают их лениво — в момент
-     клика эти поля уже заполнены. */
-  u.mutate = function (fn, msg) { mutate(fn, msg); };
-  u.openForm = function (key, extra) { openForm(key, extra); };
-  u.pushToast = function (msg, opts) { pushToast(msg, opts); };
-  u.softRender = function (route) { softRender(route); };
 
   function markTxPaid(id) {
     mutate((db) => { const t = db.transactions.find((x) => x.id === id); if (t) t.status = "paid"; }, "Отмечено как оплачено");
@@ -650,45 +590,14 @@
     openForm("contribute", { goalName: name, max: g.target - g.saved });
   }
 
-  /* ---------- навигационная история для кнопок «Назад/Вперёд» в хедере (Этап 14c) ---------- */
-  const navHist = { stack: [], index: -1 };
-
-  function recordNavHash(hash) {
-    const target = "#" + String(hash || "").replace(/^#?\/?/, "");
-    if (navHist.index >= 0 && navHist.stack[navHist.index] === target) return; // без дублей
-    navHist.stack = navHist.stack.slice(0, navHist.index + 1);
-    navHist.stack.push(target);
-    navHist.index = navHist.stack.length - 1;
-    if (navHist.stack.length > 60) { navHist.stack.shift(); navHist.index--; }
-    updateNavButtons();
-  }
-
-  function updateNavButtons() {
-    const backBtn = document.querySelector('[data-action="back"]');
-    const fwdBtn = document.querySelector('[data-action="forward"]');
-    if (backBtn) backBtn.disabled = navHist.index <= 0;
-    if (fwdBtn) fwdBtn.disabled = navHist.index >= navHist.stack.length - 1;
-  }
-
   function handleAction(name) {
     if (name === "help") return openHelp();
     if (name === "theme") return setTheme(root.dataset.theme === "dark" ? "light" : "dark");
     if (name === "profile") return goTo("profile");
+    if (name === "back") return navBack();
+    if (name === "forward") return navForward();
     if (name === "load-more") { state.budget.limit += 5; return softRender("budget"); }
     if (name === "load-more-ops") { state.operations.limit += 8; return softRender("operations"); }
-    /* Этап 14c: кнопки «Назад/Вперёд» в хедере. Свой стек истории НЕ переписывает
-       hash напрямую (это ломало браузерную историю), а использует нативные
-       history.back()/forward(). Если своей записи ещё нет — подсказка в тосте. */
-    if (name === "back") {
-      if (navHist.index <= 0) { showToast("Вы в начале истории", { kind: "info", duration: 1400 }); return; }
-      window.history.back();
-      return;
-    }
-    if (name === "forward") {
-      if (navHist.index >= navHist.stack.length - 1) { showToast("Дальше истории нет", { kind: "info", duration: 1400 }); return; }
-      window.history.forward();
-      return;
-    }
     if (name === "reset-ops-filters") {
       state.operations = { filter: "all", sort: "date", dir: "desc", limit: 8, query: "", account: "all" };
       return softRender("operations");
@@ -891,7 +800,7 @@
       state.teacher.tab = tabBtn.dataset.tab;
       state.teacher.filter = "all";
       state.teacher.sort = state.teacher.tab === "students" ? "name" : "date";
-      softRender("teacher"); // Этап 14c-fix: без скелетона/анимации при смене таба
+      softRender("teacher");
       return;
     }
 
@@ -900,7 +809,7 @@
       event.preventDefault();
       root.dataset.fontsize = fsBtn.dataset.fontsize;
       try { localStorage.setItem("mono-fontsize", fsBtn.dataset.fontsize); } catch (_) {}
-      renderRoute(state.route);
+      softRender();
       return;
     }
 
@@ -921,26 +830,17 @@
     if (sortBtn) { event.preventDefault(); cycleSort(sortBtn.dataset.sort); return; }
 
     const dashPeriodBtn = event.target.closest("[data-dash-period]");
-    if (dashPeriodBtn) { state.dashboards.period = dashPeriodBtn.dataset.dashPeriod; renderRoute("dashboards"); return; }
+    if (dashPeriodBtn) { state.dashboards.period = dashPeriodBtn.dataset.dashPeriod; softRender("dashboards"); return; }
     const actionBtn = event.target.closest("[data-action]");
     if (actionBtn) {
-      /* клики ВНУТРИ открытой модалки не должны всплывать к глобальному
-         «closeAllFans»-обработчику и другим делегатам — иначе кнопка
-         «Сохранить/Отмена» могла срабатывать вполовину (Этап 14c) */
-      const inModal = actionBtn.closest(".modal");
       event.preventDefault();
       const a = actionBtn.dataset.action;
-      /* приоритет: реестр window.AppActions (views регистрируют свои хендлеры),
-         затем ядро handleAction. Так любой новый view может добавлять кнопки,
-         не трогая ядро (Этап 14c-fix) */
-      const ext = window.AppActions && window.AppActions[a];
-      if (ext) { ext(actionBtn); if (!inModal) closeAllFans(); return; }
       if (a === "tx-pay") return markTxPaid(Number(actionBtn.dataset.id));
       if (a === "remind") return remindDebt(Number(actionBtn.dataset.id));
       if (a === "planned-done") return togglePlannedDone(actionBtn.dataset.title);
       if (a === "goal-add") return contributeGoal(actionBtn.dataset.goal);
       handleAction(a);
-      if (!inModal) closeAllFans();
+      closeAllFans();
       return;
     }
 
@@ -1004,7 +904,33 @@
     if (acc) { state.operations.account = acc.value; softRender("operations"); }
   });
 
-  window.addEventListener("hashchange", () => { recordNavHash(location.hash); renderWithSkeleton(routeFromHash()); });
+  /* ---------- собственная история навигации (Этап 14c) ---------- */
+  const navHist = { stack: [location.hash || "#home"], idx: 0 };
+
+  function updateNavBtns() {
+    const back = document.querySelector('[data-action="back"]');
+    const fwd = document.querySelector('[data-action="forward"]');
+    if (back) { back.disabled = navHist.idx <= 0; back.classList.toggle("is-disabled", navHist.idx <= 0); }
+    if (fwd) { fwd.disabled = navHist.idx >= navHist.stack.length - 1; fwd.classList.toggle("is-disabled", navHist.idx >= navHist.stack.length - 1); }
+  }
+
+  function navBack() {
+    if (navHist.idx > 0) { navHist.idx -= 1; location.hash = navHist.stack[navHist.idx]; }
+  }
+  function navForward() {
+    if (navHist.idx < navHist.stack.length - 1) { navHist.idx += 1; location.hash = navHist.stack[navHist.idx]; }
+  }
+
+  window.addEventListener("hashchange", () => {
+    const h = location.hash || "#home";
+    if (navHist.stack[navHist.idx] !== h) {
+      navHist.stack = navHist.stack.slice(0, navHist.idx + 1);
+      navHist.stack.push(h);
+      navHist.idx = navHist.stack.length - 1;
+    }
+    updateNavBtns();
+    renderWithSkeleton(routeFromHash());
+  });
 
   /* ---------- hide header on scroll down (Этап 10) ---------- */
   let lastY = window.scrollY, ticking = false;
@@ -1050,5 +976,6 @@
   }, { passive: true });
 
   fabWraps.forEach((w) => setFanState(w, false));
+  updateNavBtns();
   renderWithSkeleton(routeFromHash());
 })();
