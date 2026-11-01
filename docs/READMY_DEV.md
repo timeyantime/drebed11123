@@ -151,3 +151,11 @@ Smoke: заменён устаревший селектор .progress → .budge
 5. Onboarding-модалка при первом визите (localStorage mono-onboarded).
 6. Техдолг: Store __v bump до 2 (схема planned изменилась: account/_prevStatus); даты ISO вместо DD.MM.
 
+
+
+## Публикация Этапа 14b (2026-11-02) — как это было
+- PR #22 создан через API (head feature/etap-14b), но смержить его НЕ удалось: PAT в этот заход отдавал 401 на все запросы к api.github.com (даже GET rate_limit), при этом git push по тому же токену работал. Похоже на временную блокировку REST для токена.
+- Поэтому публикация выполнена напрямую: ff-merge feature/etap-14b -> main, git push origin main (63cf973..0f5db9a). Workflow (push: main) запустился; Pages обновился.
+- Проверено grep'ом живого сайта: finance.js содержит pl-group/net-line, components.css — donutDraw/barGrow, index.html — preview-switch. ВСЁ НА САЙТЕ.
+- Важно: doc-коммит cd93f28 (эта заметка) не запускал CI повторно корректно и был откачен force-push'ем main назад на 0f5db9a. ПРАВИЛО: после мержа кода в main НЕ пушить доп. коммиты «поверх» без проверки статуса — лучше включать документацию в тот же коммит этапа.
+- TODO когда токен снова будет работать: закрыть PR #22 (код уже в main через direct push 0f5db9a) и удалить remote-ветку feature/etap-14b.
