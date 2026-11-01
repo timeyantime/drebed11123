@@ -124,3 +124,30 @@ Smoke: заменён устаревший селектор .progress → .budge
 - **Итог аудита** (global-audit.py + livecheck): все глобальные кнопки работают; удалён rail-FAB «+» из боковой панели (index.html, app.js setFanState/positionRailFan/fan-toggle, components.css блок .rail-fab/.fan--rail, layout-base.css @media .rail-fab) — по требованию пользователя «+» только справа внизу.
 - Проверено локально: global-audit AUDIT OK, SMOKE OK, UNDO TEST OK.
 - Уроки: после каждого захода сверять diff HEAD vs origin/main ПЕРЕД созданием PR; platform snapshot-коммиты (сообщения вида "task snapshot ...") НЕ включать в ветку PR — брать только свои коммиты (git cherry-pick конкретного sha).
+
+## Этап 14b — planned v2 + dashboards v2 (D1/D2) + анимации [ГОТОВО, тесты OK]
+Дата: 2026-11-02. Публикация: ветка feature/etap-14b → PR → squash merge → полинг CI → grep Pages.
+
+### Что сделано
+1. **Планируемые платежи v2** (`Views.planned`, finance.js):
+   - Группы-панели: «⚠ Просрочено» / «На этой неделе» / «Позже» / «Выполнено» (пустые скрываются).
+   - `.due-chip` с тонами overdue/today/soon: «просрочено на N дн.», «сегодня», «завтра», «через N дн.».
+   - Демо-«сегодня» = `new Date(2026, 10, 2)`. ВНИМАНИЕ: даты мока DD.MM без года — при переходе через новый год из ломается; для реальных данных хранить ISO и брать `new Date()`.
+   - KPI «К оплате сейчас» / «Потом»; красный инсет-бордер `.pl-overdue`; в mock planned добавлен `account`.
+   - app.js togglePlannedDone сохраняет `_prevStatus` и восстанавливает его при undo (раньше всегда upcoming).
+2. **Дашборды v2**: сегмент периода 3/6 мес. (`state.dashboards.period`; обработчик `[data-dash-period]` в делегировании ПЕРЕД actionBtn-блоком); 4 KPI (итог+дельта ▲▼%, норма сбережений %, лучший месяц, средний итог); D1 бары + SVG net-линия поверх (`.db-net-line` absolute над `.bars`); D2 donut структуры расходов + список db-twin (две полосы в строке месяца).
+3. **Анимации**: JS-stagger fadeUp расширен селекторами `.segmented.period, .ops-summary, .pl-group > .list` (animateIn в app.js); donut-сегменты получили `class="seg"` (core.js donutSVG) + @keyframes donutDraw; barGrow для столбцов (inline animation-delay i*45ms); всё отключено при prefers-reduced-motion.
+   ВАЖНО: CSS-cardIn на `#page-body > *` убран — конфликтовал с inline fadeUp (inline побеждал, тест ловил fadeUp вместо cardIn). Не возвращать!
+
+### Тесты
+- docs/etap14b_test.py — НОВЫЙ: planned группы/чипы/pay+undo toast; dashboards period 6->3, net-line polyline, delta, donut segs>=3; stagger fadeUp+delay.
+- smoke.py / undotest.py / global-audit.py — зелёные (http.server 8090).
+
+### План Этапа 15
+1. Инвестиции v2: карточки активов с ringSVG доли, большая динамика портфеля, доходность %.
+2. Налоги v2: кольцо накопления к сроку + горизонтальный календарь деклараций (chip-scroll).
+3. Ученики: группировки секциями (по алфавиту / по балансу).
+4. Мобильная полировка: safe-area у sheet, горизонтальный скролл чипов, компактные KPI.
+5. Onboarding-модалка при первом визите (localStorage mono-onboarded).
+6. Техдолг: Store __v bump до 2 (схема planned изменилась: account/_prevStatus); даты ISO вместо DD.MM.
+

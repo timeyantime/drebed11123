@@ -207,33 +207,71 @@ window.Views = window.Views || {};
     `);
   };
 
-  /* ---------- Планируемые платежи ---------- */
+  /* ---------- Планируемые платежи (v2: группы по срокам) ---------- */
   Views.planned = function (ctx) {
-    const soon = ctx.DB.planned.filter((p) => p.status === "upcoming");
-    const overdue = ctx.DB.planned.filter((p) => p.status === "overdue");
-    const ordered = [...overdue, ...soon, ...ctx.DB.planned.filter((p) => p.status === "done")];
-    const sumSoon = soon.reduce((s, p) => s + p.amount, 0);
+    const MONTHS = { "Янв":0,"Фев":1,"Мар":2,"Апр":3,"Май":4,"Июн":5,"Июл":6,"Авг":7,"Сен":8,"Окт":9,"Ноя":10,"Дек":11 };
+    // демо-«сегодня»: начало ноября 2026 (данные мока привязаны к этому месяцу)
+    const today = new Date(2026, 10, 2);
+    function toDate(dstr) {
+      const m = dstr.match(/^(\d{1,2})\.(\d{2})$/);
+      if (!m) return null;
+      let month = Number(m[2]) - 1;
+      // если дата «из прошлого» относительно ноября — считаем следующий год (январь...)
+      let year = 2026;
+      if (month > today.getMonth()) year = 2026; // noop, но оставляем явно
+      return new Date(year, month, Number(m[1]));
+    }
+    function daysLeft(dstr) { const t = toDate(dstr); return t ? Math.round((t - today) / 86400000) : null; }
+    function dueLabel(dstr) {
+      const n = daysLeft(dstr);
+      if (n === null) return esc(dstr);
+      if (n < 0) return `<span class="due-chip overdue">просрочено на ${Math.abs(n)} дн.</span>`;
+      if (n === 0) return `<span class="due-chip today">сегодня</span>`;
+      if (n === 1) return `<span class="due-chip soon">завтра</span>`;
+      if (n <= 7) return `<span class="due-chip soon">через ${n} дн.</span>`;
+      return `<span class="due-chip">${esc(dstr)}</span>`;
+    }
+    const rows = ctx.DB.planned.map((p) => ({ ...p, _left: daysLeft(p.date) }));
+    const overdue = rows.filter((p) => p.status !== "done" && p._left < 0);
+    const week = rows.filter((p) => p.status !== "done" && p._left >= 0 && p._left <= 7);
+    const later = rows.filter((p) => p.status !== "done" && p._left > 7);
+    const done = rows.filter((p) => p.status === "done");
+    const sumDue = [...overdue, ...week].reduce((s, p) => s + p.amount, 0);
+    const sumLater = later.reduce((s, p) => s + p.amount, 0);
+
+    function payRow(p) {
+      return `
+        <div class="row pl-row${p.status === "overdue" || (p._left < 0 && p.status !== "done") ? " pl-overdue" : ""}">
+          <div class="row-main">
+            <div class="row-title">${esc(p.title)}</div>
+            <div class="row-meta">${dueLabel(p.date)}${p.account ? ` · ${esc(p.account)}` : ""}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="amount expense">${money(-p.amount)}</div>
+            ${p.status === "done"
+              ? `<span class="badge badge--paid">Выполнен</span>`
+              : `<button class="mini-btn" data-action="planned-done" data-title="${esc(p.title)}" title="Отметить выполненным — спишется со счёта">✓</button>`}
+          </div>
+        </div>`;
+    }
+    function group(title, list, tone) {
+      if (!list.length) return "";
+      return `
+      <section class="panel pl-group">
+        <div class="panel-head"><h2>${title}</h2><span class="note ${tone || ""}">${money(list.reduce((s, p) => s + p.amount, 0))}</span></div>
+        <div class="list">${list.map(payRow).join("")}</div>
+      </section>`;
+    }
     page(`
       <div class="kpi-grid">
-        <div class="kpi"><span class="kpi-label">К оплате в ближайшие 30 дней</span><span class="kpi-value t-pending">${money(sumSoon)}</span><span class="kpi-sub">${soon.length} платежа</span></div>
-        <div class="kpi"><span class="kpi-label">Просрочено</span><span class="kpi-value ${overdue.length ? "t-expense" : ""}">${money(overdue.reduce((s, p) => s + p.amount, 0))}</span></div>
+        <div class="kpi"><span class="kpi-label">К оплате сейчас</span><span class="kpi-value t-expense">${money(sumDue)}</span><span class="kpi-sub">${overdue.length + week.length} платежа(ев) — просрочено и на неделе</span></div>
+        <div class="kpi"><span class="kpi-label">Потом (после 7 дней)</span><span class="kpi-value">${money(sumLater)}</span><span class="kpi-sub">${later.length} платежа</span></div>
       </div>
-      <div class="list">
-        ${ordered.map((p) => `
-          <div class="row">
-            <div class="row-main">
-              <div class="row-title">${esc(p.title)}</div>
-              <div class="row-meta">${p.date}</div>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px">
-              <div class="amount expense">${money(-p.amount)}</div>
-              ${p.status === "done"
-                ? `<span class="badge badge--paid">Выполнен</span>`
-                : `<button class="mini-btn" data-action="planned-done" data-title="${esc(p.title)}" title="Отметить выполненным — спишется со счёта">✓</button>
-                   <span class="badge ${p.status === "overdue" ? "badge--overdue" : "badge--pending"}"><span class="dot"></span>${p.status === "overdue" ? "Просрочен" : "Запланирован"}</span>`}
-            </div>
-          </div>`).join("")}
-      </div>
+      ${group("⚠ Просрочено", overdue, "t-expense")}
+      ${group("На этой неделе", week, "t-pending")}
+      ${group("Позже", later)}
+      ${group("Выполнено", done)}
+      ${!done.length && !overdue.length && !week.length && !later.length ? emptyHTML("Пусто", "Нет запланированных платежей — добавьте платёж через «+».", "transaction", "Добавить операцию") : ""}
     `);
   };
 
@@ -322,31 +360,61 @@ window.Views = window.Views || {};
 
   /* ---------- Дашборды (аналитика) ---------- */
   Views.dashboards = function (ctx) {
-    const m = ctx.DB.months;
+    const all = ctx.DB.months;
+    const period = ctx.state.dashboards.period || "6";
+    const m = period === "3" ? all.slice(-3) : all;
     const net = m.map((x) => x.income - x.expense);
-    const best = m[net.indexOf(Math.max(...net))];
-    const avg = Math.round(m.reduce((s, x) => s + (x.income - x.expense), 0) / m.length);
+    const bestIdx = net.indexOf(Math.max(...net));
+    const best = m[bestIdx];
+    const avg = Math.round(net.reduce((a, b) => a + b, 0) / m.length);
+    const totalIncome = m.reduce((a, x) => a + x.income, 0);
+    const totalExpense = m.reduce((a, x) => a + x.expense, 0);
+    const margin = totalIncome ? Math.round(((totalIncome - totalExpense) / totalIncome) * 100) : 0;
+    // дельта последнего месяца к предыдущему (по итогу)
+    const dlt = net.length > 1 ? net[net.length - 1] - net[net.length - 2] : 0;
+    const dltPct = net.length > 1 && net[net.length - 2] !== 0 ? Math.round((dlt / Math.abs(net[net.length - 2])) * 100) : null;
+
+    // D1: bar-chart с линией нетто-итога поверх
+    const maxV = Math.max(...m.flatMap((x) => [x.income, x.expense]));
+    const barsHTML = (() => {
+      const W = 320, H = 150, pad = 8;
+      const step = W / m.length;
+      const pts = net.map((v, i) => `${(i * step + step / 2).toFixed(1)},${(H - pad - (Math.max(0, v) / maxV) * (H - pad * 2)).toFixed(1)}`).join(" ");
+      return `
+      <div class="db-chart">
+        <svg viewBox="0 0 ${W} ${H}" class="db-net-line" preserveAspectRatio="none" aria-hidden="true">
+          <polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          ${net.map((v, i) => `<circle cx="${(i * step + step / 2).toFixed(1)}" cy="${(H - pad - (Math.max(0, v) / maxV) * (H - pad * 2)).toFixed(1)}" r="3" fill="var(--accent)"/>`).join("")}
+        </svg>
+        <div class="bars">${m.map((x, i) => `
+          <div class="bar-col" style="animation-delay:${i * 45}ms">
+            <div class="bar-pair">
+              <span class="bar income" style="height:${Math.round((x.income / maxV) * 100)}%"></span>
+              <span class="bar expense" style="height:${Math.round((x.expense / maxV) * 100)}%"></span>
+            </div>
+            <span class="bar-label">${x.m}</span>
+          </div>`).join("")}</div>
+      </div>`;
+    })();
+
     page(`
+      <div class="segmented period" role="tablist" aria-label="Период аналитики">
+        <button class="seg-btn ${period === "3" ? "is-active" : ""}" data-dash-period="3" role="tab" aria-selected="${period === "3"}">3 мес.</button>
+        <button class="seg-btn ${period === "6" ? "is-active" : ""}" data-dash-period="6" role="tab" aria-selected="${period === "6"}">6 мес.</button>
+      </div>
       <div class="kpi-grid">
-        <div class="kpi"><span class="kpi-label">Лучший месяц</span><span class="kpi-value">${esc(best.m)}</span><span class="kpi-sub">+${money(best.income - best.expense)}</span></div>
-        <div class="kpi"><span class="kpi-label">Средний итог</span><span class="kpi-value ${avg >= 0 ? "t-income" : "t-expense"}">${money(avg)}</span><span class="kpi-sub">за 6 месяцев</span></div>
+        <div class="kpi"><span class="kpi-label">Итог за период</span><span class="kpi-value ${totalIncome - totalExpense >= 0 ? "t-income" : "t-expense"}">${money(totalIncome - totalExpense)}</span>
+          <span class="kpi-sub">${dltPct !== null ? `<span class="delta ${dlt >= 0 ? "up" : "down"}">${dlt >= 0 ? "▲" : "▼"} ${Math.abs(dltPct)}%</span> к прошлому месяцу` : ""}</span></div>
+        <div class="kpi"><span class="kpi-label">Норма сбережений</span><span class="kpi-value">${margin}%</span><span class="kpi-sub">доля дохода, ушедшая в накопления</span></div>
+        <div class="kpi"><span class="kpi-label">Лучший месяц</span><span class="kpi-value">${esc(best.m)}</span><span class="kpi-sub t-income">+${money(best.income - best.expense)}</span></div>
+        <div class="kpi"><span class="kpi-label">Средний итог</span><span class="kpi-value ${avg >= 0 ? "t-income" : "t-expense"}">${money(avg)}</span><span class="kpi-sub">за ${m.length} мес.</span></div>
       </div>
       <section class="panel">
-        <div class="panel-head"><h2>Динамика (6 мес.)</h2><span class="note">июнь — ноябрь</span></div>
-        ${(() => {
-          const max = Math.max(...m.flatMap((x) => [x.income, x.expense]));
-          return `<div class="bars">${m.map((x) => `
-            <div class="bar-col">
-              <div class="bar-pair">
-                <span class="bar income" style="height:${Math.round((x.income / max) * 100)}%"></span>
-                <span class="bar expense" style="height:${Math.round((x.expense / max) * 100)}%"></span>
-              </div>
-              <span class="bar-label">${x.m}</span>
-            </div>`).join("")}</div>`;
-        })()}
+        <div class="panel-head"><h2>Доходы и расходы</h2><span class="note"><i class="lg-dot income"></i>доход&nbsp;&nbsp;<i class="lg-dot expense"></i>расход&nbsp;&nbsp;<i class="lg-dot net"></i>итог</span></div>
+        ${barsHTML}
       </section>
       <section class="panel" style="margin-top:16px">
-        <div class="panel-head"><h2>Топ категорий расходов</h2></div>
+        <div class="panel-head"><h2>Структура расходов</h2><span class="note">${money(totalExpense)}</span></div>
         ${(() => {
           const by = {};
           ctx.DB.budgets.forEach((b) => { by[b.name] = b.fact; });
@@ -354,6 +422,24 @@ window.Views = window.Views || {};
           return `<div class="donut-wrap">${donutSVG(data, { centerText: money(data.reduce((s, d) => s + d.value, 0)), caption: "всего" }) + legendHTML(data)}</div>`;
         })()}
       </section>
+      <section class="panel" style="margin-top:16px">
+        <div class="panel-head"><h2>Доходы vs расходы по месяцам</h2></div>
+        <div class="list">
+          ${m.map((x) => {
+            const n = x.income - x.expense;
+            const wIn = Math.round((x.income / maxV) * 100), wEx = Math.round((x.expense / maxV) * 100);
+            return `
+            <div class="row db-row">
+              <div class="row-main">
+                <div class="row-title">${x.m}</div>
+                <div class="db-twin"><span class="db-twin-bar income" style="width:${wIn}%"></span><span class="db-twin-bar expense" style="width:${wEx}%"></span></div>
+              </div>
+              <div class="amount ${n >= 0 ? "income" : "expense"}">${n >= 0 ? "+" : ""}${money(n)}</div>
+            </div>`;
+          }).join("")}
+        </div>
+      </section>
     `);
-  };
+  }
+
 })();

@@ -54,10 +54,10 @@ window.DB = {
   ],
 
   planned: [
-    { title: "Налог УСН 6%", date: "25.11", amount: 8400, status: "upcoming" },
-    { title: "Аренда кабинета", date: "01.12", amount: 15000, status: "upcoming" },
-    { title: "Подписка на сервис", date: "05.12", amount: 990, status: "upcoming" },
-    { title: "Кредит (просрочен)", date: "20.10", amount: 12000, status: "overdue" }
+    { title: "Налог УСН 6%", date: "25.11", amount: 8400, status: "upcoming", account: "Карта Т-Банк" },
+    { title: "Аренда кабинета", date: "01.12", amount: 15000, status: "upcoming", account: "Карта Т-Банк" },
+    { title: "Подписка на сервис", date: "05.12", amount: 990, status: "upcoming", account: "Карта Т-Банк" },
+    { title: "Кредит (просрочен)", date: "20.10", amount: 12000, status: "overdue", account: "Карта Т-Банк" }
   ],
 
   taxes: {

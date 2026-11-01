@@ -32,6 +32,7 @@
     teacher: { tab: "students", filter: "all", sort: "name" },
     budget: { filter: "month", sort: "date", limit: 5 },
     operations: { filter: "all", sort: "date", dir: "desc", limit: 8, query: "", account: "all" },
+    dashboards: { period: "6" },
     detail: null // { kind: "student", id } — детальная страница (Этап 5B)
   };
 
@@ -72,7 +73,7 @@
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     /* stagger только для верхнеуровневых блоков: вложенные элементы
        (KPI внутри panel, tiles внутри grid) анимируются вместе с родителем */
-    const sel = ".panel, .kpi-grid, .hub-grid, .quick-grid, .detail-hero";
+    const sel = ".panel, .kpi-grid, .hub-grid, .quick-grid, .detail-hero, .segmented.period, .ops-summary, .pl-group > .list";
     const nodes = Array.from(pageBody.querySelectorAll(sel));
     const top = nodes.filter((el) => !nodes.some((p) => p !== el && p.contains(el)));
     top.forEach((el, i) => {
@@ -564,13 +565,14 @@
     mutate((db) => {
       const pl = db.planned.find((x) => x.title === title);
       if (!pl) return;
+      if (!pl.done) pl._prevStatus = pl.status;
       pl.done = !pl.done;
       if (pl.done) {
         pl.status = "done";
         db.transactions.unshift({ id: Date.now(), date: "сегодня", title: pl.title, amount: -pl.amount, type: "expense", category: "Личное", status: "paid", account: "Карта" });
         const acc = db.accounts.find((a) => a.name === "Карта");
         if (acc) acc.balance -= pl.amount;
-      } else pl.status = "upcoming";
+      } else pl.status = pl._prevStatus || "upcoming";
     }, turningDone ? `Оплачено: ${title}` : `Вернули в расписание: ${title}`);
   }
 
@@ -819,6 +821,8 @@
     const sortBtn = event.target.closest("[data-sort]");
     if (sortBtn) { event.preventDefault(); cycleSort(sortBtn.dataset.sort); return; }
 
+    const dashPeriodBtn = event.target.closest("[data-dash-period]");
+    if (dashPeriodBtn) { state.dashboards.period = dashPeriodBtn.dataset.dashPeriod; renderRoute("dashboards"); return; }
     const actionBtn = event.target.closest("[data-action]");
     if (actionBtn) {
       event.preventDefault();

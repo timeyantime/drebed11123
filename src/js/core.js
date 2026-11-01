@@ -88,7 +88,7 @@
       const v = Math.abs(d.value);
       if (!total || !v) return;
       const frac = v / total;
-      segs += `<circle r="${R}" cx="50" cy="50" stroke="${d.color || chartColor(i)}"
+      segs += `<circle class="seg" r="${R}" cx="50" cy="50" stroke="${d.color || chartColor(i)}"
         stroke-dasharray="${(frac * C - 1.5).toFixed(2)} ${(C - frac * C + 1.5).toFixed(2)}"
         stroke-dashoffset="${(-offset * C).toFixed(2)}"/>`;
       offset += frac;

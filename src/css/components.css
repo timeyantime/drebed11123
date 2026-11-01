@@ -817,3 +817,68 @@ body.framed .sheet-backdrop { z-index: 260 !important; }
   .hero-balance { font-size: 22px; }
   .acct-spark { display: none; }
 }
+
+/* ============================================================
+   ЭТАП 14b — planned v2, dashboards v2 (D1/D2), stagger, donut-in
+   ============================================================ */
+
+/* ---------- Планируемые платежи: группы по срокам ---------- */
+.pl-group { margin-top: 16px; }
+.pl-row .row-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.due-chip {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: 999px;
+  font-size: 11px; font-weight: 700;
+  background: var(--surface-2); color: var(--muted);
+  border: 1px solid var(--line);
+}
+.due-chip.today { background: var(--amber-bg); color: var(--amber); border-color: transparent; }
+.due-chip.soon { background: var(--blue-bg); color: var(--blue); border-color: transparent; }
+.due-chip.overdue { background: var(--red-bg); color: var(--red); border-color: transparent; }
+.pl-overdue { box-shadow: inset 3px 0 0 var(--red); }
+
+/* ---------- Дашборды D1/D2 ---------- */
+.db-chart { position: relative; }
+.db-net-line {
+  position: absolute; inset: 0; width: 100%; height: 150px;
+  pointer-events: none; z-index: 1;
+}
+.bars { position: relative; z-index: 0; }
+.lg-dot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  vertical-align: middle; margin-right: 2px;
+}
+.lg-dot.income { background: var(--green); }
+.lg-dot.expense { background: var(--red); }
+.lg-dot.net { background: var(--accent); }
+.delta { font-weight: 800; font-family: var(--font-num); }
+.delta.up { color: var(--green); }
+.delta.down { color: var(--red); }
+.db-twin { display: flex; flex-direction: column; gap: 3px; margin-top: 6px; max-width: 260px; }
+.db-twin-bar { height: 5px; border-radius: 3px; min-width: 4px; transition: width 0.4s ease; }
+.db-twin-bar.income { background: var(--green); }
+.db-twin-bar.expense { background: var(--red); }
+.db-row .amount { white-space: nowrap; }
+
+/* ---------- Stagger: CSS-страховка на случай reduced-motion off / JS-анимации нет ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  #page-body > .segmented.period { animation: fadeUp 0.3s ease both; }
+}
+
+/* ---------- Donut: «прорисовка» сегментов при появлении ---------- */
+@keyframes donutDraw { from { stroke-dasharray: 0 264; } }
+.donut circle.seg { animation: donutDraw 0.7s ease backwards; }
+.donut circle.seg:nth-of-type(1) { animation-delay: 0.05s; }
+.donut circle.seg:nth-of-type(2) { animation-delay: 0.12s; }
+.donut circle.seg:nth-of-type(3) { animation-delay: 0.19s; }
+.donut circle.seg:nth-of-type(4) { animation-delay: 0.26s; }
+.donut circle.seg:nth-of-type(5) { animation-delay: 0.33s; }
+.donut circle.seg:nth-of-type(6) { animation-delay: 0.40s; }
+
+/* ---------- Bars: рост столбцов снизу ---------- */
+@keyframes barGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+.bar-col .bar { transform-origin: bottom; animation: barGrow 0.45s ease backwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .donut circle.seg, .bar-col .bar, #page-body > .segmented.period { animation: none !important; }
+}
