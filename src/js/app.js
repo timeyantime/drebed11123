@@ -525,7 +525,30 @@
   });
 
   /* ---------- rail expand ---------- */
-  function expandRail() { if (window.innerWidth >= 768) app.classList.add("rail-expanded"); }
+  /* ---------- dev-preview: телефон / планшет / веб (Этап 7) ---------- */
+  const PREVIEW_KEY = "mono-preview";
+  const previewNames = { mobile: "Телефон", tablet: "Планшет", desktop: "Веб" };
+  function applyPreview(mode) {
+    if (mode === "desktop") delete root.dataset.preview; else root.dataset.preview = mode;
+    try { localStorage.setItem(PREVIEW_KEY, mode); } catch (_) {}
+    document.querySelectorAll(".preview-btn").forEach((b) => {
+      const on = b.dataset.preview === mode;
+      b.classList.toggle("is-on", on);
+      b.setAttribute("aria-pressed", String(on));
+    });
+    collapseRail();
+    if (mode !== "mobile") app.classList.add("rail-expanded"); // показать подпись пунктов в превью
+    showToast(`Режим предпросмотра: ${previewNames[mode]}`, "info");
+  }
+  let savedPreview = "auto";
+  try { savedPreview = localStorage.getItem(PREVIEW_KEY) || "auto"; } catch (_) {}
+  const initialPreview = ["mobile", "tablet", "desktop"].includes(savedPreview)
+    ? savedPreview
+    : (window.innerWidth < 768 ? "mobile" : window.innerWidth < 1180 ? "tablet" : "desktop");
+
+  function previewMode() { return root.dataset.preview || (window.innerWidth < 768 ? "mobile" : window.innerWidth < 1180 ? "tablet" : "desktop"); }
+  function isDesktopLayout() { return previewMode() !== "mobile"; } // с учётом dev-preview
+  function expandRail() { if (isDesktopLayout()) app.classList.add("rail-expanded"); }
   function collapseRail() { app.classList.remove("rail-expanded"); }
 
   /* ---------- events ---------- */
@@ -535,6 +558,7 @@
   } catch (_) {}
   u.fillIcons();
   setTheme(root.dataset.theme || "dark", false);
+  applyPreview(initialPreview);
 
   window.matchMedia("(prefers-color-scheme: light)").addEventListener?.("change", (e) => {
     let saved = null; try { saved = localStorage.getItem("mono-theme"); } catch (_) {}
@@ -556,7 +580,7 @@
   toolbar.addEventListener("mouseleave", collapseRail);
   toolbar.addEventListener("focusin", expandRail);
   toolbar.addEventListener("focusout", (e) => { if (!toolbar.contains(e.relatedTarget)) collapseRail(); });
-  window.addEventListener("resize", () => { if (window.innerWidth < 768) collapseRail(); });
+  window.addEventListener("resize", () => { if (!isDesktopLayout()) collapseRail(); });
 
   helpBackdrop.addEventListener("click", closeHelp);
   helpClose.addEventListener("click", closeHelp);
@@ -617,6 +641,9 @@
       return;
     }
 
+    const pvBtn = event.target.closest(".preview-btn");
+    if (pvBtn) { event.preventDefault(); applyPreview(pvBtn.dataset.preview); return; }
+
     const rowLink = event.target.closest("[data-go-route]");
     if (rowLink) {
       event.preventDefault();
@@ -663,7 +690,7 @@
     ticking = true;
     requestAnimationFrame(() => {
       const y = window.scrollY;
-      if (window.innerWidth >= 768 || document.body.classList.contains("fan-open")) {
+      if (isDesktopLayout() || document.body.classList.contains("fan-open")) {
         bottomNav.classList.remove("nav-hidden"); lastY = y; ticking = false; return;
       }
       if (y > 160 && y > lastY + 14) bottomNav.classList.add("nav-hidden");

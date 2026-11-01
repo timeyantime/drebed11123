@@ -1070,3 +1070,81 @@
     }
   
 /* ==== layout base end ==== */
+
+/* ============================================================
+   ЭТАП 7 — DEV PREVIEW: принудительные режимы телефон/планшет/веб
+   Переключаются кнопкой в шапке (data-preview на <html>).
+   media-запросы не поддерживают CSS-переменные, поэтому здесь
+   точечно переопределяются правила из @media выше.
+   ============================================================ */
+
+/* ---- MOBILE: как ≤767px независимо от ширины окна ---- */
+:root[data-preview="mobile"] .nav-history { display: none; }
+:root[data-preview="mobile"] .toolbar { display: none !important; }
+:root[data-preview="mobile"] .content { margin-left: 0 !important; padding: 14px var(--edge) calc(86px + var(--safe-bottom)) !important; }
+:root[data-preview="mobile"] .app.rail-expanded .content { margin-left: 0 !important; }
+:root[data-preview="mobile"] .bottom-nav { display: flex !important; }
+:root[data-preview="mobile"] .desktop-fab { display: none !important; }
+:root[data-preview="mobile"] .quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+:root[data-preview="mobile"] .dash-grid { grid-template-columns: 1fr; }
+:root[data-preview="mobile"] .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+
+/* ---- TABLET: как 768–1179px ---- */
+:root[data-preview="tablet"] .nav-history { display: grid; }
+:root[data-preview="tablet"] .toolbar {
+  display: flex;
+  position: fixed;
+  left: var(--edge);
+  top: calc(var(--edge) * 2 + var(--header-h) + var(--safe-top));
+  bottom: calc(var(--edge) + var(--safe-bottom));
+  z-index: 40;
+  width: var(--rail-w);
+  padding: 10px 8px;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--surface);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: width 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+:root[data-preview="tablet"] .content { margin-left: calc(var(--rail-w) + var(--edge) * 2); padding: 18px var(--edge) 28px 0; }
+:root[data-preview="tablet"] .app.rail-expanded .toolbar { width: var(--rail-expanded-w); }
+:root[data-preview="tablet"] .app.rail-expanded .content { margin-left: calc(var(--rail-expanded-w) + var(--edge) * 2); }
+:root[data-preview="tablet"] .bottom-nav { display: none !important; }
+:root[data-preview="tablet"] .desktop-fab { display: block; position: fixed; right: 20px; bottom: calc(20px + var(--safe-bottom)); z-index: 100; }
+:root[data-preview="tablet"] .quick-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+:root[data-preview="tablet"] .dash-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+:root[data-preview="tablet"] .toast { bottom: 24px; }
+
+/* ---- DESKTOP: как ≥1180px (раскладка планшета + 3 колонки дашбордов) ---- */
+:root[data-preview="desktop"] .nav-history { display: grid; }
+:root[data-preview="desktop"] .toolbar {
+  display: flex;
+  position: fixed;
+  left: var(--edge);
+  top: calc(var(--edge) * 2 + var(--header-h) + var(--safe-top));
+  bottom: calc(var(--edge) + var(--safe-bottom));
+  z-index: 40;
+  width: var(--rail-w);
+  padding: 10px 8px;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--surface);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: width 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+:root[data-preview="desktop"] .content { margin-left: calc(var(--rail-w) + var(--edge) * 2); padding: 18px var(--edge) 28px 0; }
+:root[data-preview="desktop"] .app.rail-expanded .toolbar { width: var(--rail-expanded-w); }
+:root[data-preview="desktop"] .app.rail-expanded .content { margin-left: calc(var(--rail-expanded-w) + var(--edge) * 2); }
+:root[data-preview="desktop"] .bottom-nav { display: none !important; }
+:root[data-preview="desktop"] .desktop-fab { display: block; position: fixed; right: 20px; bottom: calc(20px + var(--safe-bottom)); z-index: 100; }
+:root[data-preview="desktop"] .quick-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+:root[data-preview="desktop"] .dash-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
+:root[data-preview="desktop"] .toast { bottom: 24px; }
+
+/* Кнопка превью активна — подсветка */
+.preview-btn.is-on { color: var(--accent-text); background: var(--accent); }
+.preview-btn.is-on:hover { background: var(--accent); color: var(--accent-text); }
