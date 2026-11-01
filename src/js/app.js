@@ -77,12 +77,38 @@
     });
   }
 
-  function showToast(message) {
-    toast.textContent = message;
-    toast.classList.add("show");
+  /* ---------- тосты: очередь + undo (Этап 6) ---------- */
+  const toastQueue = [];
+  let toastShowing = false;
+
+  function nextToast() {
+    if (!toastQueue.length) { toastShowing = false; return; }
+    const item = toastQueue.shift();
+    toastShowing = true;
+    toast.className = "toast show" + (item.kind ? " toast--" + item.kind : "");
+    toast.innerHTML = `<span class="toast-msg">${u.esc(item.message)}</span>` +
+      (item.onUndo ? `<button type="button" class="toast-undo" data-toast-undo>Отменить</button>` : "");
+    toast._onUndo = item.onUndo || null;
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove("show"), 1900);
+    const ms = item.duration || (item.onUndo ? 5200 : 1900);
+    toastTimer = setTimeout(hideToast, ms);
   }
+
+  function hideToast() {
+    clearTimeout(toastTimer);
+    toast.classList.remove("show");
+    toastTimer = setTimeout(() => {
+      if (!toast.classList.contains("show")) { toast.innerHTML = ""; toast._onUndo = null; nextToast(); }
+    }, 220);
+  }
+
+  function pushToast(message, opts) {
+    toastQueue.push(Object.assign({ message }, opts || {}));
+    // если текущий тост с undo и новый — не undo, пусть undo-тост доживёт до конца очереди
+    if (!toastShowing) nextToast();
+  }
+
+  function showToast(message) { pushToast(message); }
 
   function setTheme(theme, persist = true) {
     root.dataset.theme = theme;
