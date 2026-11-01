@@ -90,3 +90,4 @@ F. PWA: manifest.json + service worker (offline shell), иконки из Ико
 - Анимация появления групп (.ops-group fade/slide stagger), hover-состояния строк в dark/light.
 - Раздел «Счета»: детальные карточки счетов + мини-график баланса.
 - Полировка mobile: safe-area у .ops-summary, горизонтальный скролл чипов.
+
