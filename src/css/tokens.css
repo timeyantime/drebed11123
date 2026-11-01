@@ -51,7 +51,7 @@
   /* ---- Мобильные размеры / layout-константы (из исходного layout.html) ---- */
   --bottom-nav-h: 62px;
   --edge: 10px;
-  --header-h: 46px;
+  --header-h: 56px;
   --safe-top: env(safe-area-inset-top);
   --safe-bottom: env(safe-area-inset-bottom);
   --rail-w: 64px;
