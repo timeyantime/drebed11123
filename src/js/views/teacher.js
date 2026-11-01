@@ -37,7 +37,70 @@ window.Views = window.Views || {};
     return { date: "По дате", student: "По ученику" }[sort] || "Сортировка";
   }
 
+  /* ---------- Детальная страница ученика: #/teacher/student/:id (Этап 5B) ---------- */
+  function studentDetail(ctx, id) {
+    const s = ctx.DB.students.find((x) => String(x.id) === String(id));
+    if (!s) {
+      page(`
+        ${ctx.emptyHTML("Ученик не найден", "Возможно, запись была удалена.", "student", "Добавить ученика")}
+        <div style="display:flex;justify-content:center;margin-top:12px">
+          <button class="secondary-btn" data-go-route="teacher">← К списку учеников</button>
+        </div>`);
+      return;
+    }
+    const lessons = ctx.DB.lessons.filter((l) => l.student === s.name);
+    const done = lessons.filter((l) => l.status === "done").length;
+    const upcoming = lessons.filter((l) => l.status === "upcoming").length;
+    const income = ctx.DB.transactions.filter((t) => t.type === "income" && t.title.includes(s.name.split(" ")[0]));
+    const paidSum = income.filter((t) => t.status === "paid").reduce((a, t) => a + t.amount, 0);
+    const hue = u.partials.avatarHue(s.id);
+
+    page(`
+      <div style="margin-bottom:12px">
+        <button class="link-btn" data-go-route="teacher">← Все ученики</button>
+      </div>
+
+      <section class="panel detail-hero">
+        <span class="avatar avatar--xl" style="--c:hsl(${hue} 62% 52%)">${u.esc(s.name[0])}</span>
+        <div class="detail-id">
+          <h2>${u.esc(s.name)}</h2>
+          <p>${u.esc(s.subject)} • ставка ${money(s.rate)}/занятие • ${u.esc(s.next)}</p>
+        </div>
+        <span class="badge ${s.status === "unpaid" ? "badge--pending" : s.status === "active" ? "badge--paid" : "badge--neutral"}">
+          ${s.status === "unpaid" ? "Есть долг" : s.status === "active" ? "Активный" : "Без занятий"}
+        </span>
+      </section>
+
+      <div class="kpi-grid">
+        <div class="kpi"><span class="kpi-label">Занятий проведено</span><span class="kpi-value">${done}</span></div>
+        <div class="kpi"><span class="kpi-label">Предстоит</span><span class="kpi-value">${upcoming}</span></div>
+        <div class="kpi"><span class="kpi-label">Получено оплат</span><span class="kpi-value t-income">${money(paidSum)}</span></div>
+        <div class="kpi"><span class="kpi-label">Долг</span><span class="kpi-value ${s.debt ? "t-expense" : ""}">${money(s.debt)}</span></div>
+      </div>
+
+      <section class="panel">
+        <div class="panel-head"><h2>Журнал занятий</h2><span class="note">${lessons.length} записей</span></div>
+        ${lessons.length ? `<div class="list">${lessons.map(u.partials.lessonRow).join("")}</div>`
+          : `<p class="t-muted" style="padding:10px 0;font-size:13px">Занятий пока нет.</p>`}
+      </section>
+
+      ${income.length ? `
+      <section class="panel" style="margin-top:16px">
+        <div class="panel-head"><h2>Оплаты</h2></div>
+        <div class="list">${income.map(u.partials.transactionRow).join("")}</div>
+      </section>` : ""}
+
+      <div class="detail-actions">
+        ${s.debt > 0 ? `<button class="primary-btn" data-action="remind" data-id="${s.id}">Напомнить об оплате (${money(s.debt)})</button>` : ""}
+        <button class="secondary-btn" data-quick="lesson">Запланировать занятие</button>
+      </div>
+    `);
+  }
+
   Views.teacher = function (ctx) {
+    if (ctx.state.detail && ctx.state.detail.kind === "student") {
+      return studentDetail(ctx, ctx.state.detail.id);
+    }
     const { tab, filter } = ctx.state.teacher;
     const { type, items } = getTeacherItems(ctx.state, ctx.DB);
 

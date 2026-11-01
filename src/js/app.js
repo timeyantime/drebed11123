@@ -23,15 +23,24 @@
     taxes: { title: "Налоги", subtitle: "Режим, расчёты и сроки уплаты" },
     investments: { title: "Инвестиции", subtitle: "Активы и структура портфеля" },
     goals: { title: "Цели", subtitle: "Накопления и финансовые цели" },
-    dashboards: { title: "Дашборды", subtitle: "Аналитика доходов и расходов" }
+    dashboards: { title: "Дашборды", subtitle: "Аналитика доходов и расходов" },
+    profile: { title: "Профиль", subtitle: "Настройки приложения и демо-данные" }
   };
 
   const state = {
     route: "home",
     teacher: { tab: "students", filter: "all", sort: "name" },
     budget: { filter: "month", sort: "date", limit: 5 },
-    operations: { filter: "all", sort: "date", limit: 8, query: "" }
+    operations: { filter: "all", sort: "date", limit: 8, query: "", account: "all" },
+    detail: null // { kind: "student", id } — детальная страница (Этап 5B)
   };
+
+  /* ---------- hash-парсинг с параметрами: #/teacher/student/2 ---------- */
+  function parseHash() {
+    const parts = decodeURIComponent(location.hash.replace(/^#\/?/, "")).split("/").filter(Boolean);
+    const base = normalizeRoute(parts[0] || "home");
+    return { route: base, params: parts.slice(1) };
+  }
 
   /* ---------- DOM refs ---------- */
   const root = document.documentElement;
@@ -85,13 +94,13 @@
   }
 
   function normalizeRoute(route) { return routesMeta[route] ? route : "home"; }
-  function routeFromHash() { return normalizeRoute(decodeURIComponent(location.hash.replace(/^#\/?/, ""))); }
+  function routeFromHash() { return parseHash().route; }
 
-  function goTo(route) {
+  function goTo(route, params) {
     route = normalizeRoute(route);
-    const target = "#" + route;
+    const target = "#" + [route, ...(params || [])].join("/");
     if (location.hash !== target) location.hash = target;
-    else renderWithSkeleton(route);
+    else renderWithSkeleton();
   }
 
   function setActiveRoute(route) {
@@ -104,7 +113,8 @@
     });
     const meta = routesMeta[route];
     pageTitle.textContent = meta.title;
-    pageSubtitle.textContent = meta.subtitle;
+    const isStudentDetail = route === "teacher" && state.detail && state.detail.kind === "student";
+    pageSubtitle.textContent = isStudentDetail ? "Карточка ученика" : meta.subtitle;
     document.title = `${meta.title} — Mono`;
   }
 
@@ -117,13 +127,13 @@
       <div class="skeleton sk-row"></div>`;
   }
 
-  function renderWithSkeleton(route) {
-    route = normalizeRoute(route);
+  function renderWithSkeleton() {
+    const { route, params } = parseHash();
     clearTimeout(renderTimer);
     setActiveRoute(route);
     showSkeleton();
     closeAllFans();
-    renderTimer = setTimeout(() => renderRoute(route), 360);
+    renderTimer = setTimeout(() => renderRoute(route, params), 360);
   }
 
   function emptyHTML(title, text, quickKey, quickLabel) {
@@ -136,9 +146,14 @@
       </section>`;
   }
 
-  function renderRoute(route) {
+  function renderRoute(route, params) {
     const view = window.Views[route] || window.Views.home;
-    view({ DB: window.DB, state, quickActions, emptyHTML, showToast, goTo });
+    state.detail = null;
+    if (params && params.length) {
+      // #/teacher/student/:id → detail-режим для вьюхи
+      state.detail = { kind: params[0], id: Number(params[1]) || params[1] };
+    }
+    view({ DB: window.DB, state, quickActions, emptyHTML, showToast, goTo, save: window.Store.save });
   }
 
   /* ---------- сортировки / циклы ---------- */
@@ -164,15 +179,15 @@
     lesson: {
       title: "Запланировать занятие",
       fields: [
-        { name: "student", label: "Ученик", type: "select", options: window.DB.students.map((s) => s.name) },
-        { name: "when", label: "Дата и время", type: "text", placeholder: "Напр.: Вт, 18:00" },
+        { name: "student", label: "Ученик", type: "select", options: window.DB.students.map((s) => s.name), required: true },
+        { name: "when", label: "Дата и время", type: "text", placeholder: "Напр.: Вт, 18:00", required: true },
         { name: "duration", label: "Длительность", type: "select", options: ["45 мин", "60 мин", "90 мин"] }
       ]
     },
     student: {
       title: "Добавить ученика",
       fields: [
-        { name: "name", label: "Имя", type: "text", placeholder: "Имя и фамилия" },
+        { name: "name", label: "Имя", type: "text", placeholder: "Имя и фамилия", required: true },
         { name: "subject", label: "Предмет", type: "select", options: ["Математика", "Английский", "Физика", "Информатика", "Русский"] },
         { name: "rate", label: "Ставка за занятие, ₽", type: "number", placeholder: "1200" }
       ]
@@ -180,15 +195,22 @@
     transaction: {
       title: "Новая операция",
       fields: [
-        { name: "title", label: "Название", type: "text", placeholder: "Напр.: Оплата: Анна К." },
-        { name: "amount", label: "Сумма, ₽ (минус — расход)", type: "number", placeholder: "2400" },
-        { name: "category", label: "Категория", type: "select", options: ["Ученики", "Работа", "Личное", "Развитие"] }
+        { name: "title", label: "Название", type: "text", placeholder: "Напр.: Оплата: Анна К.", required: true },
+        { name: "amount", label: "Сумма, ₽ (минус — расход)", type: "number", placeholder: "2400", required: true },
+        { name: "category", label: "Категория", type: "select", options: ["Ученики", "Работа", "Личное", "Развитие"] },
+        { name: "account", label: "Счёт", type: "select", options: window.DB.accounts.map((a) => a.name) }
+      ]
+    },
+    contribute: {
+      title: "Пополнить цель",
+      fields: [
+        { name: "sum", label: "Сумма взноса, ₽", type: "number", placeholder: "5000", required: true }
       ]
     },
     statement: {
       title: "Загрузить выписку",
       fields: [
-        { name: "file", label: "Файл выписки", type: "text", placeholder: "CSV / PDF (пока демо)" },
+        { name: "file", label: "Файл выписки", type: "text", placeholder: "CSV / PDF (пока демо)", required: true },
         { name: "account", label: "Счёт", type: "select", options: window.DB.accounts.map((a) => a.name) }
       ]
     }
@@ -200,17 +222,19 @@
   const genericForm = document.getElementById("genericForm");
   let lastFocused = null;
 
-  function openForm(key) {
+  function openForm(key, extra) {
     const f = buildForms()[key];
     if (!f) return;
     genericTitle.textContent = f.title;
+    genericForm.dataset.extra = extra ? JSON.stringify(extra) : "";
     genericForm.innerHTML = `
       ${f.fields.map((fl) => `
-        <div class="field">
-          <label for="gf-${fl.name}">${fl.label}</label>
+        <div class="field" data-field="${fl.name}">
+          <label for="gf-${fl.name}">${fl.label}${fl.required ? ' <span class="req">*</span>' : ""}</label>
           ${fl.type === "select"
             ? `<select id="gf-${fl.name}" name="${fl.name}">${fl.options.map((o) => `<option>${u.esc(o)}</option>`).join("")}</select>`
-            : `<input id="gf-${fl.name}" name="${fl.name}" type="${fl.type}" placeholder="${fl.placeholder || ""}">`}
+            : `<input id="gf-${fl.name}" name="${fl.name}" type="${fl.type}" placeholder="${fl.placeholder || ""}" inputmode="${fl.type === "number" ? "decimal" : "text"}">`}
+          <p class="field-error" role="alert"></p>
         </div>`).join("")}
       <div class="form-actions">
         <button type="button" class="secondary-btn" data-action="close-modal">Отмена</button>
@@ -231,22 +255,71 @@
     if (lastFocused) lastFocused.focus();
   }
 
+  /* ---------- валидация формы (Этап 5D) ---------- */
+  const validators = {
+    required: (v) => (String(v).trim() ? "" : "Обязательное поле"),
+    money: (v) => (v === "" || v === null || !isNaN(Number(String(v).replace(/\s/g, "").replace(",", "."))) ? "" : "Введите число"),
+    amount: (v) => {
+      if (!String(v).trim()) return "Укажите сумму";
+      const n = Number(String(v).replace(/\s/g, "").replace(",", "."));
+      if (isNaN(n)) return "Введите число";
+      if (n === 0) return "Сумма не может быть 0";
+      return "";
+    }
+  };
+
+  function setFieldError(name, msg) {
+    const field = genericForm.querySelector(`[data-field="${name}"]`);
+    if (!field) return;
+    const err = field.querySelector(".field-error");
+    const input = field.querySelector("input, select");
+    if (err) err.textContent = msg || "";
+    field.classList.toggle("invalid", !!msg);
+    if (input) input.setAttribute("aria-invalid", msg ? "true" : "false");
+  }
+
+  function validateForm(key, data) {
+    const f = buildForms()[key];
+    let ok = true, firstBad = null;
+    f.fields.forEach((fl) => {
+      const rules = [fl.required && "required", fl.type === "number" && (fl.name === "amount" ? "amount" : "money")].filter(Boolean);
+      const msg = rules.map((r) => validators[r](data[fl.name])).find(Boolean) || "";
+      setFieldError(fl.name, msg);
+      if (msg && ok) { firstBad = fl.name; ok = false; }
+    });
+    if (!ok && firstBad) genericForm.querySelector(`[name="${firstBad}"]`)?.focus();
+    return ok;
+  }
+
   genericForm.addEventListener("submit", (e) => {
     e.preventDefault();
     const key = genericModal.dataset.form;
+    let extra = {}; try { extra = JSON.parse(genericForm.dataset.extra || "{}"); } catch (_) {}
     const data = Object.fromEntries(new FormData(genericForm).entries());
-    // Демо: мутация мок-данных, чтобы UX был «живым» до бэкенда
+    if (!validateForm(key, data)) { showToast("Проверьте выделенные поля"); return; }
+    // Демо: мутация мок-данных + сохранение в localStorage (Store)
     if (key === "student" && data.name) {
-      window.DB.students.push({ id: Date.now(), name: data.name, subject: data.subject, next: "Нет записи", balance: "Ожидает", status: "unpaid", debt: 0, rate: Number(data.rate) || 0, monthIncome: 0 });
+      window.DB.students.push({ id: Date.now(), name: data.name.trim(), subject: data.subject, next: "Нет записи", balance: "Ожидает", status: "unpaid", debt: 0, rate: Number(data.rate) || 0, monthIncome: 0 });
     }
     if (key === "transaction" && data.title) {
-      window.DB.transactions.unshift({ id: Date.now(), date: "сегодня", title: data.title, amount: Number(data.amount) || 0, type: Number(data.amount) < 0 ? "expense" : "income", category: data.category, status: "pending", account: "Карта" });
+      const amount = Number(String(data.amount).replace(/\s/g, "").replace(",", "."));
+      window.DB.transactions.unshift({ id: Date.now(), date: "сегодня", title: data.title.trim(), amount, type: amount < 0 ? "expense" : "income", category: data.category, status: "pending", account: data.account || "Карта" });
     }
     if (key === "lesson" && data.student) {
       window.DB.lessons.unshift({ id: Date.now(), student: data.student, subject: (window.DB.students.find((s) => s.name === data.student) || {}).subject || "—", when: data.when || "—", duration: data.duration || "60 мин", status: "upcoming" });
     }
+    if (key === "contribute" && extra.goalName) {
+      const g = window.DB.goals.find((x) => x.name === extra.goalName);
+      if (g) g.saved = Math.min(g.target, g.saved + Number(data.sum));
+    }
+    if (key === "statement" && data.file) {
+      // Демо-импорт выписки: добавляем «подтверждающую» операцию на выбранный счёт
+      const accName = data.account || "Карта";
+      window.DB.transactions.unshift({ id: Date.now(), date: "сегодня", title: `Импорт выписки: ${data.file}`, amount: 0.01, type: "income", category: "Личное", status: "paid", account: accName });
+    }
+    window.Store.save();
     closeForm();
-    showToast("Сохранено (демо)");
+    showToast("Сохранено");
     renderRoute(state.route);
   });
 
@@ -314,16 +387,54 @@
   function openHelp() { helpModal.classList.add("open"); helpBackdrop.classList.add("open"); helpClose.focus(); }
   function closeHelp() { helpModal.classList.remove("open"); helpBackdrop.classList.remove("open"); }
 
+  /* ---------- мутации данных из view-кнопок (Этап 5A/5B) ---------- */
+  function mutate(fn, msg) {
+    fn(window.DB);
+    window.Store.save();
+    showToast(msg);
+    renderWithSkeleton();
+  }
+
+  function markTxPaid(id) {
+    mutate((db) => { const t = db.transactions.find((x) => x.id === id); if (t) t.status = "paid"; }, "Отмечено как оплачено");
+  }
+
+  function remindDebt(studentId) {
+    const s = window.DB.students.find((x) => x.id === studentId);
+    showToast(s ? `Напоминание отправлено: ${s.name}` : "Напоминание отправлено");
+  }
+
+  function togglePlannedDone(title) {
+    mutate((db) => {
+      const p = db.planned.find((x) => x.title === title);
+      if (!p) return;
+      p.done = !p.done;
+      if (p.done) {
+        p.status = "done";
+        db.transactions.unshift({ id: Date.now(), date: "сегодня", title: p.title, amount: -p.amount, type: "expense", category: "Личное", status: "paid", account: "Карта" });
+        const acc = db.accounts.find((a) => a.name === "Карта");
+        if (acc) acc.balance -= p.amount;
+      } else p.status = "upcoming";
+    }, "Обновлено");
+  }
+
+  function contributeGoal(name) {
+    const g = window.DB.goals.find((x) => x.name === name);
+    if (!g) return;
+    openForm("contribute", { goalName: name, max: g.target - g.saved });
+  }
+
   function handleAction(name) {
     if (name === "help") return openHelp();
     if (name === "theme") return setTheme(root.dataset.theme === "dark" ? "light" : "dark");
-    if (name === "profile") return showToast("Профиль — раздел в разработке");
+    if (name === "profile") return goTo("profile");
     if (name === "back") return history.back();
     if (name === "forward") return history.forward();
     if (name === "load-more") { state.budget.limit += 5; return renderRoute("budget"); }
     if (name === "load-more-ops") { state.operations.limit += 8; return renderRoute("operations"); }
     if (name === "close-modal") return closeForm();
     if (name === "more") { openFan(document.querySelector(".desktop-fab") || fabWraps[0]); return; }
+    if (name === "reset-demo") { window.Store.reset(); location.reload(); return; }
     showToast(`Действие: ${name}`);
   }
 
@@ -332,6 +443,10 @@
   function collapseRail() { app.classList.remove("rail-expanded"); }
 
   /* ---------- events ---------- */
+  try {
+    const fsSaved = localStorage.getItem("mono-fontsize");
+    if (fsSaved) root.dataset.fontsize = fsSaved;
+  } catch (_) {}
   u.fillIcons();
   setTheme(root.dataset.theme || "dark", false);
 
@@ -378,6 +493,15 @@
       return;
     }
 
+    const fsBtn = event.target.closest("[data-fontsize]");
+    if (fsBtn) {
+      event.preventDefault();
+      root.dataset.fontsize = fsBtn.dataset.fontsize;
+      try { localStorage.setItem("mono-fontsize", fsBtn.dataset.fontsize); } catch (_) {}
+      renderRoute(state.route);
+      return;
+    }
+
     const filterBtn = event.target.closest("[data-filter]");
     if (filterBtn) {
       event.preventDefault();
@@ -388,11 +512,32 @@
       return;
     }
 
+    const accChip = event.target.closest("[data-account-btn]");
+    if (accChip) { event.preventDefault(); state.operations.account = accChip.dataset.accountBtn; renderRoute("operations"); return; }
+
     const sortBtn = event.target.closest("[data-sort]");
     if (sortBtn) { event.preventDefault(); cycleSort(sortBtn.dataset.sort); return; }
 
     const actionBtn = event.target.closest("[data-action]");
-    if (actionBtn) { event.preventDefault(); handleAction(actionBtn.dataset.action); closeAllFans(); return; }
+    if (actionBtn) {
+      event.preventDefault();
+      const a = actionBtn.dataset.action;
+      if (a === "tx-pay") return markTxPaid(Number(actionBtn.dataset.id));
+      if (a === "remind") return remindDebt(Number(actionBtn.dataset.id));
+      if (a === "planned-done") return togglePlannedDone(actionBtn.dataset.title);
+      if (a === "goal-add") return contributeGoal(actionBtn.dataset.goal);
+      handleAction(a);
+      closeAllFans();
+      return;
+    }
+
+    const rowLink = event.target.closest("[data-go-route]");
+    if (rowLink) {
+      event.preventDefault();
+      const params = rowLink.dataset.goParams ? rowLink.dataset.goParams.split("/") : [];
+      goTo(rowLink.dataset.goRoute, params);
+      return;
+    }
 
     if (document.body.classList.contains("fan-open") && !event.target.closest("[data-fab-wrap]")) closeAllFans();
   });
@@ -406,6 +551,21 @@
       closeAllFans();
       activeWrap?.querySelector("[data-fab]")?.focus();
     }
+  });
+
+  document.addEventListener("input", (event) => {
+    const q = event.target.closest("[data-search]");
+    if (q) {
+      state.operations.query = q.value;
+      state.operations.limit = 8;
+      const pos = q.selectionStart;
+      renderRoute("operations");
+      const again = document.querySelector("[data-search]");
+      if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (_) {} }
+      return;
+    }
+    const acc = event.target.closest("[data-account-filter]");
+    if (acc) { state.operations.account = acc.value; renderRoute("operations"); }
   });
 
   window.addEventListener("hashchange", () => renderWithSkeleton(routeFromHash()));

@@ -9,6 +9,24 @@ window.Views = window.Views || {};
   const { money, donutSVG, legendHTML, esc } = u;
   const P = () => u.partials;
 
+  /* строка операции с кнопкой «Отметить оплаченным» для pending */
+  function txRowPayable(t) {
+    const cls = t.amount < 0 ? "expense" : "income";
+    const pendingBadge = t.status === "pending"
+      ? `<span class="badge badge--pending"><span class="dot"></span>Ожидает</span>
+         <button class="mini-btn" data-action="tx-pay" data-id="${t.id}" aria-label="Отметить оплаченным: ${esc(t.title)}">✓</button>`
+      : "";
+    return `
+      <div class="row">
+        <div class="row-main">
+          <div class="row-title">${esc(t.title)}</div>
+          <div class="row-meta">${esc(t.date)} • ${esc(t.category)} • ${esc(t.account || "Карта")}</div>
+        </div>
+        <div class="amount ${cls}">${money(t.amount)}</div>
+        ${pendingBadge}
+      </div>`;
+  }
+
   /* ---------- Операции ---------- */
   Views.operations = function (ctx) {
     const st = ctx.state.operations;
@@ -20,10 +38,16 @@ window.Views = window.Views || {};
       const q = st.query.toLowerCase();
       items = items.filter((t) => t.title.toLowerCase().includes(q) || t.category.toLowerCase().includes(q));
     }
+    if (st.account && st.account !== "all") items = items.filter((t) => t.account === st.account);
     if (st.sort === "amount") items.sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
     const visible = items.slice(0, st.limit);
+    const accounts = [...new Set(ctx.DB.transactions.map((t) => t.account).filter(Boolean))];
 
     page(`
+      <label class="search-box">
+        <span class="search-icon" data-icon="search"></span>
+        <input type="search" placeholder="Поиск по названию или категории…" value="${u.esc(st.query || "")}" data-search aria-label="Поиск операций" />
+      </label>
       <div class="page-tools">
         <div class="chips">
           ${[["all", "Все"], ["income", "Доходы"], ["expense", "Расходы"], ["pending", "Ожидает"]].map(([k, l]) => `
@@ -31,8 +55,12 @@ window.Views = window.Views || {};
         </div>
         <button class="chip" data-sort="operations">${st.sort === "date" ? "По дате" : "По сумме"}</button>
       </div>
+      <div class="chips" aria-label="Фильтр по счетам">
+        <button class="chip ${!st.account || st.account === "all" ? "is-active" : ""}" data-account-btn="all">Все счета</button>
+        ${accounts.map((a) => `<button class="chip ${st.account === a ? "is-active" : ""}" data-account-btn="${u.esc(a)}">${u.esc(a)}</button>`).join("")}
+      </div>
       <h2 class="sticky-title">${items.length} операций</h2>
-      <div class="list">${visible.map(P().transactionRow).join("")}</div>
+      <div class="list">${visible.map(txRowPayable).join("")}</div>
       ${items.length > visible.length ? `<div style="margin-top:10px;display:flex;justify-content:center;"><button class="primary-btn" data-action="load-more-ops">Загрузить ещё</button></div>` : ""}
     `);
   };
@@ -70,6 +98,7 @@ window.Views = window.Views || {};
   Views.planned = function (ctx) {
     const soon = ctx.DB.planned.filter((p) => p.status === "upcoming");
     const overdue = ctx.DB.planned.filter((p) => p.status === "overdue");
+    const ordered = [...overdue, ...soon, ...ctx.DB.planned.filter((p) => p.status === "done")];
     const sumSoon = soon.reduce((s, p) => s + p.amount, 0);
     page(`
       <div class="kpi-grid">
@@ -77,7 +106,7 @@ window.Views = window.Views || {};
         <div class="kpi"><span class="kpi-label">Просрочено</span><span class="kpi-value ${overdue.length ? "t-expense" : ""}">${money(overdue.reduce((s, p) => s + p.amount, 0))}</span></div>
       </div>
       <div class="list">
-        ${ctx.DB.planned.map((p) => `
+        ${ordered.map((p) => `
           <div class="row">
             <div class="row-main">
               <div class="row-title">${esc(p.title)}</div>
@@ -85,7 +114,10 @@ window.Views = window.Views || {};
             </div>
             <div style="display:flex;align-items:center;gap:10px">
               <div class="amount expense">${money(-p.amount)}</div>
-              <span class="badge ${p.status === "overdue" ? "badge--overdue" : "badge--pending"}"><span class="dot"></span>${p.status === "overdue" ? "Просрочен" : "Запланирован"}</span>
+              ${p.status === "done"
+                ? `<span class="badge badge--paid">Выполнен</span>`
+                : `<button class="mini-btn" data-action="planned-done" data-title="${esc(p.title)}" title="Отметить выполненным — спишется со счёта">✓</button>
+                   <span class="badge ${p.status === "overdue" ? "badge--overdue" : "badge--pending"}"><span class="dot"></span>${p.status === "overdue" ? "Просрочен" : "Запланирован"}</span>`}
             </div>
           </div>`).join("")}
       </div>
@@ -163,7 +195,10 @@ window.Views = window.Views || {};
                   <span class="sum">${Math.round(ratio * 100)}%</span>
                 </div>
                 <div class="progress ${ratio >= 1 ? "ok" : ratio > 0.5 ? "" : "warn"}"><span style="width:${ratio * 100}%"></span></div>
-                <div class="foot"><span>${g.saved >= g.target ? "Цель достигнута 🎉" : "не хватает " + money(g.target - g.saved)}</span></div>
+                <div class="foot">
+                  <span>${g.saved >= g.target ? "Цель достигнута 🎉" : "не хватает " + money(g.target - g.saved)}</span>
+                  ${g.saved < g.target ? `<button class="mini-btn" data-action="goal-add" data-goal="${esc(g.name)}" title="Пополнить цель">+ взнос</button>` : ""}
+                </div>
               </div>
             </section>`;
         }).join("")}

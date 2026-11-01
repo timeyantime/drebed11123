@@ -20,17 +20,19 @@ window.Views = window.Views || {};
       </div>`;
   }
 
+  function avatarHue(id) { return ((id || 1) * 47) % 360; }
+
   function studentRow(s) {
     const tone = s.status === "unpaid" ? "badge--pending" : s.status === "active" ? "badge--paid" : "badge--neutral";
-    const hue = (s.id * 47) % 360;
     return `
-      <div class="row">
-        <span class="avatar" style="--c:hsl(${hue} 62% 52%)">${esc(s.name[0])}</span>
+      <div class="row row-link" data-go-route="teacher" data-go-params="student/${s.id}" role="link" tabindex="0" aria-label="Открыть карточку: ${esc(s.name)}">
+        <span class="avatar" style="--c:hsl(${avatarHue(s.id)} 62% 52%)">${esc(s.name[0])}</span>
         <div class="row-main">
           <div class="row-title">${esc(s.name)}</div>
           <div class="row-meta">${esc(s.subject)} • ${esc(s.next)}</div>
         </div>
         <span class="badge ${tone}">${esc(s.balance)}</span>
+        <span class="chev" data-icon="chevron"></span>
       </div>`;
   }
 
@@ -61,7 +63,7 @@ window.Views = window.Views || {};
       </section>`;
   }
 
-  u.partials = { lessonRow, studentRow, transactionRow, statPanel };
+  u.partials = { lessonRow, studentRow, transactionRow, statPanel, avatarHue };
 
   /* ---- hub-плитки разделов (Этап 2 — IA) ---- */
   const HUB = [
