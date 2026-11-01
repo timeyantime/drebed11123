@@ -25,13 +25,15 @@ with sync_playwright() as p:
     assert "Занятия" in pg.inner_text("#page-body")
     pg.click("[data-filter='upcoming']"); pg.wait_for_timeout(100)
     pg.click("[data-sort='teacher']"); pg.wait_for_timeout(100)
-    # FAB fan + form submit
+    # FAB fan + form submit (десктопный веер: мобильный fab-wrap скрыт, берём видимый элемент)
     pg.click(".desktop-fab [data-fab]"); pg.wait_for_timeout(300)
     assert pg.locator(".desktop-fab.open .fan-item").count()==4
-    pg.click("[data-quick='transaction']"); pg.wait_for_timeout(200)
+    pg.click(".desktop-fab [data-quick='transaction']"); pg.wait_for_timeout(200)
     pg.fill("#gf-title", "Тест оплата")
     pg.fill("#gf-amount", "1000")
     pg.click("#genericForm button[type=submit]"); pg.wait_for_timeout(200)
+    # проверка мутации — на странице «Операции» (ученик-деталь/список занятий не показывают транзакции)
+    pg.evaluate("location.hash='#operations'"); pg.wait_for_timeout(700)
     assert "Тест оплата" in pg.inner_text("#page-body"), "form mutation failed"
     print("form+fan OK")
     # theme toggle
@@ -52,3 +54,5 @@ with sync_playwright() as p:
     pg.screenshot(path="docs/shot-desktop-budget-light.png")
     b.close()
 print("CONSOLE ERRORS:", errors if errors else "none")
+assert not errors, f"console/page errors: {errors}"
+print("SMOKE OK")

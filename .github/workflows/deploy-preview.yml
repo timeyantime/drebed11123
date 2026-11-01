@@ -1,0 +1,75 @@
+name: Deploy preview to GitHub Pages
+
+# Публикует статический прототип Mono на GitHub Pages.
+# После push в main: Actions → Deploy preview → ссылка в описании job "Deploy"
+# и во вкладке Environments → github.io. Дизайн доступен по
+# https://<владелец>.github.io/<репозиторий>/ (hash-роутинг работает без сервера).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  smoke:
+    name: Smoke test (Playwright)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps
+        run: |
+          pip install playwright
+          playwright install --with-deps chromium
+      - name: Serve site on :8090
+        run: |
+          python3 -m http.server 8090 > server.log 2>&1 &
+          echo $! > server.pid
+          sleep 1
+          curl -sf http://localhost:8090/index.html > /dev/null
+      - name: Run smoke
+        run: python docs/smoke.py
+      - name: Stop server
+        if: always()
+        run: kill $(cat server.pid) || true
+
+  build:
+    name: Build static site
+    needs: smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare _site (только приложение, без референсов/docs)
+        run: |
+          mkdir -p _site
+          cp index.html _site/
+          cp Иконка.png _site/icon.png
+          cp -r src _site/src
+          # favicon с кириллическим именем меняем на латиницу (надёжнее для URL на Pages)
+          sed -i 's/Иконка.png/icon.png/' _site/index.html
+      - uses: actions/configure-pages@v4
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: Deploy to Pages
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v3

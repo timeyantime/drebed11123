@@ -28,7 +28,11 @@
   }
 
   function reset() {
-    try { localStorage.removeItem(KEY); } catch (_) {}
+    try {
+      localStorage.removeItem(KEY);
+      // мгновенный возврат к mock-дефолтам без перезагрузки (см. mock.js: window.__DB_DEFAULT__)
+      if (window.__DB_DEFAULT__) window.DB = window.__DB_DEFAULT__;
+    } catch (_) {}
   }
 
   /* Инициализация: если в хранилище есть данные — подменяем mock.
