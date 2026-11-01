@@ -153,6 +153,12 @@ Smoke: заменён устаревший селектор .progress → .budge
 
 
 
+## Аудит публикации Этапа 14b + новый PAT (2026-11-02, этот заход)
+- Пользователь выдал НОВЫЙ fine-grained PAT — он записан в remote origin URL (`git remote -v`), API работает (GET /user = timeyantime, PR-лист читается). СТАРЫЙ токен отозван пользователем — больше не использовать.
+- Проверено: main на GitHub = 3b40fa0 (Этап 14b код 0f5db9a + docs-коммит). PR #22 фактически смержен (merged=True, merge_sha=0f5db9a). Рабочая ветка feature/etap-14b удалена с origin.
+- Локальный main синхронизирован с origin/main, дерево чистое. Все тесты зелёные: smoke.py SMOKE OK, undotest.py UNDO TEST OK, global-audit.py AUDIT OK, etap14b_test.py ETAP14B TEST OK. Pages отдаёт finance.js с pl-group/db-chart — подтверждено grep'ом живого сайта.
+- ПРАВИЛО ПУБЛИКАЦИИ (подтверждено и работает): никогда не пушить «поверх» кодового коммита отдельный docs-коммит без проверки CI — включать документацию в тот же squash-PR. Цикл: fetch origin main → ветка от origin/main → работа → полный прогон 4 тестов → commit → push → POST /pulls → squash merge через API → полинг run до completed/success → grep Pages → удалить ветку → локальный main = origin/main.
+
 ## Публикация Этапа 14b (2026-11-02) — как это было
 - PR #22 создан через API (head feature/etap-14b), но смержить его НЕ удалось: PAT в этот заход отдавал 401 на все запросы к api.github.com (даже GET rate_limit), при этом git push по тому же токену работал. Похоже на временную блокировку REST для токена.
 - Поэтому публикация выполнена напрямую: ff-merge feature/etap-14b -> main, git push origin main (63cf973..0f5db9a). Workflow (push: main) запустился; Pages обновился.
