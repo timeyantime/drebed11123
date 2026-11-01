@@ -90,3 +90,17 @@ F. PWA: manifest.json + service worker (offline shell), иконки из Ико
 - Анимация появления групп (.ops-group fade/slide stagger), hover-состояния строк в dark/light.
 - Раздел «Счета»: детальные карточки счетов + мини-график баланса.
 - Полировка mobile: safe-area у .ops-summary, горизонтальный скролл чипов.
+
+## Как перенести мои коммиты к тебе (песочница без доступа к GitHub)
+Я не могу пушить и создавать PR. Все изменения закоммичены в локальную ветку `main`
+(HEAD = Этап 12, a472fec). Экспортирован портативный пакет: **`mono-etap12.bundle`**
+(содержит все коммиты от f9f370a до HEAD, требует наличие f9f370a в твоём репо — оно есть).
+
+На своей машине в клоне drebed11123:
+```bash
+git fetch mono-etap12.bundle main:mono-agent   # или скачанный файл bundle
+git checkout -b feature/etap-12-ui mono-agent
+git push -u origin feature/etap-12-ui          # затем создать PR feature/etap-12-ui → main на GitHub
+# либо просто: git merge mono-agent && git push origin main
+```
+Альтернатива без bundle: скачать файлы из /workspace (src/, docs/, index.html и т.д.) и закоммитить самому.
