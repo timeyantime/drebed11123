@@ -64,6 +64,15 @@
 
   /* глобальный хелпер для вьюх */
   window.page = function (html) {
+    /* Этап 14c: скелетон показываем ТОЛЬКО при смене раздела.
+       Перерисовка того же раздела (фильтры/сортировки/мутации/формы) —
+       мгновенная, без fadeUp-анимаций, чтобы не было ощущения «переключения вкладки.» */
+    const routeChanged = pageBody.dataset.route !== state.route;
+    if (!routeChanged) {
+      pageBody.innerHTML = html;
+      u.fillIcons(pageBody);
+      return;
+    }
     pageBody.innerHTML = html;
     u.fillIcons(pageBody);
     animateIn();
@@ -203,6 +212,7 @@
   }
 
   function showSkeleton() {
+    pageBody.dataset.route = ""; // сбрасываем флаг: следующая отрисовка — новая страница (с анимацией)
     pageBody.innerHTML = `
       <div class="skeleton sk-hero"></div>
       <div class="skeleton sk-card"></div>
@@ -247,6 +257,7 @@
       state.detail = null;
     }
     view({ DB: window.DB, state, quickActions, emptyHTML, showToast, goTo, save: window.Store.save });
+    pageBody.dataset.route = route; // запоминаем отрисованный раздел (для diff в window.page)
     setActiveRoute(route); // синхронизируем заголовок/подзаголовок с фактическим состоянием detail
   }
 
@@ -402,7 +413,12 @@
       mutateForm((db) => db.students.push({ id: Date.now(), name: data.name.trim(), subject: data.subject, next: "Нет записи", balance: "Ожидает", status: "unpaid", debt: 0, rate: Number(data.rate) || 0, monthIncome: 0 }), `Ученик добавлен: ${data.name.trim()}`);
     } else if (key === "transaction" && data.title) {
       const amount = Number(String(data.amount).replace(/\s/g, "").replace(",", "."));
-      mutateForm((db) => db.transactions.unshift({ id: Date.now(), date: "сегодня", title: data.title.trim(), amount, type: amount < 0 ? "expense" : "income", category: data.category, status: "pending", account: data.account || "Карта" }), "Операция добавлена");
+      /* тип операции определяем по знаку суммы; если пользователь ввёл положительную
+         сумму и выбрал категорию-расход — считаем это расходом (Этап 14c: тосты теперь
+         отражают реальное действие) */
+      const isExpense = amount < 0 || /расход|покупк|платёж|налог/i.test(String(data.category || ""));
+      const type = isExpense ? "expense" : "income";
+      mutateForm((db) => db.transactions.unshift({ id: Date.now(), date: "сегодня", title: data.title.trim(), amount: isExpense ? -Math.abs(amount) : Math.abs(amount), type, category: data.category, status: "pending", account: data.account || "Карта" }), type === "expense" ? `Расход добавлен: ${data.title.trim()}` : `Доход добавлен: ${data.title.trim()}`);
     } else if (key === "lesson" && data.student) {
       mutateForm((db) => db.lessons.unshift({ id: Date.now(), student: data.student, subject: (db.students.find((s) => s.name === data.student) || {}).subject || "—", when: data.when || "—", duration: data.duration || "60 мин", status: "upcoming" }), `Занятие запланировано: ${data.student}`);
     } else if (key === "contribute" && extra.goalName) {
@@ -590,6 +606,21 @@
     if (name === "forward") return history.forward();
     if (name === "load-more") { state.budget.limit += 5; return renderRoute("budget"); }
     if (name === "load-more-ops") { state.operations.limit += 8; return renderRoute("operations"); }
+    /* Этап 14c: история вперёд/назад по hash-роутам (кнопки в хедере) */
+    if (name === "back") {
+      if (history.length > 1 && history.state !== null) return history.back();
+      const h = navHistory.history;
+      if (navIndex <= 0) { showToast("Вы в начале истории", { kind: "info", duration: 1400 }); return; }
+      navIndex--;
+      location.hash = h[navIndex];
+      return;
+    }
+    if (name === "forward") {
+      const h = navHistory.history;
+      if (navIndex < h.length - 1) { navIndex++; location.hash = h[navIndex]; return; }
+      showToast("Дальше истории нет", { kind: "info", duration: 1400 });
+      return;
+    }
     if (name === "reset-ops-filters") {
       state.operations = { filter: "all", sort: "date", dir: "desc", limit: 8, query: "", account: "all" };
       return renderRoute("operations");
@@ -825,6 +856,10 @@
     if (dashPeriodBtn) { state.dashboards.period = dashPeriodBtn.dataset.dashPeriod; renderRoute("dashboards"); return; }
     const actionBtn = event.target.closest("[data-action]");
     if (actionBtn) {
+      /* клики ВНУТРИ открытой модалки не должны всплывать к глобальному
+         «closeAllFans»-обработчику и другим делегатам — иначе кнопка
+         «Сохранить/Отмена» могла срабатывать вполовину (Этап 14c) */
+      const inModal = actionBtn.closest(".modal");
       event.preventDefault();
       const a = actionBtn.dataset.action;
       if (a === "tx-pay") return markTxPaid(Number(actionBtn.dataset.id));
@@ -832,7 +867,7 @@
       if (a === "planned-done") return togglePlannedDone(actionBtn.dataset.title);
       if (a === "goal-add") return contributeGoal(actionBtn.dataset.goal);
       handleAction(a);
-      closeAllFans();
+      if (!inModal) closeAllFans();
       return;
     }
 

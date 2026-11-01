@@ -45,6 +45,12 @@
 
       <div class="header-spacer"></div>
 
+      <!-- Этап 14c: название + комментарий текущего раздела — в хедере -->
+      <div class="head-titles" aria-live="polite">
+        <h1 id="page-title">Домой</h1>
+        <p id="page-subtitle">Сводка, ближайшие дела и быстрые действия</p>
+      </div>
+
       <!-- Dev-preview: временный переключатель макетов (Этап 7) -->
       <div class="preview-switch" role="group" aria-label="Предпросмотр макета">
         <button class="preview-btn" data-preview="mobile" title="Телефон (≤767px)" aria-label="Режим: телефон"><span data-icon="phone"></span></button>
@@ -143,11 +149,7 @@
     <!-- Content -->
     <main class="content">
       <div class="content-inner">
-        <div class="page-head">
-          <h1 id="page-title">Домой</h1>
-          <p id="page-subtitle">Главный экран</p>
-        </div>
-
+        <!-- Этап 14c: заголовок раздела перенесён в хедер (.head-titles) -->
         <section id="page-body" aria-live="polite"></section>
       </div>
     </main>
