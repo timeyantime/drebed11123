@@ -48,9 +48,30 @@
 
   --ring: color-mix(in srgb, var(--text) 28%, transparent);
 
-  /* ---- Мобильные размеры ---- */
+  /* ---- Мобильные размеры / layout-константы (из исходного layout.html) ---- */
   --bottom-nav-h: 62px;
+  --edge: 10px;
+  --header-h: 46px;
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+  --rail-w: 64px;
+  --rail-expanded-w: 176px;
+  --tab-h: 40px;
+  --tab-w: 40px;
+  --tab-active-w: 104px;
+  --tab-label-w: 62px;
+  --fab-size: 42px;
+  --pill-h: 40px;
 }
+
+/* ============================================================
+   РЕЖИМЫ ПРЕДПРОСМОТРА (Этап 7 — dev-preview)
+   data-preview="mobile" → все @media ведут себя как ≤767px
+   data-preview="tablet" → как 768–1179px
+   data-preview="desktop" → как ≥1180px (по умолчанию)
+   ============================================================ */
+:root[data-preview="mobile"] { --mq-mobile: 1px; }
+:root:not([data-preview]) { --mq-mobile: 0; }
 
 /* ================= ТЁМНАЯ ТЕМА (дефолт Mono) ================= */
 :root[data-theme="dark"] {
