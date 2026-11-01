@@ -135,6 +135,23 @@
     });
   }
 
+  /* мутация с формой: снимок + «Отменить» (Этап 6) */
+  function mutateForm(fn, msg) {
+    const prev = snapshot();
+    fn(window.DB);
+    window.Store.save();
+    renderRoute(state.route);
+    pushToast(msg, {
+      kind: "success",
+      onUndo: prev ? () => {
+        window.DB = prev;
+        window.Store.save();
+        renderRoute(state.route);
+        pushToast("Действие отменено", { kind: "info", duration: 1600 });
+      } : null
+    });
+  }
+
   function setTheme(theme, persist = true) {
     root.dataset.theme = theme;
     if (persist) { try { localStorage.setItem("mono-theme", theme); } catch (_) {} }
@@ -348,30 +365,26 @@
     let extra = {}; try { extra = JSON.parse(genericForm.dataset.extra || "{}"); } catch (_) {}
     const data = Object.fromEntries(new FormData(genericForm).entries());
     if (!validateForm(key, data)) { showToast("Проверьте выделенные поля"); return; }
-    // Демо: мутация мок-данных + сохранение в localStorage (Store)
+    // Мутации через mutateForm: снимок DB до изменения → тост с «Отменить» (Этап 6)
     if (key === "student" && data.name) {
-      window.DB.students.push({ id: Date.now(), name: data.name.trim(), subject: data.subject, next: "Нет записи", balance: "Ожидает", status: "unpaid", debt: 0, rate: Number(data.rate) || 0, monthIncome: 0 });
-    }
-    if (key === "transaction" && data.title) {
+      mutateForm((db) => db.students.push({ id: Date.now(), name: data.name.trim(), subject: data.subject, next: "Нет записи", balance: "Ожидает", status: "unpaid", debt: 0, rate: Number(data.rate) || 0, monthIncome: 0 }), `Ученик добавлен: ${data.name.trim()}`);
+    } else if (key === "transaction" && data.title) {
       const amount = Number(String(data.amount).replace(/\s/g, "").replace(",", "."));
-      window.DB.transactions.unshift({ id: Date.now(), date: "сегодня", title: data.title.trim(), amount, type: amount < 0 ? "expense" : "income", category: data.category, status: "pending", account: data.account || "Карта" });
-    }
-    if (key === "lesson" && data.student) {
-      window.DB.lessons.unshift({ id: Date.now(), student: data.student, subject: (window.DB.students.find((s) => s.name === data.student) || {}).subject || "—", when: data.when || "—", duration: data.duration || "60 мин", status: "upcoming" });
-    }
-    if (key === "contribute" && extra.goalName) {
-      const g = window.DB.goals.find((x) => x.name === extra.goalName);
-      if (g) g.saved = Math.min(g.target, g.saved + Number(data.sum));
-    }
-    if (key === "statement" && data.file) {
+      mutateForm((db) => db.transactions.unshift({ id: Date.now(), date: "сегодня", title: data.title.trim(), amount, type: amount < 0 ? "expense" : "income", category: data.category, status: "pending", account: data.account || "Карта" }), "Операция добавлена");
+    } else if (key === "lesson" && data.student) {
+      mutateForm((db) => db.lessons.unshift({ id: Date.now(), student: data.student, subject: (db.students.find((s) => s.name === data.student) || {}).subject || "—", when: data.when || "—", duration: data.duration || "60 мин", status: "upcoming" }), `Занятие запланировано: ${data.student}`);
+    } else if (key === "contribute" && extra.goalName) {
+      mutateForm((db) => { const g = db.goals.find((x) => x.name === extra.goalName); if (g) g.saved = Math.min(g.target, g.saved + Number(data.sum)); }, `Цель пополнена на ${u.money(Number(data.sum))}`);
+    } else if (key === "statement" && data.file) {
       // Демо-импорт выписки: добавляем «подтверждающую» операцию на выбранный счёт
       const accName = data.account || "Карта";
-      window.DB.transactions.unshift({ id: Date.now(), date: "сегодня", title: `Импорт выписки: ${data.file}`, amount: 0.01, type: "income", category: "Личное", status: "paid", account: accName });
+      mutateForm((db) => db.transactions.unshift({ id: Date.now(), date: "сегодня", title: `Импорт выписки: ${data.file}`, amount: 0.01, type: "income", category: "Личное", status: "paid", account: accName }), "Выписка импортирована");
+    } else {
+      window.Store.save();
+      renderRoute(state.route);
+      pushToast("Сохранено", { kind: "success" });
     }
-    window.Store.save();
     closeForm();
-    renderRoute(state.route);
-    pushToast("Сохранено", { kind: "success" });
   });
 
   function runQuick(key) {
