@@ -85,3 +85,6 @@ window.DB = {
     { name: "Отпуск", target: 90000, saved: 9000, deadline: "Июнь 2027" }
   ]
 };
+
+/* Эталонная копия mock-данных для мгновенного сброса демо (Store.reset). */
+window.__DB_DEFAULT__ = JSON.parse(JSON.stringify(window.DB));

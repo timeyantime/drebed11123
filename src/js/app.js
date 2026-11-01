@@ -434,7 +434,7 @@
     if (name === "load-more-ops") { state.operations.limit += 8; return renderRoute("operations"); }
     if (name === "close-modal") return closeForm();
     if (name === "more") { openFan(document.querySelector(".desktop-fab") || fabWraps[0]); return; }
-    if (name === "reset-demo") { window.Store.reset(); location.reload(); return; }
+    if (name === "reset-demo") { window.Store.reset(); renderWithSkeleton(); showToast("Демо-данные сброшены"); return; }
     showToast(`Действие: ${name}`);
   }
 
