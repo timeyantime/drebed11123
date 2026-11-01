@@ -442,4 +442,41 @@ window.Views = window.Views || {};
     `);
   }
 
+  /* ---------- Этап 14c-fix: собственные data-action этого view ----------
+     Раньше tx-pay/planned-done/goal-add были зашиты в ядро app.js; теперь
+     любой view может регистрировать обработчики через window.AppActions.
+     Ядро вызывает их из глобального делегата кликов. */
+  const AA = (window.AppActions = window.AppActions || {});
+
+  AA["tx-pay"] = function (btn) {
+    const id = Number(btn.dataset.id);
+    u.mutate((db) => { const t = db.transactions.find((x) => x.id === id); if (t) t.status = "paid"; },
+      "Отмечено как оплачено");
+  };
+
+  AA["planned-done"] = function (btn) {
+    const title = btn.dataset.title;
+    const p = (window.DB.planned || []).find((x) => x.title === title);
+    const turningDone = p && !p.done;
+    u.mutate((db) => {
+      const pl = db.planned.find((x) => x.title === title);
+      if (!pl) return;
+      if (!pl.done) pl._prevStatus = pl.status;
+      pl.done = !pl.done;
+      if (pl.done) {
+        pl.status = "done";
+        db.transactions.unshift({ id: Date.now(), date: "сегодня", title: pl.title, amount: -pl.amount, type: "expense", category: "Личное", status: "paid", account: "Карта" });
+        const acc = db.accounts.find((a) => a.name === "Карта");
+        if (acc) acc.balance -= pl.amount;
+      } else pl.status = pl._prevStatus || "upcoming";
+    }, turningDone ? `Оплачено: ${title}` : `Вернули в расписание: ${title}`);
+  };
+
+  AA["goal-add"] = function (btn) {
+    const name = btn.dataset.goal;
+    const g = window.DB.goals.find((x) => x.name === name);
+    if (!g) return;
+    u.openForm("contribute", { goalName: name, max: g.target - g.saved });
+  };
+
 })();

@@ -586,6 +586,21 @@
     mutateWithUndo(fn, msg);
   }
 
+  /* Этап 14c-fix: глобальный реестр обработчиков data-action.
+     Делегат кликов живёт в app.js, но кнопки рендерятся views-файлами,
+     которые грузятся ПОСЛЕДНИМИ и не имеют доступа к локальным функциям
+     ядра. window.AppActions позволяет любому view зарегистрировать свой
+     обработчик без правки ядра. */
+  window.AppActions = window.AppActions || {};
+
+  /* мост ядро→views: mutate/openForm/pushToast/goTo доступны всем view-файлам
+     через window.u (утилиты core.js). Views вызывают их лениво — в момент
+     клика эти поля уже заполнены. */
+  u.mutate = function (fn, msg) { mutate(fn, msg); };
+  u.openForm = function (key, extra) { openForm(key, extra); };
+  u.pushToast = function (msg, opts) { pushToast(msg, opts); };
+  u.softRender = function (route) { softRender(route); };
+
   function markTxPaid(id) {
     mutate((db) => { const t = db.transactions.find((x) => x.id === id); if (t) t.status = "paid"; }, "Отмечено как оплачено");
   }
@@ -898,6 +913,11 @@
       const inModal = actionBtn.closest(".modal");
       event.preventDefault();
       const a = actionBtn.dataset.action;
+      /* приоритет: реестр window.AppActions (views регистрируют свои хендлеры),
+         затем ядро handleAction. Так любой новый view может добавлять кнопки,
+         не трогая ядро (Этап 14c-fix) */
+      const ext = window.AppActions && window.AppActions[a];
+      if (ext) { ext(actionBtn); if (!inModal) closeAllFans(); return; }
       if (a === "tx-pay") return markTxPaid(Number(actionBtn.dataset.id));
       if (a === "remind") return remindDebt(Number(actionBtn.dataset.id));
       if (a === "planned-done") return togglePlannedDone(actionBtn.dataset.title);
