@@ -434,30 +434,9 @@
     fab?.setAttribute("aria-expanded", open ? "true" : "false");
     fan?.setAttribute("aria-hidden", open ? "false" : "true");
     wrap.querySelectorAll(".fan-item").forEach((b) => (b.tabIndex = open ? 0 : -1));
-    if (open && fan?.classList.contains("fan--rail")) positionRailFan(fan, fab);
   }
 
-  /* рейловый веер: выносим за overflow:hidden тулбара и расставляем круги справа дугой.
-     Этап 10: позиция пересчитывается после окончания CSS-перехода ширины рейла
-     (transitionend), иначе веер «прилипает» к сжатому рейлу при hover-раскрытии. */
-  let railFanTimer = null;
-  function positionRailFan(fan, fab) {
-    if (!fab) return;
-    const place = () => {
-      const r = fab.getBoundingClientRect();
-      fan.style.top = r.top + r.height / 2 + "px";
-      fan.style.left = r.right + 8 + "px";
-      fan.querySelectorAll(".fan-item").forEach((it, i) => {
-        it.style.setProperty("--rx", (i % 2) * 46 + "px");
-        it.style.setProperty("--ry", Math.floor(i / 2) * 46 + "px");
-      });
-    };
-    place();
-    clearTimeout(railFanTimer);
-    // страховка: transitionend может не прийти (reduced-motion, мгновенная смена класса)
-    railFanTimer = setTimeout(place, 320);
-    toolbar.addEventListener("transitionend", place, { once: true });
-  }
+  /* Этап 14a-fix2: rail-FAB удалён (дублировал нижний FAB) — positionRailFan больше не нужен */
 
   function closeAllFans() {
     if (!document.body.classList.contains("fan-open")) return;
@@ -615,11 +594,7 @@
     }
     if (name === "close-modal") return closeForm();
     if (name === "more") { isDesktopLayout() ? openFan(document.querySelector(".desktop-fab") || fabWraps[0]) : openSheet(); return; }
-    if (name === "fan-toggle") {
-      const w = document.getElementById("railFab");
-      if (w) toggleFan(w); // setFanState уже ставит aria-expanded
-      return;
-    }
+    /* fan-toggle больше не нужен: rail-FAB удалён (дублировал нижний FAB, Этап 14a-fix2) */
     if (name === "frame-exit") { setFrame(false); return; }
     if (name === "reset-demo") {
       const prev = snapshot();

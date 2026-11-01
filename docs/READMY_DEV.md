@@ -118,3 +118,9 @@ Smoke: заменён устаревший селектор .progress → .budge
   3. CSS: .list .row position:relative + mini-btn z-index:2 — клики по ✓ не тонут в row-link.
   4. A11y: Enter/Space на [data-go-route][tabindex] эмулирует клик (клавиатурная навигация списков).
 - TODO дальше: перенести audit.py в docs и добавить в CI; группировка planned (сегодня/неделя/просрочены); дашборды D1/D2; stagger-анимации; safe-area полировка.
+
+## Этап 14a-fix2 (публикация аудита глобальных кнопок)
+- **Проблема**: пользователь не видел результатов 14a на сайте. Причина: фиксы 14a попали в snapshot-коммит платформы (6fda5e3), но PR #19 их не включал — на Pages уехал только docs/global-audit.py без самих правок app.js/components.css.
+- **Итог аудита** (global-audit.py + livecheck): все глобальные кнопки работают; удалён rail-FAB «+» из боковой панели (index.html, app.js setFanState/positionRailFan/fan-toggle, components.css блок .rail-fab/.fan--rail, layout-base.css @media .rail-fab) — по требованию пользователя «+» только справа внизу.
+- Проверено локально: global-audit AUDIT OK, SMOKE OK, UNDO TEST OK.
+- Уроки: после каждого захода сверять diff HEAD vs origin/main ПЕРЕД созданием PR; platform snapshot-коммиты (сообщения вида "task snapshot ...") НЕ включать в ветку PR — брать только свои коммиты (git cherry-pick конкретного sha).
