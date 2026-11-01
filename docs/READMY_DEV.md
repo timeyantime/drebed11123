@@ -109,3 +109,12 @@ Smoke: заменён устаревший селектор .progress → .budge
 4. Мобильная полировка: safe-area для bottom-nav/sheet, горизонтальный скролл чипов фильтров, touch-target ≥44px.
 5. Анимации: stagger появления .ops-group и карточек дашбордов (prefers-reduced-motion), hover-scale на tile.
 6. Тонкая типографика: единая шкала заголовков секций, money() в tabular-nums.
+
+## Этап 14a — глобальный аудит кнопок (сделано)
+- Аудит-скрипт `/tmp/audit.py` (перенести в docs/global-audit.py при возможности): проверяет rail без «+», fixed-хедер, тулбар ниже хедера, tx-pay/planned-done/remind/goal-add, Enter на row-link, sheet «Ещё», тема/help/FAB-веер/live-search. Все пункты OK + SMOKE OK + UNDO TEST OK.
+- Исправлено:
+  1. renderRoute больше НЕ теряет state.detail при мутациях без params (подзаголовок «Карточка ученика/Детали счёта» остаётся; setActiveRoute вызывается после рендера).
+  2. goTo нормализует параметры detail: "account:1" → #accounts/account/1 (раньше hash #accounts/account:1 не парсился роутером).
+  3. CSS: .list .row position:relative + mini-btn z-index:2 — клики по ✓ не тонут в row-link.
+  4. A11y: Enter/Space на [data-go-route][tabindex] эмулирует клик (клавиатурная навигация списков).
+- TODO дальше: перенести audit.py в docs и добавить в CI; группировка planned (сегодня/неделя/просрочены); дашборды D1/D2; stagger-анимации; safe-area полировка.

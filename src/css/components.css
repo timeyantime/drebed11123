@@ -226,6 +226,12 @@
 .row-link:active { transform: scale(0.99); }
 .row-link:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: 14px; }
 
+/* Внутри кликабельных строк кнопки действий должны лежать НАДЮ родителем,
+   иначе клик по ✓ «уходит» в row-link и перехватчик closest("[data-quick]")
+   раньше closest("[data-action]") не сработает (баг Этапа 13, tx-pay/planned-done) */
+.list .row { position: relative; }
+.list .row .mini-btn, .list .row [data-action] { position: relative; z-index: 2; }
+
 .chev { width: 18px; height: 18px; color: var(--muted); flex: 0 0 auto; display: inline-flex; }
 .chev svg { width: 18px; height: 18px; }
 
