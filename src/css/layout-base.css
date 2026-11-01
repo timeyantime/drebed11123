@@ -686,11 +686,6 @@
       gap: 4px;
     }
 
-    /* Этап 10b: тулбар теперь fixed на всю высоту — FAB-веер прижимаем к низу рейла */
-    @media (min-width: 768px) {
-      .rail-fab { margin-top: auto; }
-    }
-
     .tool-item {
       position: relative;
       width: 100%;
