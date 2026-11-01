@@ -233,7 +233,11 @@
       </section>`;
   }
 
-  function renderRoute(route, params) {
+  /* softRender: true — без скелетона и без перезапуска fadeUp-анимаций
+     (используется для фильтров/табов/сортировок в пределах одного раздела). */
+  function renderRoute(route, params, opts) {
+    opts = opts || {};
+    if (opts.soft) root.classList.add("no-anim");
     const view = window.Views[route] || window.Views.home;
     /* detail-контекст берём из ФАКТИЧЕСКОГО hash, а не из args:
        - renderRoute(route, params) из роутера → params есть всегда (возможно [])
@@ -248,26 +252,30 @@
     }
     view({ DB: window.DB, state, quickActions, emptyHTML, showToast, goTo, save: window.Store.save });
     setActiveRoute(route); // синхронизируем заголовок/подзаголовок с фактическим состоянием detail
+    if (opts.soft) requestAnimationFrame(() => root.classList.remove("no-anim"));
   }
+
+  /* быстрый мягкий перерендер текущего раздела (фильтры/табы/сортировки) */
+  function softRender(route) { renderRoute(route || state.route, undefined, { soft: true }); }
 
   /* ---------- сортировки / циклы ---------- */
   function cycleSort(scope) {
     if (scope === "teacher") {
       const arr = state.teacher.tab === "students" ? ["name", "next", "balance"] : ["date", "student"];
       state.teacher.sort = arr[(arr.indexOf(state.teacher.sort) + 1) % arr.length];
-      renderRoute("teacher");
+      softRender("teacher");
     } else if (scope === "budget") {
       const arr = ["date", "amount"];
       state.budget.sort = arr[(arr.indexOf(state.budget.sort) + 1) % arr.length];
       state.budget.limit = 5;
-      renderRoute("budget");
+      softRender("budget");
     } else if (scope === "operations") {
       const seq = [["date","desc"],["date","asc"],["amount","desc"],["amount","asc"]];
       const cur = [state.operations.sort, state.operations.dir];
       const idx = seq.findIndex(([a,b]) => a===cur[0] && b===cur[1]);
       const nxt = seq[(idx+1) % seq.length];
       state.operations.sort = nxt[0]; state.operations.dir = nxt[1];
-      renderRoute("operations");
+      softRender("operations");
     }
   }
 
@@ -586,13 +594,13 @@
     if (name === "help") return openHelp();
     if (name === "theme") return setTheme(root.dataset.theme === "dark" ? "light" : "dark");
     if (name === "profile") return goTo("profile");
-    if (name === "back") return history.back();
-    if (name === "forward") return history.forward();
-    if (name === "load-more") { state.budget.limit += 5; return renderRoute("budget"); }
-    if (name === "load-more-ops") { state.operations.limit += 8; return renderRoute("operations"); }
+    if (name === "back") return navBack();
+    if (name === "forward") return navForward();
+    if (name === "load-more") { state.budget.limit += 5; return softRender("budget"); }
+    if (name === "load-more-ops") { state.operations.limit += 8; return softRender("operations"); }
     if (name === "reset-ops-filters") {
       state.operations = { filter: "all", sort: "date", dir: "desc", limit: 8, query: "", account: "all" };
-      return renderRoute("operations");
+      return softRender("operations");
     }
     if (name === "close-modal") return closeForm();
     if (name === "more") { isDesktopLayout() ? openFan(document.querySelector(".desktop-fab") || fabWraps[0]) : openSheet(); return; }
@@ -792,7 +800,7 @@
       state.teacher.tab = tabBtn.dataset.tab;
       state.teacher.filter = "all";
       state.teacher.sort = state.teacher.tab === "students" ? "name" : "date";
-      renderRoute("teacher");
+      softRender("teacher");
       return;
     }
 
@@ -801,7 +809,7 @@
       event.preventDefault();
       root.dataset.fontsize = fsBtn.dataset.fontsize;
       try { localStorage.setItem("mono-fontsize", fsBtn.dataset.fontsize); } catch (_) {}
-      renderRoute(state.route);
+      softRender();
       return;
     }
 
@@ -809,20 +817,20 @@
     if (filterBtn) {
       event.preventDefault();
       const scope = filterBtn.dataset.scope;
-      if (scope === "teacher") { state.teacher.filter = filterBtn.dataset.filter; renderRoute("teacher"); }
-      if (scope === "budget") { state.budget.filter = filterBtn.dataset.filter; state.budget.limit = 5; renderRoute("budget"); }
-      if (scope === "operations") { state.operations.filter = filterBtn.dataset.filter; state.operations.limit = 8; renderRoute("operations"); }
+      if (scope === "teacher") { state.teacher.filter = filterBtn.dataset.filter; softRender("teacher"); }
+      if (scope === "budget") { state.budget.filter = filterBtn.dataset.filter; state.budget.limit = 5; softRender("budget"); }
+      if (scope === "operations") { state.operations.filter = filterBtn.dataset.filter; state.operations.limit = 8; softRender("operations"); }
       return;
     }
 
     const accChip = event.target.closest("[data-account-btn]");
-    if (accChip) { event.preventDefault(); state.operations.account = accChip.dataset.accountBtn; renderRoute("operations"); return; }
+    if (accChip) { event.preventDefault(); state.operations.account = accChip.dataset.accountBtn; softRender("operations"); return; }
 
     const sortBtn = event.target.closest("[data-sort]");
     if (sortBtn) { event.preventDefault(); cycleSort(sortBtn.dataset.sort); return; }
 
     const dashPeriodBtn = event.target.closest("[data-dash-period]");
-    if (dashPeriodBtn) { state.dashboards.period = dashPeriodBtn.dataset.dashPeriod; renderRoute("dashboards"); return; }
+    if (dashPeriodBtn) { state.dashboards.period = dashPeriodBtn.dataset.dashPeriod; softRender("dashboards"); return; }
     const actionBtn = event.target.closest("[data-action]");
     if (actionBtn) {
       event.preventDefault();
@@ -887,16 +895,42 @@
       state.operations.query = q.value;
       state.operations.limit = 8;
       const pos = q.selectionStart;
-      renderRoute("operations");
+      softRender("operations");
       const again = document.querySelector("[data-search]");
       if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (_) {} }
       return;
     }
     const acc = event.target.closest("[data-account-filter]");
-    if (acc) { state.operations.account = acc.value; renderRoute("operations"); }
+    if (acc) { state.operations.account = acc.value; softRender("operations"); }
   });
 
-  window.addEventListener("hashchange", () => renderWithSkeleton(routeFromHash()));
+  /* ---------- собственная история навигации (Этап 14c) ---------- */
+  const navHist = { stack: [location.hash || "#home"], idx: 0 };
+
+  function updateNavBtns() {
+    const back = document.querySelector('[data-action="back"]');
+    const fwd = document.querySelector('[data-action="forward"]');
+    if (back) { back.disabled = navHist.idx <= 0; back.classList.toggle("is-disabled", navHist.idx <= 0); }
+    if (fwd) { fwd.disabled = navHist.idx >= navHist.stack.length - 1; fwd.classList.toggle("is-disabled", navHist.idx >= navHist.stack.length - 1); }
+  }
+
+  function navBack() {
+    if (navHist.idx > 0) { navHist.idx -= 1; location.hash = navHist.stack[navHist.idx]; }
+  }
+  function navForward() {
+    if (navHist.idx < navHist.stack.length - 1) { navHist.idx += 1; location.hash = navHist.stack[navHist.idx]; }
+  }
+
+  window.addEventListener("hashchange", () => {
+    const h = location.hash || "#home";
+    if (navHist.stack[navHist.idx] !== h) {
+      navHist.stack = navHist.stack.slice(0, navHist.idx + 1);
+      navHist.stack.push(h);
+      navHist.idx = navHist.stack.length - 1;
+    }
+    updateNavBtns();
+    renderWithSkeleton(routeFromHash());
+  });
 
   /* ---------- hide header on scroll down (Этап 10) ---------- */
   let lastY = window.scrollY, ticking = false;
@@ -942,5 +976,6 @@
   }, { passive: true });
 
   fabWraps.forEach((w) => setFanState(w, false));
+  updateNavBtns();
   renderWithSkeleton(routeFromHash());
 })();

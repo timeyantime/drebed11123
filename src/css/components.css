@@ -882,3 +882,11 @@ body.framed .sheet-backdrop { z-index: 260 !important; }
 @media (prefers-reduced-motion: reduce) {
   .donut circle.seg, .bar-col .bar, #page-body > .segmented.period { animation: none !important; }
 }
+
+/* ============================================================
+   ЭТАП 14c — no-anim (мягкий перерендер), nav-btn disabled
+   ============================================================ */
+:root.no-anim .panel, :root.no-anim .kpi, :root.no-anim .hub-tile,
+:root.no-anim .quick-card, :root.no-anim #page-body > .segmented.period,
+:root.no-anim .donut circle.seg, :root.no-anim .bar-col .bar { animation: none !important; }
+.nav-history[disabled], .nav-history.is-disabled { opacity: 0.35; pointer-events: none; }
