@@ -537,3 +537,163 @@ body.framed .app { min-height: 100%; height: 100%; }
 .fan-backdrop { z-index: 90 !important; }
 .sheet-backdrop { z-index: 120 !important; }
 .modal-backdrop { z-index: 190 !important; }
+
+/* ============================================================
+   ЭТАП 9 — FAB + quick actions (перенесено из layout-base.css:
+   блок лежал внутри незакрытого @media и не применялся нигде,
+   кроме десктоп-переопределений; теперь это глобальные стили)
+   ============================================================ */
+
+.fab {
+  position: absolute;
+  inset: 0;
+  width: var(--fab-size);
+  height: var(--fab-size);
+  border-radius: 50%;
+  background: var(--active-bg);
+  color: var(--active-text);
+  display: grid;
+  place-items: center;
+  box-shadow: var(--soft-shadow);
+  transition:
+transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1),
+background 0.18s ease,
+color 0.18s ease;
+  touch-action: manipulation;
+}
+
+.fab svg {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+body.fan-open .fab {
+  transform: rotate(45deg);
+}
+
+.fan {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.fan-item {
+  position: absolute;
+  right: 1px;
+  bottom: 1px;
+  height: var(--pill-h);
+  min-width: var(--pill-h);
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+
+  transform: translate(0, 0) scale(0.82);
+  transform-origin: 100% 50%;
+
+  transition:
+transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1),
+opacity 0.18s ease,
+visibility 0s linear 0.26s,
+background 0.18s ease,
+color 0.18s ease;
+}
+
+.fan-item [data-icon] {
+  width: 18px;
+  height: 18px;
+}
+
+.fan-item svg {
+  width: 18px;
+  height: 18px;
+}
+
+.fan-item span:last-child {
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.fan-item:hover,
+.fan-item:focus-visible {
+  background: var(--active-bg);
+  color: var(--active-text);
+  outline: none;
+}
+
+body.fan-open .fan-item {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translate(var(--tx), var(--ty)) scale(1);
+  transition-delay: var(--d, 0ms), var(--d, 0ms), 0s, 0s, 0s;
+}
+
+/* ============================================================
+   Fan backdrop
+   ============================================================ */
+
+.fan-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+
+  background: var(--backdrop);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+}
+
+body.fan-open .fan-backdrop {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+
+
+/* ============================================================
+   ЭТАП 9 — позиционирование веера.
+   Корень бага: в layout-base.css был незакрытый @media (max-width:767px) —
+   все правила после него (рейл, bottom-nav, FAB, модалки) применялись
+   только на мобильной ширине. На десктопе .desktop-fab оставался
+   display:none из базового блока, а JS всё равно кликал по скрытому
+   элементу => «element is outside of the viewport» в CI.
+   Поэтому здесь: принудительно включаем desktop-раскладку при ширине >=768px
+   (независимо от layout-base), и даём вееру нормальный контекст.
+   ============================================================ */
+@media (min-width: 768px) {
+  .toolbar { display: flex !important; }
+  .bottom-nav { display: none !important; }
+  .nav-history { display: grid !important; }
+  .desktop-fab {
+    display: block !important;
+    position: fixed !important;
+    right: 20px !important;
+    bottom: calc(20px + var(--safe-bottom)) !important;
+    top: auto !important; left: auto !important;
+    z-index: 100;
+  }
+}
+.fab-wrap { position: relative; width: var(--fab-size); height: var(--fab-size); }
+
+/* в рамке устройства (dev-frame) оверлеи режутся border-radius рамки:
+   поднимаем z-index поверх шапки/рейла, но ниже модалок и выхода из рамки */
+body.framed .fan-backdrop { z-index: 250 !important; }
+body.framed .sheet-backdrop { z-index: 260 !important; }
