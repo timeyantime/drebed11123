@@ -85,10 +85,14 @@
     if (!toastQueue.length) { toastShowing = false; return; }
     const item = toastQueue.shift();
     toastShowing = true;
-    toast.className = "toast show" + (item.kind ? " toast--" + item.kind : "");
-    toast.innerHTML = `<span class="toast-msg">${u.esc(item.message)}</span>` +
+    const iconKind = item.kind || (item.onUndo ? "undo" : "info");
+    toast.className = "toast show toast--" + iconKind;
+    toast.innerHTML =
+      `<span class="toast-icon" data-icon="toast-${iconKind}"></span>` +
+      `<span class="toast-msg">${u.esc(item.message)}</span>` +
       (item.onUndo ? `<button type="button" class="toast-undo" data-toast-undo>Отменить</button>` : "");
     toast._onUndo = item.onUndo || null;
+    u.fillIcons(toast);
     clearTimeout(toastTimer);
     const ms = item.duration || (item.onUndo ? 5200 : 1900);
     toastTimer = setTimeout(hideToast, ms);
@@ -109,6 +113,27 @@
   }
 
   function showToast(message) { pushToast(message); }
+
+  /* undo-обёртка: снимок DB до мутации → кнопка «Отменить» в тосте (Этап 6) */
+  function snapshot() {
+    try { return JSON.parse(JSON.stringify(window.DB)); } catch (_) { return null; }
+  }
+
+  function mutateWithUndo(fn, msg) {
+    const prev = snapshot();
+    fn(window.DB);
+    window.Store.save();
+    renderRoute(state.route);
+    pushToast(msg, {
+      kind: "success",
+      onUndo: prev ? () => {
+        window.DB = prev;
+        window.Store.save();
+        renderRoute(state.route);
+        pushToast("Действие отменено", { kind: "info", duration: 1600 });
+      } : null
+    });
+  }
 
   function setTheme(theme, persist = true) {
     root.dataset.theme = theme;
@@ -345,8 +370,8 @@
     }
     window.Store.save();
     closeForm();
-    showToast("Сохранено");
     renderRoute(state.route);
+    pushToast("Сохранено", { kind: "success" });
   });
 
   function runQuick(key) {
@@ -413,12 +438,9 @@
   function openHelp() { helpModal.classList.add("open"); helpBackdrop.classList.add("open"); helpClose.focus(); }
   function closeHelp() { helpModal.classList.remove("open"); helpBackdrop.classList.remove("open"); }
 
-  /* ---------- мутации данных из view-кнопок (Этап 5A/5B) ---------- */
+  /* ---------- мутации данных из view-кнопок (Этап 5A/5B, undo — Этап 6) ---------- */
   function mutate(fn, msg) {
-    fn(window.DB);
-    window.Store.save();
-    showToast(msg);
-    renderWithSkeleton();
+    mutateWithUndo(fn, msg);
   }
 
   function markTxPaid(id) {
@@ -427,21 +449,23 @@
 
   function remindDebt(studentId) {
     const s = window.DB.students.find((x) => x.id === studentId);
-    showToast(s ? `Напоминание отправлено: ${s.name}` : "Напоминание отправлено");
+    pushToast(s ? `Напоминание отправлено: ${s.name}` : "Напоминание отправлено", { kind: "info" });
   }
 
   function togglePlannedDone(title) {
+    const p = (window.DB.planned || []).find((x) => x.title === title);
+    const turningDone = p && !p.done;
     mutate((db) => {
-      const p = db.planned.find((x) => x.title === title);
-      if (!p) return;
-      p.done = !p.done;
-      if (p.done) {
-        p.status = "done";
-        db.transactions.unshift({ id: Date.now(), date: "сегодня", title: p.title, amount: -p.amount, type: "expense", category: "Личное", status: "paid", account: "Карта" });
+      const pl = db.planned.find((x) => x.title === title);
+      if (!pl) return;
+      pl.done = !pl.done;
+      if (pl.done) {
+        pl.status = "done";
+        db.transactions.unshift({ id: Date.now(), date: "сегодня", title: pl.title, amount: -pl.amount, type: "expense", category: "Личное", status: "paid", account: "Карта" });
         const acc = db.accounts.find((a) => a.name === "Карта");
-        if (acc) acc.balance -= p.amount;
-      } else p.status = "upcoming";
-    }, "Обновлено");
+        if (acc) acc.balance -= pl.amount;
+      } else pl.status = "upcoming";
+    }, turningDone ? `Оплачено: ${title}` : `Вернули в расписание: ${title}`);
   }
 
   function contributeGoal(name) {
@@ -460,9 +484,32 @@
     if (name === "load-more-ops") { state.operations.limit += 8; return renderRoute("operations"); }
     if (name === "close-modal") return closeForm();
     if (name === "more") { openFan(document.querySelector(".desktop-fab") || fabWraps[0]); return; }
-    if (name === "reset-demo") { window.Store.reset(); renderWithSkeleton(); showToast("Демо-данные сброшены"); return; }
+    if (name === "reset-demo") {
+      const prev = snapshot();
+      window.Store.reset();
+      renderRoute(state.route);
+      pushToast("Демо-данные сброшены", {
+        kind: "info",
+        onUndo: prev ? () => {
+          window.DB = prev;
+          window.Store.save();
+          renderRoute(state.route);
+          pushToast("Сброс отменён", { kind: "info", duration: 1600 });
+        } : null
+      });
+      return;
+    }
     showToast(`Действие: ${name}`);
   }
+
+  /* кнопка «Отменить» внутри тоста (Этап 6) */
+  toast.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-toast-undo]");
+    if (!btn || !toast._onUndo) return;
+    const fn = toast._onUndo;
+    hideToast();
+    fn();
+  });
 
   /* ---------- rail expand ---------- */
   function expandRail() { if (window.innerWidth >= 768) app.classList.add("rail-expanded"); }

@@ -52,10 +52,11 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-          cache: "pip"
+          # cache убран: в репозитории нет requirements.txt/pyproject.toml —
+          # setup-python падает с "No file ... matched to [**/requirements.txt]"
       - name: Install deps
         run: |
-          pip install playwright==1.48.0
+          pip install -r requirements.txt
           playwright install --with-deps chromium
       - name: Serve site on :8090
         run: |
