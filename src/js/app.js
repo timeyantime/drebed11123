@@ -890,7 +890,7 @@
       state.teacher.tab = tabBtn.dataset.tab;
       state.teacher.filter = "all";
       state.teacher.sort = state.teacher.tab === "students" ? "name" : "date";
-      renderRoute("teacher");
+      softRender("teacher"); // Этап 14c-fix: без скелетона/анимации при смене таба
       return;
     }
 

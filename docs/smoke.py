@@ -23,7 +23,7 @@ with sync_playwright() as p:
     pg.evaluate("location.hash='#teacher'"); pg.wait_for_timeout(500)
     pg.click("[data-tab='lessons']"); pg.wait_for_timeout(100)
     assert "Занятия" in pg.inner_text("#page-body")
-    pg.click("[data-filter='upcoming']"); pg.wait_for_timeout(100)
+    pg.click("[data-filter='upcoming'][data-scope='teacher']"); pg.wait_for_timeout(100)
     pg.click("[data-sort='teacher']"); pg.wait_for_timeout(100)
     # FAB fan + form submit (десктопный веер: мобильный fab-wrap скрыт, берём видимый элемент)
     pg.click(".desktop-fab [data-fab]"); pg.wait_for_timeout(300)
