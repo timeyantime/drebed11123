@@ -43,7 +43,7 @@ with sync_playwright() as p:
     print("theme", before, "->", after)
     # light theme render check on budget
     pg.evaluate("location.hash='#budget'"); pg.wait_for_timeout(600)
-    assert pg.locator(".progress").count()>0
+    assert pg.locator(".budget-row").count()>0 and pg.locator(".db-plan-mark").count()>0
     # mobile viewport
     pm = b.new_page(viewport={"width":390,"height":844}, is_mobile=True)
     pm.on("pageerror", lambda e: errors.append(str(e)))
