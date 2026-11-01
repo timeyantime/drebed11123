@@ -91,16 +91,28 @@ F. PWA: manifest.json + service worker (offline shell), иконки из Ико
 - Раздел «Счета»: детальные карточки счетов + мини-график баланса.
 - Полировка mobile: safe-area у .ops-summary, горизонтальный скролл чипов.
 
-## Как перенести мои коммиты к тебе (песочница без доступа к GitHub)
-Я не могу пушить и создавать PR. Все изменения закоммичены в локальную ветку `main`
-(HEAD = Этап 12, a472fec). Экспортирован портативный пакет: **`mono-etap12.bundle`**
-(содержит все коммиты от f9f370a до HEAD, требует наличие f9f370a в твоём репо — оно есть).
+## Git-доступ агента (вариант C — PAT, проверено на PR #14, 02.11.2026)
 
-На своей машине в клоне drebed11123:
+Репозиторий: `github.com/timeyantime/drebed11123`. Pages: https://timeyantime.github.io/drebed11123
+(обновлено Этапом 12 ✅ — ops-summary/preview-switch в проде).
+
+PAT пользователь даёт в чате перед этапом; в git config НЕ сохранять, использовать inline:
 ```bash
-git fetch mono-etap12.bundle main:mono-agent   # или скачанный файл bundle
-git checkout -b feature/etap-12-ui mono-agent
-git push -u origin feature/etap-12-ui          # затем создать PR feature/etap-12-ui → main на GitHub
-# либо просто: git merge mono-agent && git push origin main
+TOKEN=<pat_из_сообщения>
+REMOTE=https://x-access-token:${TOKEN}@github.com/timeyantime/drebed11123.git
+git fetch ${REMOTE} main            # ВСЕГДА начинать со свежего remote tip (squash-мержи!)
+# ...работа, коммиты в main локально...
+git checkout -b feature/<name>      # ветка от локального результата
+git push ${REMOTE} feature/<name>:feature/<name>
+curl -X POST -H "Authorization: Bearer $TOKEN" https://api.github.com/repos/timeyantime/drebed11123/pulls \
+  -d '{"title":"...","head":"feature/<name>","base":"main","body":"..."}'
+curl -X PUT  -H "Authorization: Bearer $TOKEN" .../pulls/N/merge -d '{"merge_method":"squash"}'
+git reset --hard <merged_sha>; git push ${REMOTE} main:main   # синхрон + fast-forward main
+git push ${REMOTE} --delete feature/<name>
 ```
-Альтернатива без bundle: скачать файлы из /workspace (src/, docs/, index.html и т.д.) и закоммитить самому.
+Затем полить run «Deploy preview to GitHub Pages» (~2–4 мин) и grep'ом проверить живые файлы на Pages.
+⚠️ Напоминать пользователю отзывать/ротировать PAT после этапа (светится в чате).
+Workflow не запускается на pull_request — только push main; PR можно мержить сразу после создания.
+
+## Старый способ (bundle) — больше не нужен, оставлен для истории
+Пакет `mono-etap12.bundle` заменён прямым доступом через PAT (см. выше).
