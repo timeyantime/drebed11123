@@ -697,3 +697,83 @@ body.fan-open .fan-backdrop {
    поднимаем z-index поверх шапки/рейла, но ниже модалок и выхода из рамки */
 body.framed .fan-backdrop { z-index: 250 !important; }
 body.framed .sheet-backdrop { z-index: 260 !important; }
+
+/* ============================================================
+   ЭТАП 11 — анимации компонентов + тонкая настройка дизайна
+   ============================================================ */
+
+/* Пульс скелетонов */
+@keyframes shimmerPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
+.skeleton { animation: shimmerPulse 1.2s ease-in-out infinite; }
+
+/* Кольцо-прогресс целей */
+.ring { display: inline-block; line-height: 0; }
+.ring circle { fill: none; stroke-width: 8; }
+.ring .ring-bg { stroke: var(--hover); }
+.ring .ring-fg { stroke: var(--accent); stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dashoffset 0.5s ease; }
+.ring.warn .ring-fg { stroke: var(--amber); }
+.ring.over .ring-fg { stroke: var(--red); }
+
+/* Чипы фильтров */
+.chip { cursor: pointer; }
+.chip.is-active { background: var(--active-bg); color: var(--active-text); border-color: transparent; }
+
+/* Активная плашка раздела в hub-сетке */
+.hub-tile[aria-current="page"] { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+/* Мicro-interaction для строк списков */
+.row { transition: background 0.15s ease; }
+
+/* Плавный hover lift для карточек */
+.panel:hover { box-shadow: var(--shadow); }
+
+/* Уменьшение смещения при нажатии FAB/табов */
+.tab-item:active, .rail-btn:active { transform: scale(0.97); }
+
+/* prefers-reduced-motion обрабатывается глобально в layout-base.css */
+
+/* ============================================================
+   ЭТАП 12 — операции: сводка, группировка по дням, иконки категорий
+   ============================================================ */
+.ops-summary {
+  display: flex; align-items: center; gap: var(--sp-3);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: var(--sp-3) var(--sp-4);
+  margin-bottom: var(--sp-3);
+}
+.ops-sum { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.ops-sum-label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.4px; }
+.ops-sum-val { font-family: var(--font-num); font-weight: 800; font-size: 15px; white-space: nowrap; }
+.ops-sum-sep { width: 1px; align-self: stretch; background: var(--border); }
+.ops-group { margin-top: var(--sp-4); }
+.group-head {
+  font-size: 12px; font-weight: 700; color: var(--text-3);
+  text-transform: capitalize; padding: 0 4px var(--sp-2);
+}
+.cat-icon {
+  flex: 0 0 auto; width: 38px; height: 38px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--c) 16%, transparent); color: var(--c);
+}
+.cat-icon svg, .cat-icon [data-icon] svg { width: 19px; height: 19px; }
+.row--tx { display: flex; align-items: center; gap: var(--sp-3); }
+.chip--sort { display: inline-flex; align-items: center; gap: 6px; }
+.chip--sort svg { width: 14px; height: 14px; }
+.empty-state {
+  display: flex; flex-direction: column; align-items: center; gap: var(--sp-2);
+  text-align: center; padding: var(--sp-8) var(--sp-4);
+  background: var(--surface); border: 1px dashed var(--border);
+  border-radius: var(--r-lg); margin-top: var(--sp-4);
+}
+.empty-state h3 { margin: 0; font-size: 15px; color: var(--text); }
+.empty-state p { margin: 0 0 var(--sp-2); font-size: 13px; color: var(--text-3); }
+.empty-icon {
+  width: 48px; height: 48px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--hover); color: var(--text-3); margin-bottom: var(--sp-2);
+}
+.empty-icon svg { width: 24px; height: 24px; }
+@media (max-width: 480px) {
+  .ops-summary { gap: var(--sp-2); padding: var(--sp-3); }
+  .ops-sum-val { font-size: 13px; }
+}

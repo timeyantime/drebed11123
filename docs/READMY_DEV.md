@@ -59,3 +59,48 @@ F. PWA: manifest.json + service worker (offline shell), иконки из Ико
 - Каждый новый CSS-блок комментировать «Этап N».
 - После изменений: node --check всех js, открыть index.html, проверить dark/light + mobile(rail hidden)/tablet/desktop, reduced-motion.
 - Тест-маршруты: #home #teacher #budget #operations #accounts #planned #taxes #investments #goals #dashboards (несуществующий → home).
+
+## Этап 11 (2026-11-02) — анимации, тонкая настройка, синхронизация превью-режимов
+Сделано:
+- layout-base.css: добавлен блок «ЭТАП 11» — правила :root[data-preview="desktop"] (.nav-history grid, .toolbar flex, .bottom-nav none, .desktop-fab block), синхронизирующие принудительный режим с реальными @media ≥1180px; глобальный prefers-reduced-motion блок продублирован в конец файла (раньше не покрывал компоненты).
+- components.css: блок «ЭТАП 11» — shimmer-пульс .skeleton, классы .ring (кольцевой прогресс, stroke-dashoffset transition), .chip.is-active, .hub-tile[aria-current], hover-shadow для .panel, active-scale для табов/rail-кнопок.
+- app.js animateIn(): stagger теперь считается только для верхнеуровневых блоков (.panel/.kpi-grid/.hub-grid/.quick-grid/.detail-hero; вложенные не дублируют анимацию), шаг 40мс, потолок 280мс.
+- docs/smoke.py: добавлены проверки переключения data-preview и существования таба «Ещё»; SMOKE OK + UNDO TEST OK локально (python http.server 8090 + Playwright).
+
+Не сделано / продолжить:
+- ✅ u.ringSVG(ratio,label,size) добавлен в core.js и применён в Views.goals (finance.js) вместо linear progress — проверено smoke.
+- Pixel-портинг карточек Домкнига (план A выше) — по-прежнему главный долг дизайна. Следующий шаг: «Операции/операции.html» → виртуальный список + rich-строки; затем B2 бюджеты.
+- Чипы фильтров в operations используют is-active ✓ (совпадает с CSS).
+- Перед релизом удалить dev-preview/dev-frame (см. этап 7/8 заметки).
+- .ring-fg transform rotate(-90deg) через CSS — проверить в браузере корректность старта дуги (Safari иногда игнорирует transform-origin на SVG circle; при проблемах — повернуть через viewBox transform).
+
+## Этап 12 — Операции v2 (Домкнига-порт) ✅ (2026-11-02)
+Сделано:
+- Сводка «Доходы / Расходы / Итог» над списком (.ops-summary, считается по отфильтрованным).
+- Группировка списка по дням («31 октября», .ops-group + .group-head), даты DD.MM парсятся в порядок.
+- Иконки категорий слева у строк (.cat-icon: Ученики/Работа/Личное/Развитие → teacher/briefcase/wallet/book; hue по категории).
+- Сортировка: цикл Дата↓ → Дата↑ → Сумма↓ → Сумма↑ (state.operations.dir), чип с arrow-up/down (новые иконки в core.js ic).
+- Empty-state поиска + кнопка «Сбросить фильтры» (action reset-ops-filters).
+- smoke.py расширен блоком «operations v2 OK»; SMOKE OK + UNDO TEST OK локально.
+Заметки:
+- txRowPayable больше не печатает дату в row-meta (она в заголовке группы); home-виджет transactionRow не трогали.
+- state.operations теперь содержит dir ("desc"|"asc"); mock-даты только окт-нояб 2026 — группировка завязана на формат /^\d{2}\.\d{2}/.
+Дальше (Этап 13):
+- Тонкая настройка: карточки Бюджета (B2 plan/fact двойная шкала), Дашборды (D1/D2 layout из Домкниги), кольцевые диаграммы с анимацией прорисовки.
+- Анимация появления групп (.ops-group fade/slide stagger), hover-состояния строк в dark/light.
+- Раздел «Счета»: детальные карточки счетов + мини-график баланса.
+- Полировка mobile: safe-area у .ops-summary, горизонтальный скролл чипов.
+
+## Как перенести мои коммиты к тебе (песочница без доступа к GitHub)
+Я не могу пушить и создавать PR. Все изменения закоммичены в локальную ветку `main`
+(HEAD = Этап 12, a472fec). Экспортирован портативный пакет: **`mono-etap12.bundle`**
+(содержит все коммиты от f9f370a до HEAD, требует наличие f9f370a в твоём репо — оно есть).
+
+На своей машине в клоне drebed11123:
+```bash
+git fetch mono-etap12.bundle main:mono-agent   # или скачанный файл bundle
+git checkout -b feature/etap-12-ui mono-agent
+git push -u origin feature/etap-12-ui          # затем создать PR feature/etap-12-ui → main на GitHub
+# либо просто: git merge mono-agent && git push origin main
+```
+Альтернатива без bundle: скачать файлы из /workspace (src/, docs/, index.html и т.д.) и закоммитить самому.
