@@ -192,3 +192,9 @@ Smoke: заменён устаревший селектор .progress → .budge
 - Мобильная полировка: safe-area у sheet/тостов, горизонтальный скролл чипов с градиентными масками.
 - Onboarding-модалка при первом запуске (localStorage mono-onboarded).
 - Техдолг: Store __v=2 миграция, ISO-даты вместо «сегодня/DD.MM» в мок-данных.
+
+## Статус (Этап 14c — ОПУБЛИКОВАН и проверен)
+- main = a35d29b (merge feature/etap-14c). CI completed success. Pages отдаёт app.js с navHist (проверено grep по живому сайту).
+- Если на https://timeyantime.github.io/drebed11123 «ничего не изменилось» — это кэш браузера/CDN (cache-control: max-age=600). Решение: Ctrl+Shift+R, приватное окно или ?v=2 в URL.
+- Тесты зелёные: t14c.py=T14C OK, smoke.py=UNDO TEST OK, global-audit.py=AUDIT OK.
+- Заголовок раздела рендерится в #page-title/#page-subtitle внутри header (класса hd-title в index.html нет — не искать).
