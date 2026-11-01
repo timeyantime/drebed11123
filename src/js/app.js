@@ -173,9 +173,14 @@
   function normalizeRoute(route) { return routesMeta[route] ? route : "home"; }
   function routeFromHash() { return parseHash().route; }
 
+  /* канонический вид параметра detail: "account:1" → ["account", "1"],
+     иначе hash получается #accounts/account:1 и не парсится роутером */
+  function normDetailParam(p) { return String(p).replace(":", "/"); }
+
   function goTo(route, params) {
     route = normalizeRoute(route);
-    const target = "#" + [route, ...(params || [])].join("/");
+    const clean = (params || []).map(normDetailParam);
+    const target = "#" + [route, ...clean].join("/");
     if (location.hash !== target) location.hash = target;
     else renderWithSkeleton();
   }
@@ -229,12 +234,19 @@
 
   function renderRoute(route, params) {
     const view = window.Views[route] || window.Views.home;
-    state.detail = null;
-    if (params && params.length) {
-      // #/teacher/student/:id → detail-режим для вьюхи
-      state.detail = { kind: params[0], id: Number(params[1]) || params[1] };
+    /* detail-контекст берём из ФАКТИЧЕСКОГО hash, а не из args:
+       - renderRoute(route, params) из роутера → params есть всегда (возможно [])
+       - renderRoute(route) из мутаций/фильтров → params undefined:
+         если остаёмся на том же роуте — сохраняем state.detail (детальная страница
+         не должна терять контекст и подзаголовок после tx-pay/planned-done),
+         при смене роута — сбрасываем. */
+    if (params !== undefined) {
+      state.detail = params.length ? { kind: params[0], id: Number(params[1]) || params[1] } : null;
+    } else if (state.route !== route) {
+      state.detail = null;
     }
     view({ DB: window.DB, state, quickActions, emptyHTML, showToast, goTo, save: window.Store.save });
+    setActiveRoute(route); // синхронизируем заголовок/подзаголовок с фактическим состоянием detail
   }
 
   /* ---------- сортировки / циклы ---------- */
@@ -870,6 +882,15 @@
   });
 
   document.addEventListener("keydown", (event) => {
+    /* Enter/Space на кликабельной строке (row-link) — эквивалент клика */
+    if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
+      const link = event.target.closest && event.target.closest("[data-go-route]");
+      if (link && (link.getAttribute("tabindex") !== null || link.getAttribute("role"))) {
+        event.preventDefault();
+        link.click();
+        return;
+      }
+    }
     if (event.key !== "Escape") return;
     if (genericModal.classList.contains("open")) { closeForm(); return; }
     if (isSheetOpen()) { closeSheet(); document.querySelector('[data-action="more"]')?.focus(); return; }
