@@ -447,6 +447,62 @@
     el.addEventListener("contextmenu", (e) => e.preventDefault());
   }
 
+  /* ---------- bottom sheet «Ещё» — мобильная IA (Этап 7) ---------- */
+  const sheetBackdrop = document.getElementById("sheetBackdrop");
+  const moreSheet = document.getElementById("moreSheet");
+  const sheetGrid = document.getElementById("sheetGrid");
+
+  function renderSheet() {
+    if (!sheetGrid || !window.u.HUB) return;
+    sheetGrid.innerHTML = window.u.HUB.map((h) => `
+      <button class="sheet-item" data-go-route="${h.route}" style="--tone:${h.tone}; --tint:${h.tint}">
+        <span class="ic-wrap" data-icon="${h.icon}"></span>
+        <span class="title">${h.title}</span>
+      </button>`).join("");
+    u.fillIcons();
+  }
+
+  function openSheet() {
+    renderSheet();
+    sheetBackdrop.classList.add("open");
+    moreSheet.classList.add("open");
+    document.body.classList.add("sheet-open");
+    const tab = document.querySelector('[data-action="more"]');
+    if (tab) tab.setAttribute("aria-expanded", "true");
+    const first = sheetGrid.querySelector(".sheet-item");
+    if (first) first.focus({ preventScroll: true });
+  }
+
+  function closeSheet() {
+    sheetBackdrop.classList.remove("open");
+    moreSheet.classList.remove("open");
+    document.body.classList.remove("sheet-open");
+    const tab = document.querySelector('[data-action="more"]');
+    if (tab) tab.setAttribute("aria-expanded", "false");
+  }
+
+  function isSheetOpen() { return moreSheet.classList.contains("open"); }
+
+  sheetBackdrop.addEventListener("click", closeSheet);
+
+  /* клик по плитке sheet: закрыть sheet и перейти (rowLink-делегат закроет сам) */
+  sheetGrid?.addEventListener("click", (e) => {
+    if (!e.target.closest("[data-go-route]")) return;
+    closeSheet();
+  });
+
+  /* свайп вниз закрывает sheet */
+  (function attachSheetSwipe() {
+    let startY = null;
+    moreSheet.addEventListener("touchstart", (e) => { startY = e.touches[0].clientY; }, { passive: true });
+    moreSheet.addEventListener("touchmove", (e) => {
+      if (startY === null) return;
+      const dy = e.touches[0].clientY - startY;
+      if (dy > 60) { closeSheet(); startY = null; }
+    }, { passive: true });
+    moreSheet.addEventListener("touchend", () => { startY = null; });
+  })();
+
   /* ---------- помощь ---------- */
   function openHelp() { helpModal.classList.add("open"); helpBackdrop.classList.add("open"); helpClose.focus(); }
   function closeHelp() { helpModal.classList.remove("open"); helpBackdrop.classList.remove("open"); }
@@ -496,7 +552,7 @@
     if (name === "load-more") { state.budget.limit += 5; return renderRoute("budget"); }
     if (name === "load-more-ops") { state.operations.limit += 8; return renderRoute("operations"); }
     if (name === "close-modal") return closeForm();
-    if (name === "more") { openFan(document.querySelector(".desktop-fab") || fabWraps[0]); return; }
+    if (name === "more") { isDesktopLayout() ? openFan(document.querySelector(".desktop-fab") || fabWraps[0]) : openSheet(); return; }
     if (name === "reset-demo") {
       const prev = snapshot();
       window.Store.reset();
@@ -658,6 +714,7 @@
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Escape") return;
     if (genericModal.classList.contains("open")) { closeForm(); return; }
+    if (isSheetOpen()) { closeSheet(); document.querySelector('[data-action="more"]')?.focus(); return; }
     if (helpModal.classList.contains("open")) { closeHelp(); return; }
     if (document.body.classList.contains("fan-open")) {
       const activeWrap = fabWraps.find((w) => w.classList.contains("open"));
