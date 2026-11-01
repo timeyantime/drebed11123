@@ -221,16 +221,36 @@
       <div class="skeleton sk-row"></div>`;
   }
 
+  /* Этап 14c: быстрая перерисовка без skeleton и fadeUp — для фильтров,
+     сортировок, поиска, load-more. Skeleton+анимация входа остаются только
+     при реальной СМЕНЕ раздела/страницы (renderWithSkeleton). */
+  function softRender(route) {
+    clearTimeout(renderTimer);
+    pageBody.dataset.route = route; // не сбрасываем → view-анимация не перезапускается
+    renderRoute(route);
+  }
+
   function renderWithSkeleton() {
     const { route, params } = parseHash();
     clearTimeout(renderTimer);
     setActiveRoute(route);
+    /* если тот же роут и те же params (например клик по активному табу или
+       хеш-навигация back/forward на текущую запись) — не устраиваем «загрузку» */
+    if (state.route === route && sameParams(params) && pageBody.dataset.route === route) {
+      renderRoute(route, params);
+      return;
+    }
     showSkeleton();
     closeAllFans();
     scrollToTop(false); // при смене раздела — наверх (fixed-хедер остаётся видимым)
     lastY = 0;
     bottomNav.classList.remove("nav-hidden");
     renderTimer = setTimeout(() => renderRoute(route, params), 360);
+  }
+
+  function sameParams(params) {
+    const cur = parseHash().params;
+    return cur.length === params.length && cur.every((p, i) => p === params[i]);
   }
 
   function emptyHTML(title, text, quickKey, quickLabel) {
@@ -266,19 +286,19 @@
     if (scope === "teacher") {
       const arr = state.teacher.tab === "students" ? ["name", "next", "balance"] : ["date", "student"];
       state.teacher.sort = arr[(arr.indexOf(state.teacher.sort) + 1) % arr.length];
-      renderRoute("teacher");
+      softRender("teacher");
     } else if (scope === "budget") {
       const arr = ["date", "amount"];
       state.budget.sort = arr[(arr.indexOf(state.budget.sort) + 1) % arr.length];
       state.budget.limit = 5;
-      renderRoute("budget");
+      softRender("budget");
     } else if (scope === "operations") {
       const seq = [["date","desc"],["date","asc"],["amount","desc"],["amount","asc"]];
       const cur = [state.operations.sort, state.operations.dir];
       const idx = seq.findIndex(([a,b]) => a===cur[0] && b===cur[1]);
       const nxt = seq[(idx+1) % seq.length];
       state.operations.sort = nxt[0]; state.operations.dir = nxt[1];
-      renderRoute("operations");
+      softRender("operations");
     }
   }
 
@@ -598,32 +618,48 @@
     openForm("contribute", { goalName: name, max: g.target - g.saved });
   }
 
+  /* ---------- навигационная история для кнопок «Назад/Вперёд» в хедере (Этап 14c) ---------- */
+  const navHist = { stack: [], index: -1 };
+
+  function recordNavHash(hash) {
+    const target = "#" + String(hash || "").replace(/^#?\/?/, "");
+    if (navHist.index >= 0 && navHist.stack[navHist.index] === target) return; // без дублей
+    navHist.stack = navHist.stack.slice(0, navHist.index + 1);
+    navHist.stack.push(target);
+    navHist.index = navHist.stack.length - 1;
+    if (navHist.stack.length > 60) { navHist.stack.shift(); navHist.index--; }
+    updateNavButtons();
+  }
+
+  function updateNavButtons() {
+    const backBtn = document.querySelector('[data-action="back"]');
+    const fwdBtn = document.querySelector('[data-action="forward"]');
+    if (backBtn) backBtn.disabled = navHist.index <= 0;
+    if (fwdBtn) fwdBtn.disabled = navHist.index >= navHist.stack.length - 1;
+  }
+
   function handleAction(name) {
     if (name === "help") return openHelp();
     if (name === "theme") return setTheme(root.dataset.theme === "dark" ? "light" : "dark");
     if (name === "profile") return goTo("profile");
-    if (name === "back") return history.back();
-    if (name === "forward") return history.forward();
-    if (name === "load-more") { state.budget.limit += 5; return renderRoute("budget"); }
-    if (name === "load-more-ops") { state.operations.limit += 8; return renderRoute("operations"); }
-    /* Этап 14c: история вперёд/назад по hash-роутам (кнопки в хедере) */
+    if (name === "load-more") { state.budget.limit += 5; return softRender("budget"); }
+    if (name === "load-more-ops") { state.operations.limit += 8; return softRender("operations"); }
+    /* Этап 14c: кнопки «Назад/Вперёд» в хедере. Свой стек истории НЕ переписывает
+       hash напрямую (это ломало браузерную историю), а использует нативные
+       history.back()/forward(). Если своей записи ещё нет — подсказка в тосте. */
     if (name === "back") {
-      if (history.length > 1 && history.state !== null) return history.back();
-      const h = navHistory.history;
-      if (navIndex <= 0) { showToast("Вы в начале истории", { kind: "info", duration: 1400 }); return; }
-      navIndex--;
-      location.hash = h[navIndex];
+      if (navHist.index <= 0) { showToast("Вы в начале истории", { kind: "info", duration: 1400 }); return; }
+      window.history.back();
       return;
     }
     if (name === "forward") {
-      const h = navHistory.history;
-      if (navIndex < h.length - 1) { navIndex++; location.hash = h[navIndex]; return; }
-      showToast("Дальше истории нет", { kind: "info", duration: 1400 });
+      if (navHist.index >= navHist.stack.length - 1) { showToast("Дальше истории нет", { kind: "info", duration: 1400 }); return; }
+      window.history.forward();
       return;
     }
     if (name === "reset-ops-filters") {
       state.operations = { filter: "all", sort: "date", dir: "desc", limit: 8, query: "", account: "all" };
-      return renderRoute("operations");
+      return softRender("operations");
     }
     if (name === "close-modal") return closeForm();
     if (name === "more") { isDesktopLayout() ? openFan(document.querySelector(".desktop-fab") || fabWraps[0]) : openSheet(); return; }
@@ -840,14 +876,14 @@
     if (filterBtn) {
       event.preventDefault();
       const scope = filterBtn.dataset.scope;
-      if (scope === "teacher") { state.teacher.filter = filterBtn.dataset.filter; renderRoute("teacher"); }
-      if (scope === "budget") { state.budget.filter = filterBtn.dataset.filter; state.budget.limit = 5; renderRoute("budget"); }
-      if (scope === "operations") { state.operations.filter = filterBtn.dataset.filter; state.operations.limit = 8; renderRoute("operations"); }
+      if (scope === "teacher") { state.teacher.filter = filterBtn.dataset.filter; softRender("teacher"); }
+      if (scope === "budget") { state.budget.filter = filterBtn.dataset.filter; state.budget.limit = 5; softRender("budget"); }
+      if (scope === "operations") { state.operations.filter = filterBtn.dataset.filter; state.operations.limit = 8; softRender("operations"); }
       return;
     }
 
     const accChip = event.target.closest("[data-account-btn]");
-    if (accChip) { event.preventDefault(); state.operations.account = accChip.dataset.accountBtn; renderRoute("operations"); return; }
+    if (accChip) { event.preventDefault(); state.operations.account = accChip.dataset.accountBtn; softRender("operations"); return; }
 
     const sortBtn = event.target.closest("[data-sort]");
     if (sortBtn) { event.preventDefault(); cycleSort(sortBtn.dataset.sort); return; }
@@ -922,16 +958,16 @@
       state.operations.query = q.value;
       state.operations.limit = 8;
       const pos = q.selectionStart;
-      renderRoute("operations");
+      softRender("operations");
       const again = document.querySelector("[data-search]");
       if (again) { again.focus(); try { again.setSelectionRange(pos, pos); } catch (_) {} }
       return;
     }
     const acc = event.target.closest("[data-account-filter]");
-    if (acc) { state.operations.account = acc.value; renderRoute("operations"); }
+    if (acc) { state.operations.account = acc.value; softRender("operations"); }
   });
 
-  window.addEventListener("hashchange", () => renderWithSkeleton(routeFromHash()));
+  window.addEventListener("hashchange", () => { recordNavHash(location.hash); renderWithSkeleton(routeFromHash()); });
 
   /* ---------- hide header on scroll down (Этап 10) ---------- */
   let lastY = window.scrollY, ticking = false;

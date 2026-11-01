@@ -1129,3 +1129,10 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ===== Этап 14c: состояние disabled для кнопок истории в хедере ===== */
+.icon-btn.nav-history[disabled] {
+  opacity: 0.35;
+  cursor: default;
+  pointer-events: auto; /* чтобы не «проваливалось», но визуально было ясно */
+}
