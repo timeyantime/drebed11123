@@ -46,6 +46,12 @@
         <button class="preview-btn" data-preview="desktop" title="Веб (≥1180px)" aria-label="Режим: веб"><span data-icon="monitor"></span></button>
       </div>
 
+      <!-- Dev-frame: рамка устройства для превью (Этап 8, видна только в mobile/tablet) -->
+      <label class="frame-toggle" title="Рамка устройства">
+        <input type="checkbox" id="frameToggle" />
+        <span>Рамка</span>
+      </label>
+
       <div class="header-actions">
         <button class="icon-btn" data-action="help" aria-label="Помощь">
           <span data-icon="help"></span>
@@ -65,6 +71,27 @@
     <!-- Desktop / tablet toolbar -->
     <aside class="toolbar" id="toolbar" aria-label="Боковая навигация">
       <div class="rail-logo">M</div>
+
+      <!-- FAB-веер в рейле: быстрый доступ к действиям на десктопе/планшете (Этап 8) -->
+      <div class="fab-wrap rail-fab" id="railFab" data-fab-wrap>
+        <div class="fan fan--rail" data-fan aria-hidden="true">
+          <button class="fan-item" data-quick="lesson" aria-label="Запланировать занятие" style="--tx: 46px; --ty: -4px; --d: 0ms">
+            <span data-icon="calendar"></span><span>Занятие</span>
+          </button>
+          <button class="fan-item" data-quick="student" aria-label="Добавить ученика" style="--tx: 46px; --ty: -50px; --d: 35ms">
+            <span data-icon="userPlus"></span><span>Ученик</span>
+          </button>
+          <button class="fan-item" data-quick="transaction" aria-label="Новая операция" style="--tx: 46px; --ty: -96px; --d: 70ms">
+            <span data-icon="card"></span><span>Операция</span>
+          </button>
+          <button class="fan-item" data-quick="statement" aria-label="Загрузить выписку" style="--tx: 46px; --ty: -142px; --d: 105ms">
+            <span data-icon="upload"></span><span>Выписка</span>
+          </button>
+        </div>
+        <button class="fab fab--sm" data-action="fan-toggle" aria-expanded="false" aria-label="Быстрые действия в рейле">
+          <span data-icon="plus"></span>
+        </button>
+      </div>
 
       <nav class="toolbar-nav">
         <button class="tool-item is-active" data-route="home" aria-current="page">

@@ -112,7 +112,11 @@
     if (!toastShowing) nextToast();
   }
 
-  function showToast(message) { pushToast(message); }
+  /* showToast(msg) | showToast(msg, "success"|"error"|"info"|"undo") | showToast(msg, {kind, duration}) */
+  function showToast(message, kindOrOpts) {
+    const opts = typeof kindOrOpts === "string" ? { kind: kindOrOpts } : (kindOrOpts || {});
+    pushToast(message, opts);
+  }
 
   /* undo-обёртка: снимок DB до мутации → кнопка «Отменить» в тосте (Этап 6) */
   function snapshot() {
@@ -553,6 +557,11 @@
     if (name === "load-more-ops") { state.operations.limit += 8; return renderRoute("operations"); }
     if (name === "close-modal") return closeForm();
     if (name === "more") { isDesktopLayout() ? openFan(document.querySelector(".desktop-fab") || fabWraps[0]) : openSheet(); return; }
+    if (name === "fan-toggle") {
+      const w = document.getElementById("railFab");
+      if (w) { toggleFan(w); const b = w.querySelector("[data-fab]"); b?.setAttribute("aria-expanded", w.classList.contains("open") ? "true" : "false"); }
+      return;
+    }
     if (name === "reset-demo") {
       const prev = snapshot();
       window.Store.reset();
