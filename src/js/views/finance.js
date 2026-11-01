@@ -275,17 +275,41 @@ window.Views = window.Views || {};
     `);
   };
 
-  /* ---------- Налоги ---------- */
+  /* ---------- Налоги v2 ---------- */
   Views.taxes = function (ctx) {
     const t = ctx.DB.taxes;
-    const rest = t.due - t.paid;
+    const rest = Math.max(t.due - t.paid, 0);
+    const ratio = t.due ? Math.min(t.paid / t.due, 1) : 0;
+    const pendingSum = t.declarations.filter((d) => d.status !== "paid").reduce((s, d) => s + d.sum, 0);
     page(`
       <div class="kpi-grid">
-        <div class="kpi"><span class="kpi-label">Режим</span><span class="kpi-value" style="font-size:16px">${esc(t.regime)}</span></div>
-        <div class="kpi"><span class="kpi-label">Доход за квартал</span><span class="kpi-value">${money(t.incomeQuarter)}</span></div>
+        <div class="kpi"><span class="kpi-label">Режим</span><span class="kpi-value" style="font-size:16px">${esc(t.regime)}</span><span class="kpi-sub">доход за квартал: ${money(t.incomeQuarter)}</span></div>
         <div class="kpi"><span class="kpi-label">Налог к уплате</span><span class="kpi-value ${rest ? "t-expense" : "t-income"}">${money(rest)}</span><span class="kpi-sub">следующий срок: ${t.nextDate}</span></div>
+        <div class="kpi"><span class="kpi-label">Всего неплаченных</span><span class="kpi-value ${pendingSum ? "t-expense" : "t-income"}">${money(pendingSum)}</span><span class="kpi-sub">${t.declarations.filter((d) => d.status !== "paid").length} деклараци(ий)</span></div>
       </div>
-      <section class="panel">
+      <section class="panel tax-save-card">
+        <div class="panel-head"><h2>Накопление к платежу</h2><span class="note">${esc(t.regime)} · срок ${t.nextDate}</span></div>
+        <div class="tax-save-body">
+          ${u.ringSVG(ratio, "оплачено", 92)}
+          <div class="tax-save-info">
+            <div class="tax-save-sums"><strong>${money(t.paid)}</strong> <span>/ ${money(t.due)}</span></div>
+            <div class="row-meta">${ratio >= 1 ? "Налог за квартал закрыт полностью" : `Осталось отложить ${money(rest)}`}</div>
+            ${rest ? `<button class="mini-btn" data-action="tax-pay" data-extra="${rest}">Отложить ${money(rest)}</button>` : `<span class="badge badge--paid">Закрыто</span>`}
+          </div>
+        </div>
+      </section>
+      <section class="panel" style="margin-top:16px">
+        <div class="panel-head"><h2>Календарь деклараций</h2><span class="note">горизонтальный скролл</span></div>
+        <div class="chip-scroll">
+          ${t.declarations.map((d) => `
+            <div class="decl-chip ${d.status === "paid" ? "is-paid" : "is-pending"}">
+              <span class="decl-date">${esc(d.due)}</span>
+              <span class="decl-name">${esc(d.name)}</span>
+              <span class="decl-sum">${money(d.sum)}</span>
+            </div>`).join("")}
+        </div>
+      </section>
+      <section class="panel" style="margin-top:16px">
         <div class="panel-head"><h2>Декларации и платежи</h2></div>
         <div class="list">
           ${t.declarations.map((d) => `
@@ -296,33 +320,72 @@ window.Views = window.Views || {};
               </div>
               <div style="display:flex;align-items:center;gap:10px">
                 <div class="amount">${money(d.sum)}</div>
-                <span class="badge ${d.status === "paid" ? "badge--paid" : "badge--pending"}">${d.status === "paid" ? "Уплачено" : "Ожидает"}</span>
+                ${d.status === "paid"
+                  ? `<span class="badge badge--paid">Уплачено</span>`
+                  : `<button class="mini-btn" data-action="tax-decl-pay" data-extra="${esc(d.name)}">Уплатить</button>`}
               </div>
             </div>`).join("")}
-        </div>
-      </section>
-      <section class="panel" style="margin-top:16px">
-        <div class="panel-head"><h2>Расчёт налога</h2><span class="note">автоматически по доходу «Ученики»</span></div>
-        <div class="budget-row" style="border:0;padding-top:0">
-          <div class="head"><span class="name">Уплачено за квартал</span><span class="sum">${money(t.paid)} / ${money(t.due)}</span></div>
-          <div class="progress ${t.paid >= t.due ? "ok" : "warn"}"><span style="width:${Math.min(Math.round((t.paid / t.due) * 100), 100)}%"></span></div>
         </div>
       </section>
     `);
   };
 
-  /* ---------- Инвестиции ---------- */
+  /* ---------- Инвестиции v2 ---------- */
+  function lineChartSVG(values, color, opts = {}) {
+    if (!values || values.length < 2) return "";
+    const w = 320, h = 96, pad = 6;
+    const min = Math.min(...values), max = Math.max(...values);
+    const span = max - min || 1;
+    const pts = values.map((v, i) => [pad + (i / (values.length - 1)) * (w - pad * 2), h - pad - ((v - min) / span) * (h - pad * 2)]);
+    const line = pts.map((p) => p.join(",")).join(" ");
+    const area = `${pad},${h - pad} ${line} ${w - pad},${h - pad}`;
+    const last = pts[pts.length - 1];
+    return `<svg class="pf-line" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
+      <polygon points="${area}" fill="${color}" opacity="0.12"></polygon>
+      <polyline class="pf-grow" points="${line}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></polyline>
+      <circle cx="${last[0]}" cy="${last[1]}" r="3.5" fill="${color}"></circle>
+    </svg>`;
+  }
+
   Views.investments = function (ctx) {
-    const total = ctx.DB.investments.reduce((s, a) => s + a.value, 0);
+    const assets = ctx.DB.investments;
+    const total = assets.reduce((s, a) => s + a.value, 0);
+    const hist = ctx.DB.portfolioHistory || [];
+    const change = hist.length >= 2 ? ((hist[hist.length - 1] - hist[hist.length - 2]) / hist[hist.length - 2]) * 100 : 0;
+    const weightedGrowth = assets.reduce((s, a) => s + (a.growth || 0) * (a.value / total), 0);
     page(`
       <div class="kpi-grid">
-        <div class="kpi"><span class="kpi-label">Стоимость портфеля</span><span class="kpi-value">${money(total)}</span></div>
-        <div class="kpi"><span class="kpi-label">Дивидендная доходность</span><span class="kpi-value t-income">+7,4%</span><span class="kpi-sub">за год</span></div>
+        <div class="kpi"><span class="kpi-label">Стоимость портфеля</span><span class="kpi-value">${money(total)}</span><span class="kpi-sub ${change >= 0 ? "t-income" : "t-expense"}">${change >= 0 ? "+" : ""}${change.toFixed(1).replace(".", ",")}% за месяц</span></div>
+        <div class="kpi"><span class="kpi-label">Доходность за год</span><span class="kpi-value ${weightedGrowth >= 0 ? "t-income" : "t-expense"}">${weightedGrowth >= 0 ? "+" : ""}${weightedGrowth.toFixed(1).replace(".", ",")}% (${Math.round(weightedGrowth / 100 * total)})</span><span class="kpi-sub">взвешенная по активам</span></div>
+        <div class="kpi"><span class="kpi-label">Активов</span><span class="kpi-value">${assets.length}</span><span class="kpi-sub">облигации · вклады · акции · фонды</span></div>
       </div>
       <section class="panel">
+        <div class="panel-head"><h2>Динамика портфеля</h2><span class="note">последние 6 месяцев</span></div>
+        ${lineChartSVG(hist, "var(--blue)")}
+        <div class="pf-months">${["май", "июн", "июл", "авг", "сен", "окт"].map((m) => `<span>${m}</span>`).join("")}</div>
+      </section>
+      <section class="panel" style="margin-top:16px">
         <div class="panel-head"><h2>Структура активов</h2></div>
         <div class="donut-wrap">
-          ${donutSVG(ctx.DB.investments, { centerText: money(total), caption: "портфель" }) + legendHTML(ctx.DB.investments)}
+          ${donutSVG(assets, { centerText: money(total), caption: "портфель" }) + legendHTML(assets)}
+        </div>
+      </section>
+      <section class="panel" style="margin-top:16px">
+        <div class="panel-head"><h2>Позиции</h2></div>
+        <div class="list">
+          ${assets.map((a) => {
+            const share = a.value / total;
+            return `<div class="row inv-row">
+              <div class="cat-icon" style="--ci:${a.color}">${`<span data-icon="investments"></span>`}</div>
+              <div class="row-main">
+                <div class="row-title">${esc(a.label)}</div>
+                <div class="inv-share"><span style="width:${Math.round(share * 100)}%;background:${a.color}"></span></div>
+                <div class="row-meta">${(share * 100).toFixed(1).replace(".", ",")}% портфеля · ${money(a.value)}</div>
+              </div>
+              <div class="amount ${a.growth >= 0 ? "t-income" : "t-expense"}">${a.growth >= 0 ? "+" : ""}${a.growth.toFixed(1).replace(".", ",")}%</div>
+              ${sparkline(a.history, a.color)}
+            </div>`;
+          }).join("")}
         </div>
       </section>
     `);

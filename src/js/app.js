@@ -590,6 +590,23 @@
     openForm("contribute", { goalName: name, max: g.target - g.saved });
   }
 
+  /* Налоги v2 (Этап 15): «отложить остаток» и уплата декларации */
+  function taxPayRest(amount) {
+    const t = window.DB.taxes;
+    const add = Math.min(Number(amount) || (t.due - t.paid), t.due - t.paid);
+    if (add <= 0) return pushToast("Налог уже закрыт", { kind: "info" });
+    mutateWithUndo((db) => { db.taxes.paid += add; }, `Отложено на налог: ${money(add)}`);
+  }
+  function taxDeclPay(name) {
+    const d = window.DB.taxes.declarations.find((x) => x.name === name);
+    if (!d || d.status === "paid") return;
+    mutateWithUndo((db) => {
+      d.status = "paid";
+      const t = db.taxes;
+      t.paid = Math.min(t.paid + d.sum, t.due);
+    }, `Уплачено: ${name}`);
+  }
+
   function handleAction(name) {
     if (name === "help") return openHelp();
     if (name === "theme") return setTheme(root.dataset.theme === "dark" ? "light" : "dark");
@@ -671,6 +688,9 @@
     const size = FRAME_SIZES[mode];
     if (!size) return false; // desktop не оборачиваем
     if (app.parentElement !== deviceFrame) deviceFrame.appendChild(app);
+    /* Этап 15: тост живёт ВНЕ рамки — иначе transform/overflow рамки
+       делают его position:fixed относительно телефона и он перекрывается. */
+    if (toast && toast.parentElement !== document.body) document.body.appendChild(toast);
     deviceFrame.classList.add("active");
     deviceFrame.style.width = size.w + "px";
     deviceFrame.style.height = Math.min(size.h, window.innerHeight - 96) + "px";
@@ -682,6 +702,8 @@
 
   function removeFrame() {
     if (app.parentElement !== document.body) document.body.insertBefore(app, deviceFrame);
+    /* Этап 15: тост всегда остаётся прямым ребёнком body (вне transform-контекста рамки) */
+    if (toast && toast.parentElement !== document.body) document.body.appendChild(toast);
     deviceFrame.classList.remove("active");
     deviceFrame.style.width = "";
     deviceFrame.style.height = "";
@@ -839,6 +861,8 @@
       if (a === "remind") return remindDebt(Number(actionBtn.dataset.id));
       if (a === "planned-done") return togglePlannedDone(actionBtn.dataset.title);
       if (a === "goal-add") return contributeGoal(actionBtn.dataset.goal);
+      if (a === "tax-pay") return taxPayRest(actionBtn.dataset.extra);
+      if (a === "tax-decl-pay") return taxDeclPay(actionBtn.dataset.extra);
       handleAction(a);
       closeAllFans();
       return;
