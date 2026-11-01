@@ -890,3 +890,27 @@ body.framed .sheet-backdrop { z-index: 260 !important; }
 :root.no-anim .quick-card, :root.no-anim #page-body > .segmented.period,
 :root.no-anim .donut circle.seg, :root.no-anim .bar-col .bar { animation: none !important; }
 .nav-history[disabled], .nav-history.is-disabled { opacity: 0.35; pointer-events: none; }
+
+/* ===== Этап 15: инвестиции v2, налоги v2, chip-scroll ===== */
+.pf-line { display:block; width:100%; height:96px; }
+.pf-months { display:flex; justify-content:space-between; font-size:11px; color:var(--text-3, var(--muted)); margin-top:4px; padding:0 2px; }
+.inv-row { gap:10px; }
+.inv-share { height:4px; border-radius:2px; background:var(--hover); margin:6px 0 4px; overflow:hidden; max-width:220px; }
+.inv-share span { display:block; height:100%; border-radius:2px; transition:width .45s ease; }
+.tax-save-body { display:flex; align-items:center; gap:var(--sp-4, 16px); padding:4px 2px 8px; }
+.tax-save-info { flex:1; min-width:0; }
+.tax-save-sums strong { font-size:20px; }
+.tax-save-sums span { color:var(--muted); font-size:14px; }
+.chip-scroll { display:flex; gap:10px; overflow-x:auto; padding:6px 2px 10px; scroll-snap-type:x proximity; scrollbar-width:none;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 12px,#000 calc(100% - 12px),transparent); }
+.chip-scroll::-webkit-scrollbar { display:none; }
+.decl-chip { scroll-snap-align:start; flex:0 0 auto; display:flex; flex-direction:column; gap:2px; padding:10px 14px; border-radius:14px;
+  border:1px solid var(--border); background:var(--surface-2, var(--bg)); min-width:130px; }
+.decl-chip.is-paid { border-color:color-mix(in srgb, var(--green) 40%, var(--border)); }
+.decl-chip.is-pending { border-color:color-mix(in srgb, var(--amber, #f59e0b) 45%, var(--border)); }
+.decl-date { font-size:12px; font-weight:700; color:var(--muted); }
+.decl-name { font-size:13px; font-weight:600; }
+.decl-sum { font-size:13px; color:var(--text-2, inherit); }
+
+/* Этап 15: тост поверх контента — z-index выше app-слоёв (см. layout-base .toast) */
+.toast { z-index: 9999 !important; }
