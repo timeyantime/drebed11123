@@ -271,6 +271,7 @@
          если остаёмся на том же роуте — сохраняем state.detail (детальная страница
          не должна терять контекст и подзаголовок после tx-pay/planned-done),
          при смене роута — сбрасываем. */
+    if (params === undefined) params = parseHash().params; // ← Этап 14c-fix2: params всегда актуальны из hash
     if (params !== undefined) {
       state.detail = params.length ? { kind: params[0], id: Number(params[1]) || params[1] } : null;
     } else if (state.route !== route) {
