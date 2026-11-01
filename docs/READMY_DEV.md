@@ -91,3 +91,21 @@ F. PWA: manifest.json + service worker (offline shell), иконки из Ико
 - Раздел «Счета»: детальные карточки счетов + мини-график баланса.
 - Полировка mobile: safe-area у .ops-summary, горизонтальный скролл чипов.
 
+
+
+## Этап 13 — ЗАВЕРШЁН (PR #18, squash 637c443, Pages обновлён)
+Бюджет v2: двойная шкала план/факт (.db-fill + .db-plan-mark), флаги over/warn, aria-label.
+Детальная страница счёта: #accounts/:id → detail-hero (--hero-c), спарклайны (sparkline в finance.js), KPI, история балансов в mock (accounts.history).
+Smoke: заменён устаревший селектор .progress → .budget-row + .db-plan-mark.
+Проверено локально: SMOKE OK, UNDO TEST OK; CI run completed success; на Pages budget.js содержит db-plan-mark.
+
+## Процесс агента (напоминание)
+Важно: snapshot-коммиты платформы («task snapshot …») могут НЕ попадать в origin/main через автосинхронизацию — если grep по Pages даёт 0, значит работа не опубликована. Алгоритм: найти snapshot-коммит локально (git log --all), создать ветку от origin/main, cherry-pick, push, PR через API, merge squash, poll run, проверка curl.
+
+## План Этапа 14
+1. Дашборды D1/D2 из Домкнига: динамика доходов/расходов по месяцам (SVG bar-chart, анимация роста столбцов), big pie структура расходов.
+2. Планируемые платежи: группировка «Сегодня / На этой неделе / Просроченные», повтор (repeat) после pay-done.
+3. Налоги: календарь налоговых периодов + прогресс накопления на налог (% отложенного резерва).
+4. Мобильная полировка: safe-area для bottom-nav/sheet, горизонтальный скролл чипов фильтров, touch-target ≥44px.
+5. Анимации: stagger появления .ops-group и карточек дашбордов (prefers-reduced-motion), hover-scale на tile.
+6. Тонкая типографика: единая шкала заголовков секций, money() в tabular-nums.
