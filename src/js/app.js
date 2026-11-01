@@ -353,6 +353,12 @@
   function openForm(key, extra) {
     const f = buildForms()[key];
     if (!f) return;
+    /* Этап 14c-fix2: если открыт FAB-веер или sheet «Ещё» — закрыть их.
+       Иначе backdrop (z-index 90/120) перекрывает модалку (200) и все её
+       кнопки становятся недоступны для клика (жалоба пользователя). */
+    closeAllFans();
+    if (isSheetOpen()) closeSheet();
+    ensureTopLayer(genericModal); ensureTopLayer(genericBackdrop);
     genericTitle.textContent = f.title;
     genericForm.dataset.extra = extra ? JSON.stringify(extra) : "";
     genericForm.innerHTML = `
@@ -534,6 +540,7 @@
 
   function openSheet() {
     renderSheet();
+    ensureTopLayer(moreSheet); ensureTopLayer(sheetBackdrop); // Этап 14c-fix2
     sheetBackdrop.classList.add("open");
     moreSheet.classList.add("open");
     document.body.classList.add("sheet-open");
@@ -574,7 +581,16 @@
   })();
 
   /* ---------- помощь ---------- */
+  /* Этап 14c-fix2: перенос модалок в конец body при ПЕРВОМ открытии.
+     Внутри .device-frame у них transform → fixed-потомки позиционируются от
+    рамки; вне рамки — от viewport, и backdrop больше не может перекрыть
+     кнопки диалога (жалоба «кнопки в модалке не работают»). */
+  function ensureTopLayer(el) {
+    if (el && el.parentElement !== document.body) document.body.appendChild(el);
+  }
+
   function openHelp() {
+    ensureTopLayer(helpModal); ensureTopLayer(document.getElementById("helpBackdrop"));
     const hScale = frameOn() ? Math.min(1, (deviceFrame.clientHeight - 48) / 560) : 1;
     helpModal.style.setProperty("--modal-scale", String(hScale));
     helpModal.classList.add("open"); helpBackdrop.classList.add("open"); helpClose.focus();
