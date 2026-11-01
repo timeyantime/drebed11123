@@ -58,6 +58,10 @@ jobs:
           curl -sf http://localhost:8090/index.html > /dev/null
       - name: Run smoke
         run: python docs/smoke.py
+      - name: Run undo test
+        run: python docs/undotest.py
+      - name: Run global button audit
+        run: python docs/global-audit.py
       - name: Stop server
         if: always()
         run: kill $(cat server.pid) || true
