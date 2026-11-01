@@ -9,6 +9,15 @@ window.Views = window.Views || {};
   const { money, donutSVG, legendHTML, esc } = u;
   const P = () => u.partials;
 
+  /* иконка по категории (Домкнига-стиль: цветной кружок слева) */
+  const CAT_ICON = { "Ученики": "teacher", "Работа": "briefcase", "Личное": "wallet", "Развитие": "book" };
+  const CAT_HUE = { "Ученики": 158, "Работа": 24, "Личное": 268, "Развитие": 210 };
+  function catIcon(t) {
+    const icon = CAT_ICON[t.category] || "operations";
+    const hue = CAT_HUE[t.category] != null ? CAT_HUE[t.category] : ((t.id || 1) * 67) % 360;
+    return `<span class="cat-icon" style="--c:hsl(${hue} 62% 52%)"><span data-icon="${icon}"></span></span>`;
+  }
+
   /* строка операции с кнопкой «Отметить оплаченным» для pending */
   function txRowPayable(t) {
     const cls = t.amount < 0 ? "expense" : "income";
@@ -17,14 +26,23 @@ window.Views = window.Views || {};
          <button class="mini-btn" data-action="tx-pay" data-id="${t.id}" aria-label="Отметить оплаченным: ${esc(t.title)}">✓</button>`
       : "";
     return `
-      <div class="row">
+      <div class="row row--tx">
+        ${catIcon(t)}
         <div class="row-main">
           <div class="row-title">${esc(t.title)}</div>
-          <div class="row-meta">${esc(t.date)} • ${esc(t.category)} • ${esc(t.account || "Карта")}</div>
+          <div class="row-meta">${esc(t.category)} • ${esc(t.account || "Карта")}</div>
         </div>
         <div class="amount ${cls}">${money(t.amount)}</div>
         ${pendingBadge}
       </div>`;
+  }
+
+  /* группировка «dd MMMM» по строке даты "DD.MM" (год — текущий демо) */
+  const MONTHS_RU = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
+  function dateGroup(dateStr) {
+    const m = /^(\d{2})\.(\d{2})/.exec(dateStr || "");
+    if (!m) return esc(dateStr || "Без даты");
+    return `${Number(m[1])} ${MONTHS_RU[Number(m[2]) - 1] || ""}`.trim();
   }
 
   /* ---------- Операции ---------- */
@@ -39,11 +57,34 @@ window.Views = window.Views || {};
       items = items.filter((t) => t.title.toLowerCase().includes(q) || t.category.toLowerCase().includes(q));
     }
     if (st.account && st.account !== "all") items = items.filter((t) => t.account === st.account);
-    if (st.sort === "amount") items.sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
+    // сортировка: date — по дате (DD.MM парсим в число), amount — по модулю суммы; dir — направление
+    const dnum = (d) => { const m = /^(\d{2})\.(\d{2})/.exec(d || ""); return m ? Number(m[2]) * 100 + Number(m[1]) : 0; };
+    const dir = st.dir === "asc" ? 1 : -1;
+    if (st.sort === "amount") items.sort((a, b) => (Math.abs(b.amount) - Math.abs(a.amount)) * dir);
+    else items.sort((a, b) => (dnum(b.date) - dnum(a.date)) * dir);
     const visible = items.slice(0, st.limit);
     const accounts = [...new Set(ctx.DB.transactions.map((t) => t.account).filter(Boolean))];
+    const sumIn = items.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0);
+    const sumOut = items.filter((t) => t.amount < 0).reduce((s, t) => s + t.amount, 0);
 
+    // группировка видимых по дню ("31 октября")
+    const groups = [];
+    let curKey = null;
+    for (const t of visible) {
+      const key = dateGroup(t.date);
+      if (key !== curKey) { groups.push({ key, rows: [] }); curKey = key; }
+      groups[groups.length - 1].rows.push(t);
+    }
+
+    const sortLabel = st.sort === "date" ? "Дата" : "Сумма";
     page(`
+      <div class="ops-summary">
+        <div class="ops-sum"><span class="ops-sum-label">Доходы</span><span class="ops-sum-val t-income">+${money(sumIn).replace("−", "")}</span></div>
+        <div class="ops-sum-sep"></div>
+        <div class="ops-sum"><span class="ops-sum-label">Расходы</span><span class="ops-sum-val t-expense">${money(sumOut)}</span></div>
+        <div class="ops-sum-sep"></div>
+        <div class="ops-sum"><span class="ops-sum-label">Итог</span><span class="ops-sum-val ${sumIn + sumOut >= 0 ? "t-income" : "t-expense"}">${money(sumIn + sumOut)}</span></div>
+      </div>
       <label class="search-box">
         <span class="search-icon" data-icon="search"></span>
         <input type="search" placeholder="Поиск по названию или категории…" value="${u.esc(st.query || "")}" data-search aria-label="Поиск операций" />
@@ -53,15 +94,26 @@ window.Views = window.Views || {};
           ${[["all", "Все"], ["income", "Доходы"], ["expense", "Расходы"], ["pending", "Ожидает"]].map(([k, l]) => `
             <button class="chip ${st.filter === k ? "is-active" : ""}" data-filter="${k}" data-scope="operations">${l}</button>`).join("")}
         </div>
-        <button class="chip" data-sort="operations">${st.sort === "date" ? "По дате" : "По сумме"}</button>
+        <button class="chip chip--sort" data-sort="operations" title="Дата ↓ → Дата ↑ → Сумма ↓ → Сумма ↑">
+          ${sortLabel} <span data-icon="${st.dir === "asc" ? "arrow-up" : "arrow-down"}"></span>
+        </button>
       </div>
       <div class="chips" aria-label="Фильтр по счетам">
         <button class="chip ${!st.account || st.account === "all" ? "is-active" : ""}" data-account-btn="all">Все счета</button>
         ${accounts.map((a) => `<button class="chip ${st.account === a ? "is-active" : ""}" data-account-btn="${u.esc(a)}">${u.esc(a)}</button>`).join("")}
       </div>
-      <h2 class="sticky-title">${items.length} операций</h2>
-      <div class="list">${visible.map(txRowPayable).join("")}</div>
-      ${items.length > visible.length ? `<div style="margin-top:10px;display:flex;justify-content:center;"><button class="primary-btn" data-action="load-more-ops">Загрузить ещё</button></div>` : ""}
+      ${items.length === 0 ? `
+        <div class="empty-state">
+          <span class="empty-icon" data-icon="search"></span>
+          <h3>Ничего не найдено</h3>
+          <p>Измените запрос или сбросьте фильтры.</p>
+          <button class="secondary-btn" data-action="reset-ops-filters">Сбросить фильтры</button>
+        </div>` : groups.map((g) => `
+        <section class="ops-group" aria-label="${esc(g.key)}">
+          <h3 class="group-head">${esc(g.key)}</h3>
+          <div class="list">${g.rows.map(txRowPayable).join("")}</div>
+        </section>`).join("")}
+      ${items.length > visible.length ? `<div style="margin-top:10px;display:flex;justify-content:center;"><button class="primary-btn" data-action="load-more-ops">Загрузить ещё (${items.length - visible.length})</button></div>` : ""}
     `);
   };
 

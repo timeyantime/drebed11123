@@ -57,6 +57,21 @@ with sync_playwright() as p:
     assert pm.evaluate("true")  # sanity
     print("preview switch OK:", pg.evaluate("document.documentElement.dataset.preview"))
     pg.click("[data-preview='desktop']"); pg.wait_for_timeout(300)
+    # --- Этап 12: операции (сводка, группировка по дням, сортировка, empty-state) ---
+    pg.evaluate("localStorage.clear()")
+    pg.goto("http://localhost:8090/index.html#/operations"); pg.wait_for_timeout(700)
+    assert pg.locator(".ops-summary").count() == 1, "no ops summary"
+    assert pg.locator(".ops-group").count() >= 1, "no date groups"
+    assert pg.locator(".cat-icon").count() >= 1, "no category icons"
+    before_g = pg.eval_on_selector_all(".group-head", "els=>els.map(e=>e.textContent)")
+    pg.click(".chip--sort"); pg.wait_for_timeout(400)   # date desc -> date asc
+    after_g = pg.eval_on_selector_all(".group-head", "els=>els.map(e=>e.textContent)")
+    assert before_g != after_g, "sort dir toggle had no effect on grouping order"
+    pg.fill("[data-search]", "zzzz-nothing"); pg.wait_for_timeout(500)
+    assert pg.locator(".empty-state").count() == 1, "no empty state on bad query"
+    pg.click("[data-action='reset-ops-filters']"); pg.wait_for_timeout(500)
+    assert pg.locator(".empty-state").count() == 0 and pg.locator(".ops-group").count() >= 1, "reset did not restore list"
+    print("operations v2 OK")
     # sheet «Ещё» (мобильный) — проверка, что таб существует
     assert pm.locator("[data-action='more']").count() > 0 or True
     pm.screenshot(path="docs/shot-mobile-home.png")

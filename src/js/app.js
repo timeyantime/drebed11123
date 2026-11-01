@@ -31,7 +31,7 @@
     route: "home",
     teacher: { tab: "students", filter: "all", sort: "name" },
     budget: { filter: "month", sort: "date", limit: 5 },
-    operations: { filter: "all", sort: "date", limit: 8, query: "", account: "all" },
+    operations: { filter: "all", sort: "date", dir: "desc", limit: 8, query: "", account: "all" },
     detail: null // { kind: "student", id } — детальная страница (Этап 5B)
   };
 
@@ -248,8 +248,11 @@
       state.budget.limit = 5;
       renderRoute("budget");
     } else if (scope === "operations") {
-      const arr = ["date", "amount"];
-      state.operations.sort = arr[(arr.indexOf(state.operations.sort) + 1) % arr.length];
+      const seq = [["date","desc"],["date","asc"],["amount","desc"],["amount","asc"]];
+      const cur = [state.operations.sort, state.operations.dir];
+      const idx = seq.findIndex(([a,b]) => a===cur[0] && b===cur[1]);
+      const nxt = seq[(idx+1) % seq.length];
+      state.operations.sort = nxt[0]; state.operations.dir = nxt[1];
       renderRoute("operations");
     }
   }
@@ -593,6 +596,10 @@
     if (name === "forward") return history.forward();
     if (name === "load-more") { state.budget.limit += 5; return renderRoute("budget"); }
     if (name === "load-more-ops") { state.operations.limit += 8; return renderRoute("operations"); }
+    if (name === "reset-ops-filters") {
+      state.operations = { filter: "all", sort: "date", dir: "desc", limit: 8, query: "", account: "all" };
+      return renderRoute("operations");
+    }
     if (name === "close-modal") return closeForm();
     if (name === "more") { isDesktopLayout() ? openFan(document.querySelector(".desktop-fab") || fabWraps[0]) : openSheet(); return; }
     if (name === "fan-toggle") {

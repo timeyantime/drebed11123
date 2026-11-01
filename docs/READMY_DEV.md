@@ -73,3 +73,20 @@ F. PWA: manifest.json + service worker (offline shell), иконки из Ико
 - Чипы фильтров в operations используют is-active ✓ (совпадает с CSS).
 - Перед релизом удалить dev-preview/dev-frame (см. этап 7/8 заметки).
 - .ring-fg transform rotate(-90deg) через CSS — проверить в браузере корректность старта дуги (Safari иногда игнорирует transform-origin на SVG circle; при проблемах — повернуть через viewBox transform).
+
+## Этап 12 — Операции v2 (Домкнига-порт) ✅ (2026-11-02)
+Сделано:
+- Сводка «Доходы / Расходы / Итог» над списком (.ops-summary, считается по отфильтрованным).
+- Группировка списка по дням («31 октября», .ops-group + .group-head), даты DD.MM парсятся в порядок.
+- Иконки категорий слева у строк (.cat-icon: Ученики/Работа/Личное/Развитие → teacher/briefcase/wallet/book; hue по категории).
+- Сортировка: цикл Дата↓ → Дата↑ → Сумма↓ → Сумма↑ (state.operations.dir), чип с arrow-up/down (новые иконки в core.js ic).
+- Empty-state поиска + кнопка «Сбросить фильтры» (action reset-ops-filters).
+- smoke.py расширен блоком «operations v2 OK»; SMOKE OK + UNDO TEST OK локально.
+Заметки:
+- txRowPayable больше не печатает дату в row-meta (она в заголовке группы); home-виджет transactionRow не трогали.
+- state.operations теперь содержит dir ("desc"|"asc"); mock-даты только окт-нояб 2026 — группировка завязана на формат /^\d{2}\.\d{2}/.
+Дальше (Этап 13):
+- Тонкая настройка: карточки Бюджета (B2 plan/fact двойная шкала), Дашборды (D1/D2 layout из Домкниги), кольцевые диаграммы с анимацией прорисовки.
+- Анимация появления групп (.ops-group fade/slide stagger), hover-состояния строк в dark/light.
+- Раздел «Счета»: детальные карточки счетов + мини-график баланса.
+- Полировка mobile: safe-area у .ops-summary, горизонтальный скролл чипов.
