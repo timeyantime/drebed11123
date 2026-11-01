@@ -205,6 +205,9 @@
     setActiveRoute(route);
     showSkeleton();
     closeAllFans();
+    scrollToTop(false); // при смене раздела — наверх (fixed-хедер остаётся видимым)
+    lastY = 0;
+    bottomNav.classList.remove("nav-hidden");
     renderTimer = setTimeout(() => renderRoute(route, params), 360);
   }
 
@@ -862,18 +865,45 @@
 
   window.addEventListener("hashchange", () => renderWithSkeleton(routeFromHash()));
 
-  /* ---------- hide bottom nav on scroll down ---------- */
+  /* ---------- hide header on scroll down (Этап 10) ---------- */
   let lastY = window.scrollY, ticking = false;
+
+  function scrollRoot() { return frameOn() ? app : document.scrollingElement || document.documentElement; }
+
+  function scrollToTop(smooth) {
+    const s = scrollRoot();
+    if (s === app) app.scrollTo({ top: 0, behavior: smooth ? "smooth" : "auto" });
+    else window.scrollTo({ top: 0, behavior: smooth ? "smooth" : "auto" });
+  }
+
+  function updateChrome(y) {
+    /* хедер статичный (fixed): не прячем. Прячем нижнюю навигацию только на мобильных */
+    document.body.classList.remove("header-hidden");
+    if (isDesktopLayout() || document.body.classList.contains("fan-open")) {
+      bottomNav.classList.remove("nav-hidden");
+      return;
+    }
+    if (y > 160 && y > lastY + 14) bottomNav.classList.add("nav-hidden");
+    else if (y < lastY - 8 || y < 120) bottomNav.classList.remove("nav-hidden");
+  }
+
   window.addEventListener("scroll", () => {
     if (ticking) return;
     ticking = true;
     requestAnimationFrame(() => {
       const y = window.scrollY;
-      if (isDesktopLayout() || document.body.classList.contains("fan-open")) {
-        bottomNav.classList.remove("nav-hidden"); lastY = y; ticking = false; return;
-      }
-      if (y > 160 && y > lastY + 14) bottomNav.classList.add("nav-hidden");
-      else if (y < lastY - 8 || y < 120) bottomNav.classList.remove("nav-hidden");
+      updateChrome(y);
+      lastY = y; ticking = false;
+    });
+  }, { passive: true });
+
+  /* в режиме рамки скроллится сам .app — вешаем отдельный слушатель */
+  app.addEventListener("scroll", () => {
+    if (ticking || !frameOn()) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      const y = app.scrollTop;
+      updateChrome(y);
       lastY = y; ticking = false;
     });
   }, { passive: true });

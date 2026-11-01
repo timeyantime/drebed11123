@@ -51,13 +51,16 @@
        Header
        ============================================================ */
 
+    /* Этап 10: header — fixed (всегда виден, не прячется при скролле),
+       тулбар и контент начинаются НИЖЕ хедера. */
     .header {
-      position: sticky;
+      position: fixed;
       top: calc(var(--edge) + var(--safe-top));
+      left: var(--edge);
+      right: var(--edge);
       z-index: 50;
 
       height: var(--header-h);
-      margin: calc(var(--edge) + var(--safe-top)) var(--edge) 0;
       padding: 0 8px 0 12px;
 
       display: flex;
@@ -67,6 +70,19 @@
       background: var(--surface);
       border-radius: 16px;
       box-shadow: var(--shadow);
+
+      transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    body.header-hidden .header {
+      transform: translateY(calc(-100% - var(--edge) - var(--safe-top) - 8px));
+    }
+
+    /* «дыра» вместо хедера в потоке */
+    .app::before {
+      content: "";
+      flex: 0 0 auto;
+      height: calc(var(--edge) * 2 + var(--header-h) + var(--safe-top));
     }
 
     .brand {
@@ -158,8 +174,14 @@
     .content {
       flex: 1;
       min-width: 0;
-      padding: 14px var(--edge) calc(86px + var(--safe-bottom));
+      padding: calc(4px + var(--edge)) var(--edge) calc(86px + var(--safe-bottom));
       transition: margin-left 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    /* Этап 10: «дыра» вместо fixed-хедера только на мобильных
+       (на десктопе место под хедер даёт padding у .content в @media). */
+    @media (max-width: 767.98px) {
+      .app::before { content: none; }
     }
 
     .content-inner {
@@ -566,13 +588,17 @@
 
       .toolbar {
         display: flex;
-        position: fixed;
-        left: var(--edge);
+        position: sticky; /* Этап 10: был fixed — налезал на хедер; sticky + top под хедером */
+        left: auto;
         top: calc(var(--edge) * 2 + var(--header-h) + var(--safe-top));
-        bottom: calc(var(--edge) + var(--safe-bottom));
+        bottom: auto;
+        max-height: calc(100dvh - (var(--edge) * 3 + var(--header-h) + var(--safe-top) + var(--safe-bottom)));
+        overflow-y: auto;
+        scrollbar-width: none;
         z-index: 40;
 
         width: var(--rail-w);
+        margin-left: var(--edge);
         padding: 10px 8px;
         flex-direction: column;
         gap: 4px;
@@ -580,20 +606,24 @@
         background: var(--surface);
         border-radius: 20px;
         box-shadow: var(--shadow);
-        overflow: hidden;
+        overflow-x: hidden;
 
         transition: width 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
       }
 
+      .toolbar::-webkit-scrollbar { display: none; }
+
       .content {
         margin-left: calc(var(--rail-w) + var(--edge) * 2);
-        padding: 18px var(--edge) 28px 0;
+        padding: calc(4px + var(--edge)) var(--edge) 28px 0;
       }
 
       .app.rail-expanded .toolbar {
         width: var(--rail-expanded-w);
       }
 
+      /* Этап 10: тулбар — sticky; базовые правила (position/top/max-height)
+         уже заданы в @media выше, здесь только синхронизация с превью-режимами */
       .app.rail-expanded .content {
         margin-left: calc(var(--rail-expanded-w) + var(--edge) * 2);
       }
@@ -971,22 +1001,26 @@
 :root[data-preview="tablet"] .nav-history { display: grid; }
 :root[data-preview="tablet"] .toolbar {
   display: flex;
-  position: fixed;
-  left: var(--edge);
+  position: sticky;
+  left: auto;
   top: calc(var(--edge) * 2 + var(--header-h) + var(--safe-top));
-  bottom: calc(var(--edge) + var(--safe-bottom));
+  bottom: auto;
+  max-height: calc(100dvh - (var(--edge) * 3 + var(--header-h) + var(--safe-top) + var(--safe-bottom)));
+  overflow-y: auto;
+  scrollbar-width: none;
   z-index: 40;
   width: var(--rail-w);
+  margin-left: var(--edge);
   padding: 10px 8px;
   flex-direction: column;
   gap: 4px;
   background: var(--surface);
   border-radius: 20px;
   box-shadow: var(--shadow);
-  overflow: hidden;
+  overflow-x: hidden;
   transition: width 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-:root[data-preview="tablet"] .content { margin-left: calc(var(--rail-w) + var(--edge) * 2); padding: 18px var(--edge) 28px 0; }
+:root[data-preview="tablet"] .content { margin-left: calc(var(--rail-w) + var(--edge) * 2); padding: calc(4px + var(--edge)) var(--edge) 28px 0; }
 :root[data-preview="tablet"] .app.rail-expanded .toolbar { width: var(--rail-expanded-w); }
 :root[data-preview="tablet"] .app.rail-expanded .content { margin-left: calc(var(--rail-expanded-w) + var(--edge) * 2); }
 :root[data-preview="tablet"] .bottom-nav { display: none !important; }
@@ -999,22 +1033,26 @@
 :root[data-preview="desktop"] .nav-history { display: grid; }
 :root[data-preview="desktop"] .toolbar {
   display: flex;
-  position: fixed;
-  left: var(--edge);
+  position: sticky;
+  left: auto;
   top: calc(var(--edge) * 2 + var(--header-h) + var(--safe-top));
-  bottom: calc(var(--edge) + var(--safe-bottom));
+  bottom: auto;
+  max-height: calc(100dvh - (var(--edge) * 3 + var(--header-h) + var(--safe-top) + var(--safe-bottom)));
+  overflow-y: auto;
+  scrollbar-width: none;
   z-index: 40;
   width: var(--rail-w);
+  margin-left: var(--edge);
   padding: 10px 8px;
   flex-direction: column;
   gap: 4px;
   background: var(--surface);
   border-radius: 20px;
   box-shadow: var(--shadow);
-  overflow: hidden;
+  overflow-x: hidden;
   transition: width 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-:root[data-preview="desktop"] .content { margin-left: calc(var(--rail-w) + var(--edge) * 2); padding: 18px var(--edge) 28px 0; }
+:root[data-preview="desktop"] .content { margin-left: calc(var(--rail-w) + var(--edge) * 2); padding: calc(4px + var(--edge)) var(--edge) 28px 0; }
 :root[data-preview="desktop"] .app.rail-expanded .toolbar { width: var(--rail-expanded-w); }
 :root[data-preview="desktop"] .app.rail-expanded .content { margin-left: calc(var(--rail-expanded-w) + var(--edge) * 2); }
 :root[data-preview="desktop"] .bottom-nav { display: none !important; }
