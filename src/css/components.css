@@ -94,6 +94,33 @@
 .bar.expense { background: var(--red); }
 .bar-label { font-size: 10px; color: var(--muted); white-space: nowrap; }
 
+/* Этап 19: бары стали интерактивными — hover/focus и тач-тултип со значениями */
+.bar-col { cursor: default; border-radius: 10px; }
+.bar-col:hover .bar, .bar-col:focus-visible .bar { filter: brightness(1.18); }
+.bar-col:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+.chart-tip {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 1150;
+  max-width: min(280px, calc(100vw - 24px));
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.chart-tip.show { opacity: 1; }
+
 /* ---------- Сегментированный контрол периода ---------- */
 .segmented.period { display: inline-flex; background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 3px; gap: 2px; }
 .segmented.period .seg-btn { border-radius: 999px; padding: 6px 14px; font-size: 12px; font-weight: 700; color: var(--muted); transition: background 0.15s, color 0.15s; }

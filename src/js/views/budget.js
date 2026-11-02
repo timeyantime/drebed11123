@@ -70,14 +70,17 @@ window.Views = window.Views || {};
     const max = Math.max(...months.flatMap((m) => [m.income, m.expense]));
     return `
       <div class="bars">
-        ${months.map((m) => `
-          <div class="bar-col" title="${m.m}: ${money(m.income)} / ${money(-m.expense)}">
+        ${months.map((m) => {
+          const tip = `${m.m} · Доходы ${money(m.income)} · Расходы ${money(m.expense)}`;
+          return `
+          <div class="bar-col" tabindex="0" role="img" aria-label="${tip}" data-tip="${tip}">
             <div class="bar-pair">
               <span class="bar income" style="height:${Math.round((m.income / max) * 100)}%"></span>
               <span class="bar expense" style="height:${Math.round((m.expense / max) * 100)}%"></span>
             </div>
             <span class="bar-label">${m.m}</span>
-          </div>`).join("")}
+          </div>`;
+        }).join("")}
       </div>
       <div class="legend" style="margin-top:10px">
         <div class="legend-item"><span class="cat-dot" style="--c:var(--green)"></span><span class="name">Доходы</span></div>
