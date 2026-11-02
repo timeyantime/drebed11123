@@ -23,11 +23,13 @@ window.DB = {
     { id: 1, date: "01.11", title: "Оплата: Анна К.", amount: 2400, type: "income", category: "Ученики", status: "paid", account: "Карта" },
     { id: 2, date: "31.10", title: "Аренда кабинета", amount: -15000, type: "expense", category: "Работа", status: "paid", account: "Карта" },
     { id: 3, date: "30.10", title: "Оплата: Иван П.", amount: 2000, type: "income", category: "Ученики", status: "pending", account: "Карта" },
-    { id: 4, date: "29.10", title: "Продукты", amount: -3200, type: "expense", category: "Личное", status: "paid", account: "Наличные" },
+    { id: 4, date: "29.10", title: "Продукты", amount: -3200, type: "expense", category: "Продукты", status: "paid", account: "Наличные" },
     { id: 5, date: "28.10", title: "Оплата: Олег Д.", amount: 2400, type: "income", category: "Ученики", status: "paid", account: "Карта" },
     { id: 6, date: "27.10", title: "Интернет", amount: -700, type: "expense", category: "Работа", status: "paid", account: "Карта" },
     { id: 7, date: "26.10", title: "Учебники", amount: -1800, type: "expense", category: "Развитие", status: "paid", account: "Карта" },
-    { id: 8, date: "25.10", title: "Оплата: Дарья Л.", amount: 2200, type: "income", category: "Ученики", status: "paid", account: "Наличные" }
+    { id: 8, date: "25.10", title: "Оплата: Дарья Л.", amount: 2200, type: "income", category: "Ученики", status: "paid", account: "Наличные" },
+    { id: 9, date: "31.10", title: "Метро", amount: -300, type: "expense", category: "Транспорт", status: "paid", account: "Карта" },
+    { id: 10, date: "28.10", title: "Кино", amount: -800, type: "expense", category: "Развлечения", status: "paid", account: "Наличные" }
   ],
 
   budgets: [
