@@ -86,6 +86,65 @@ window.Views = window.Views || {};
       groups[groups.length - 1].rows.push(t);
     }
 
+    /* Этап 27: десктоп — настоящая таблица по референсу /operations;
+       мобиле — прежние карточки с группами по дням. */
+    const isDesktop = (() => {
+      const pv = document.documentElement.dataset.preview;
+      if (pv) return pv === "desktop";
+      return window.innerWidth >= 1024;
+    })();
+    const tagChips = (t) => (Array.isArray(t.tags) && t.tags.length
+      ? `<span class="tx-tags">${t.tags.slice(0, 2).map((x) => `<span>${esc(x)}</span>`).join("")}</span>`
+      : "");
+    const tableHTML = `
+      <div class="ops-table-wrap">
+        <table class="ops-table" aria-label="Таблица операций">
+          <thead><tr>
+            <th class="c-date">Дата</th>
+            <th class="c-op">Операция</th>
+            <th class="c-cat">Категория</th>
+            <th class="c-acc">Счёт</th>
+            <th class="c-type">Тип</th>
+            <th class="c-tags">Теги</th>
+            <th class="c-sum">Сумма</th>
+            <th class="c-act" aria-label="Действия"></th>
+          </tr></thead>
+          <tbody class="ops-group">
+            ${visible.map((t) => {
+              const cat = u.catMeta(t.category);
+              const acc = ctx.DB.accounts.find((a) => a.name === (t.account || "Карта"));
+              const cls = t.amount < 0 ? "t-expense" : "t-income";
+              const pending = t.status === "pending";
+              return `<tr class="row row--tx">
+                <td class="c-date">${esc(t.date)}</td>
+                <td class="c-op"><span class="tx-title">${esc(t.title)}</span></td>
+                <td class="c-cat"><span class="cat-pill" style="--c:${cat.color}"><span class="cat-ico" data-icon="${cat.icon}"></span>${esc(t.category)}</span></td>
+                <td class="c-acc"><span class="acc-dot" style="--c:${(acc && acc.color) || "var(--muted)"}"></span>${esc(t.account || "Карта")}</td>
+                <td class="c-type ${cls}">${t.amount < 0 ? "Расход" : "Доход"}</td>
+                <td class="c-tags">${tagChips(t)}</td>
+                <td class="c-sum ${cls}">${t.amount > 0 ? "+" : ""}${money(t.amount)}</td>
+                <td class="c-act">${pending
+                  ? `<button class="mini-btn" data-action="tx-pay" data-id="${t.id}" aria-label="Отметить оплаченным: ${esc(t.title)}">✓</button>`
+                  : ""}<button class="mini-btn mini-btn--ghost" data-action="tx-del" data-id="${t.id}" aria-label="Удалить операцию: ${esc(t.title)}"><span data-icon="trash"></span></button></td>
+              </tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>
+      <div class="ops-foot">
+        <span>1–${visible.length} из ${items.length}</span>
+        <span>стр. 1/1</span>
+      </div>`;
+    const cardsHTML = groups.map((g) => {
+      // итог дня в заголовке группы (референс «Счета и транзакции»)
+      const daySum = g.rows.reduce((s, t) => s + t.amount, 0);
+      return `
+        <section class="ops-group" aria-label="${esc(g.key)}">
+          <h3 class="group-head"><span>${esc(g.key)}</span><span class="group-sum ${daySum < 0 ? "t-expense" : "t-income"}">${daySum < 0 ? "−" : "+"}${money(Math.abs(daySum))}</span></h3>
+          <div class="list">${g.rows.map(txRowPayable).join("")}</div>
+        </section>`;
+    }).join("");
+
     const sortLabel = st.sort === "date" ? "Дата" : "Сумма";
     page(`
       <div class="ops-summary">
@@ -118,24 +177,7 @@ window.Views = window.Views || {};
           <h3>Ничего не найдено</h3>
           <p>Измените запрос или сбросьте фильтры.</p>
           <button class="secondary-btn" data-action="reset-ops-filters">Сбросить фильтры</button>
-        </div>` : `<div class="ops-head" aria-hidden="true">
-          <span></span>
-          <span>Операция</span>
-          <span>Категория</span>
-          <span>Счёт</span>
-          <span>Тип</span>
-          <span class="num">Сумма</span>
-          <span>Статус</span>
-          <span></span>
-        </div>` + groups.map((g) => {
-          // Этап 23: итог дня в заголовке группы (референс «Счета и транзакции»)
-          const daySum = g.rows.reduce((s, t) => s + t.amount, 0);
-          return `
-        <section class="ops-group" aria-label="${esc(g.key)}">
-          <h3 class="group-head"><span>${esc(g.key)}</span><span class="group-sum ${daySum < 0 ? "t-expense" : "t-income"}">${daySum < 0 ? "−" : "+"}${money(Math.abs(daySum))}</span></h3>
-          <div class="list">${g.rows.map(txRowPayable).join("")}</div>
-        </section>`;
-        }).join("")}
+        </div>` : (isDesktop ? tableHTML : cardsHTML)}
       ${items.length > visible.length ? `<div style="margin-top:10px;display:flex;justify-content:center;"><button class="primary-btn" data-action="load-more-ops">Загрузить ещё (${items.length - visible.length})</button></div>` : ""}
     `);
   };
