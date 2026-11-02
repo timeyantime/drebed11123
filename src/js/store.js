@@ -39,10 +39,35 @@
     } catch (_) {}
   }
 
+  /* ---------- Этап 22: экспорт/импорт JSON ---------- */
+  function dump() {
+    return {
+      app: "mono",
+      __v: VERSION,
+      exportedAt: new Date().toISOString(),
+      data: window.DB
+    };
+  }
+
+  function importData(obj) {
+    if (!obj || typeof obj !== "object") {
+      return { ok: false, error: "Файл не похож на резервную копию Mono" };
+    }
+    const data = obj.data && typeof obj.data === "object" ? obj.data : obj;
+    const required = ["students", "transactions", "accounts", "lessons", "goals"];
+    const missing = required.filter((k) => !Array.isArray(data[k]));
+    if (missing.length) {
+      return { ok: false, error: "В файле нет разделов: " + missing.join(", ") };
+    }
+    window.DB = data;
+    save();
+    return { ok: true };
+  }
+
   /* Инициализация: если в хранилище есть данные — подменяем mock.
      Вызывается ДО app.js (см. порядок <script> в index.html). */
   const saved = load();
   if (saved) window.DB = saved;
 
-  window.Store = { load, save, reset, KEY, VERSION };
+  window.Store = { load, save, reset, dump, importData, KEY, VERSION };
 })();

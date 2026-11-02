@@ -198,23 +198,12 @@ window.Views = window.Views || {};
           </div>
         </section>
 
-        <section class="panel">
+        <section class="panel panel-wide">
           <div class="panel-head">
             <h2>Последние операции</h2>
             <button class="link-btn" data-route="operations">Все →</button>
           </div>
           <div class="list">${recent.map(transactionRow).join("")}</div>
-        </section>
-
-        <section class="panel import-panel">
-          <div class="import-row">
-            <span class="quick-icon" data-icon="upload"></span>
-            <div class="import-copy">
-              <h3>Выписка из банка</h3>
-              <p>Загрузите файл, чтобы быстро добавить операции в бюджет.</p>
-            </div>
-            <button class="primary-btn" data-quick="statement">Загрузить</button>
-          </div>
         </section>
       </div>
     `);

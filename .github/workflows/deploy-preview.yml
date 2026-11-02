@@ -78,6 +78,8 @@ jobs:
           cp index.html _site/
           cp Иконка.png _site/icon.png
           cp -r src _site/src
+          # PWA: манифест, service worker и иконки 192/512 (Этап 22)
+          cp manifest.json sw.js icon-192.png icon-512.png _site/
           # favicon с кириллическим именем меняем на латиницу (надёжнее для URL на Pages)
           sed -i 's/Иконка.png/icon.png/' _site/index.html
       - uses: actions/configure-pages@v5
