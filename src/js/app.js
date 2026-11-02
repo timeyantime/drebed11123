@@ -337,7 +337,7 @@
       title: "Запланировать занятие",
       fields: [
         { name: "student", label: "Ученик", type: "select", options: window.DB.students.map((s) => s.name), required: true },
-        { name: "when", label: "Дата и время", type: "text", placeholder: "Напр.: Вт, 18:00", required: true },
+        { name: "when", label: "Дата и время", type: "datetime", required: true },
         { name: "duration", label: "Длительность", type: "select", options: ["45 мин", "60 мин", "90 мин"] }
       ]
     },
@@ -352,8 +352,9 @@
     transaction: {
       title: "Новая операция",
       fields: [
+        { name: "kind", label: "Тип операции", type: "segmented", options: [["expense", "Расход"], ["income", "Доход"]] },
         { name: "title", label: "Название", type: "text", placeholder: "Напр.: Оплата: Анна К.", required: true },
-        { name: "amount", label: "Сумма, ₽ (минус — расход)", type: "number", placeholder: "2400", required: true },
+        { name: "amount", label: "Сумма, ₽", type: "number", placeholder: "2400", required: true },
         { name: "category", label: "Категория", type: "select", options: ["Ученики", "Работа", "Личное", "Развитие"] },
         { name: "account", label: "Счёт", type: "select", options: window.DB.accounts.map((a) => a.name) }
       ]
@@ -384,19 +385,49 @@
     if (!f) return;
     genericTitle.textContent = f.title;
     genericForm.dataset.extra = extra ? JSON.stringify(extra) : "";
+    const todayISO = (() => {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    })();
+    let savedKind = "income";
+    try { savedKind = localStorage.getItem("mono-tx-kind") || "income"; } catch (_) {}
+    const control = (fl) => {
+      if (fl.type === "select") {
+        return `<select id="gf-${fl.name}" name="${fl.name}">${fl.options.map((o) => `<option>${u.esc(o)}</option>`).join("")}</select>`;
+      }
+      if (fl.type === "segmented") {
+        return `<div class="form-seg" role="radiogroup" aria-label="${fl.label}">
+          ${fl.options.map(([val, txt]) => `
+            <label class="form-seg-opt">
+              <input type="radio" name="${fl.name}" value="${val}" ${val === savedKind ? "checked" : ""}>
+              <span>${txt}</span>
+            </label>`).join("")}
+        </div>`;
+      }
+      if (fl.type === "datetime") {
+        return `<div class="field-row">
+          <input id="gf-${fl.name}-date" name="${fl.name}_date" type="date" min="${todayISO}" value="${todayISO}" required aria-label="Дата занятия">
+          <input id="gf-${fl.name}-time" name="${fl.name}_time" type="time" value="18:00" step="900" aria-label="Время занятия">
+        </div>`;
+      }
+      return `<input id="gf-${fl.name}" name="${fl.name}" type="${fl.type}" placeholder="${fl.placeholder || ""}" inputmode="${fl.type === "number" ? "decimal" : "text"}">`;
+    };
     genericForm.innerHTML = `
       ${f.fields.map((fl) => `
         <div class="field" data-field="${fl.name}">
-          <label for="gf-${fl.name}">${fl.label}${fl.required ? ' <span class="req">*</span>' : ""}</label>
-          ${fl.type === "select"
-            ? `<select id="gf-${fl.name}" name="${fl.name}">${fl.options.map((o) => `<option>${u.esc(o)}</option>`).join("")}</select>`
-            : `<input id="gf-${fl.name}" name="${fl.name}" type="${fl.type}" placeholder="${fl.placeholder || ""}" inputmode="${fl.type === "number" ? "decimal" : "text"}">`}
+          <label${fl.type === "segmented" ? "" : ` for="gf-${fl.name}${fl.type === "datetime" ? "-date" : ""}"`}>${fl.label}${fl.required ? ' <span class="req">*</span>' : ""}</label>
+          ${control(fl)}
           <p class="field-error" role="alert"></p>
         </div>`).join("")}
       <div class="form-actions">
         <button type="button" class="secondary-btn" data-action="close-modal">Отмена</button>
         <button type="submit" class="primary-btn">Сохранить</button>
       </div>`;
+    /* Этап 20: ошибка поля снимается, как только пользователь начал править */
+    genericForm.querySelectorAll("input, select").forEach((el) => {
+      const ev = el.type === "radio" ? "change" : "input";
+      el.addEventListener(ev, () => { if (el.name) setFieldError(el.name, ""); });
+    });
     genericForm.dataset.key = key;
     lastFocused = document.activeElement;
     // модалки внутри рамки устройства (Этап 8): уменьшаем, чтобы влезали в экран рамки
@@ -405,7 +436,7 @@
     genericModal.classList.add("open");
     genericBackdrop.classList.add("open");
     genericModal.dataset.form = key;
-    const first = genericForm.querySelector("input, select");
+    const first = genericForm.querySelector("input:not([type=radio]), select");
     if (first) first.focus();
   }
 
@@ -413,6 +444,22 @@
     genericModal.classList.remove("open");
     genericBackdrop.classList.remove("open");
     if (lastFocused) lastFocused.focus();
+  }
+
+  /* Этап 20: значение нативных date/time → «Сегодня, 18:00» / «05.11, 18:00» */
+  function formatWhen(value) {
+    if (!value) return "—";
+    const [d, t] = String(value).split("T");
+    const time = (t || "18:00").slice(0, 5);
+    const dt = new Date(`${d}T${time}`);
+    if (isNaN(dt)) return value;
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const day = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+    const diff = Math.round((day - today) / 86400000);
+    if (diff === 0) return `Сегодня, ${time}`;
+    if (diff === 1) return `Завтра, ${time}`;
+    return `${String(dt.getDate()).padStart(2, "0")}.${String(dt.getMonth() + 1).padStart(2, "0")}, ${time}`;
   }
 
   /* ---------- валидация формы (Этап 5D) ---------- */
@@ -430,8 +477,7 @@
 
   function setFieldError(name, msg) {
     const field = genericForm.querySelector(`[data-field="${name}"]`);
-    if (!field) return;
-    const err = field.querySelector(".field-error");
+    if (!field) return;    const err = field.querySelector(".field-error");
     const input = field.querySelector("input, select");
     if (err) err.textContent = msg || "";
     field.classList.toggle("invalid", !!msg);
@@ -456,15 +502,21 @@
     const key = genericModal.dataset.form;
     let extra = {}; try { extra = JSON.parse(genericForm.dataset.extra || "{}"); } catch (_) {}
     const data = Object.fromEntries(new FormData(genericForm).entries());
+    // дата+время занятия приходят двумя полями — склеиваем в одно значение
+    if (key === "lesson") data.when = data.when_date ? `${data.when_date}T${data.when_time || "18:00"}` : "";
     if (!validateForm(key, data)) { showToast("Проверьте выделенные поля"); return; }
     // Мутации через mutateForm: снимок DB до изменения → тост с «Отменить» (Этап 6)
     if (key === "student" && data.name) {
       mutateForm((db) => db.students.push({ id: Date.now(), name: data.name.trim(), subject: data.subject, next: "Нет записи", balance: "Ожидает", status: "unpaid", debt: 0, rate: Number(data.rate) || 0, monthIncome: 0 }), `Ученик добавлен: ${data.name.trim()}`);
     } else if (key === "transaction" && data.title) {
-      const amount = Number(String(data.amount).replace(/\s/g, "").replace(",", "."));
+      const raw = Number(String(data.amount).replace(/\s/g, "").replace(",", ".")) || 0;
+      // минус в поле суммы по-прежнему означает расход, даже если выбран «Доход»
+      const kind = raw < 0 ? "expense" : (data.kind === "income" ? "income" : "expense");
+      const amount = (kind === "income" ? 1 : -1) * Math.abs(raw);
+      try { localStorage.setItem("mono-tx-kind", kind); } catch (_) {}
       mutateForm((db) => db.transactions.unshift({ id: Date.now(), date: "сегодня", title: data.title.trim(), amount, type: amount < 0 ? "expense" : "income", category: data.category, status: "pending", account: data.account || "Карта" }), "Операция добавлена");
     } else if (key === "lesson" && data.student) {
-      mutateForm((db) => db.lessons.unshift({ id: Date.now(), student: data.student, subject: (db.students.find((s) => s.name === data.student) || {}).subject || "—", when: data.when || "—", duration: data.duration || "60 мин", status: "upcoming" }), `Занятие запланировано: ${data.student}`);
+      mutateForm((db) => db.lessons.unshift({ id: Date.now(), student: data.student, subject: (db.students.find((s) => s.name === data.student) || {}).subject || "—", when: formatWhen(data.when), duration: data.duration || "60 мин", status: "upcoming" }), `Занятие запланировано: ${data.student}`);
     } else if (key === "contribute" && extra.goalName) {
       mutateForm((db) => { const g = db.goals.find((x) => x.name === extra.goalName); if (g) g.saved = Math.min(g.target, g.saved + Number(data.sum)); }, `Цель пополнена на ${u.money(Number(data.sum))}`);
     } else if (key === "statement" && data.file) {
@@ -512,7 +564,11 @@
     try {
       if (!localStorage.getItem("mono-hint-long")) {
         localStorage.setItem("mono-hint-long", "1");
-        setTimeout(() => showToast("Долгое нажатие на + повторит последнее действие"), 450);
+        setTimeout(() => {
+          // не перекрываем открытую форму подсказкой про долгое нажатие
+          if (genericModal.classList.contains("open")) return;
+          showToast("Долгое нажатие на + повторит последнее действие");
+        }, 450);
       }
     } catch (_) {}
   }

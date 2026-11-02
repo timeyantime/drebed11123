@@ -223,6 +223,40 @@
 
 .form-actions { display: flex; gap: var(--sp-2); justify-content: flex-end; margin-top: var(--sp-2); }
 
+/* ---------- Этап 20: тип операции (сегмент) и дата/время в формах ---------- */
+/* нативные date/time/select корректно красятся в тёмной теме */
+:root[data-theme="dark"] { color-scheme: dark; }
+:root[data-theme="light"] { color-scheme: light; }
+
+.field-row { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: 8px; }
+
+.form-seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+.form-seg-opt { position: relative; display: block; }
+.form-seg-opt input { position: absolute; inset: 0; margin: 0; padding: 0; height: auto; border: 0; background: transparent; opacity: 0; cursor: pointer; }
+.form-seg-opt span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  transition: background 0.15s, color 0.15s;
+}
+.form-seg-opt input:checked + span { background: var(--hover); color: var(--text); }
+.form-seg-opt input[value="expense"]:checked + span { color: var(--red); }
+.form-seg-opt input[value="income"]:checked + span { color: var(--green); }
+.form-seg-opt input:focus-visible + span { outline: 2px solid var(--ring); outline-offset: 1px; }
+
 /* ---------- Focus-visible единый ---------- */
 .chip:focus-visible, .seg-btn:focus-visible, .link-btn:focus-visible,
 .secondary-btn:focus-visible, .hub-tile:focus-visible, .row:focus-visible {
