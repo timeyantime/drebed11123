@@ -88,15 +88,30 @@ window.DB = {
     { name: "Отпуск", target: 90000, saved: 9000, deadline: "Июнь 2027", history: [0, 1500, 3000, 5000, 7000, 9000] }
   ],
 
-  /* Этап 26: справочники для конструктора категорий и тегов */
+  /* Этап 26–27: справочник категорий (имена/цвета/иконки — из референса «Домкнига») */
   categories: [
-    { name: "Ученики", color: "var(--chart-2)" },
-    { name: "Работа", color: "var(--chart-3)" },
-    { name: "Продукты", color: "var(--chart-1)" },
-    { name: "Транспорт", color: "var(--chart-5)" },
-    { name: "Развлечения", color: "var(--chart-4)" },
-    { name: "Развитие", color: "var(--chart-7)" },
-    { name: "Личное", color: "var(--chart-6)" }
+    { name: "Ученики", kind: "income", color: "var(--chart-2)", icon: "teacher" },
+    { name: "Работа", kind: "expense", color: "var(--chart-3)", icon: "briefcase" },
+    { name: "Продукты", kind: "expense", color: "#00b894", icon: "cart" },
+    { name: "Транспорт", kind: "expense", color: "#74b9ff", icon: "car" },
+    { name: "Жильё", kind: "expense", color: "#fdcb6e", icon: "home" },
+    { name: "Коммуналка", kind: "expense", color: "#0984e3", icon: "zap" },
+    { name: "Связь", kind: "expense", color: "#636e72", icon: "phone" },
+    { name: "Подписки", kind: "expense", color: "#a29bfe", icon: "refresh" },
+    { name: "Здоровье", kind: "expense", color: "#ff7675", icon: "pill" },
+    { name: "Развлечения", kind: "expense", color: "#fd79a8", icon: "gamepad" },
+    { name: "Покупки", kind: "expense", color: "#6c5ce7", icon: "bag" },
+    { name: "Образование", kind: "expense", color: "#00cec9", icon: "book" },
+    { name: "Развитие", kind: "expense", color: "var(--chart-7)", icon: "book" },
+    { name: "Личное", kind: "expense", color: "var(--chart-6)", icon: "wallet" },
+    { name: "Прочее", kind: "expense", color: "#b2bec3", icon: "ellipsis" },
+    { name: "Зарплата", kind: "income", color: "#00b894", icon: "banknote" },
+    { name: "Бонус", kind: "income", color: "#fdcb6e", icon: "gift" },
+    { name: "Кэшбэк", kind: "income", color: "#74b9ff", icon: "refresh" },
+    { name: "Инвестиции", kind: "income", color: "#6c5ce7", icon: "investments" },
+    { name: "Подарок", kind: "income", color: "#ff9f7f", icon: "gift" },
+    { name: "Прочий доход", kind: "income", color: "#b2bec3", icon: "plus" },
+    { name: "Перевод", kind: "transfer", color: "#94a3b8", icon: "transfer" }
   ],
   tags: ["налог", "кабинет", "семья", "здоровье", "подписки"]
 };

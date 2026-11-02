@@ -927,9 +927,9 @@ body.framed .sheet-backdrop { z-index: 260 !important; }
 .ops-sum-sep { width: 1px; align-self: stretch; background: var(--border); }
 .ops-group { margin-top: var(--sp-4); }
 
-/* ---------- Этап 25: операции таблицей на десктопе ----------
-   Референс «Домкнига» /operations: колонки, шапка, сумма справа.
-   На мобиле строка остаётся карточкой (колонки скрыты). */
+/* ---------- Этап 25/27: операции — таблица на десктопе ----------
+   Референс «Домкнига» /operations: колонки, шапка, иконки категорий,
+   сумма справа. На мобиле — прежние карточки (колонки скрыты). */
 .tx-cat, .tx-acc, .tx-type { display: none; }
 .tx-status { display: inline-flex; align-items: center; }
 .tx-act { display: inline-flex; align-items: center; }
@@ -938,58 +938,83 @@ body.framed .sheet-backdrop { z-index: 260 !important; }
 @media (max-width: 1023.98px) {
   /* на телефоне «Оплачено» не показываем — только проблемные статусы */
   .tx-status .badge--paid { display: none; }
+  .tx-tags { display: none; }
 }
 
-@media (min-width: 1024px) {
-  .tx-cat { display: inline-flex; align-items: center; gap: 6px; min-width: 0; font-size: 12px; color: var(--text-2); }
-  .tx-cat .cat-dot { flex: none; }
-  .tx-acc { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .tx-type { display: block; font-size: 12px; font-weight: 700; }
+/* dev-preview «Телефон» на широком окне: карточки должны выглядеть как на телефоне */
+:root[data-preview="mobile"] .tx-status .badge--paid { display: none; }
+:root[data-preview="mobile"] .tx-tags { display: none; }
 
-  .ops-head {
-    display: grid;
-    grid-template-columns: 38px minmax(0, 1.5fr) 1fr 0.75fr 0.6fr 110px 100px 40px;
-    gap: 12px;
-    padding: 0 12px 8px;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--text-3);
-  }
-  .ops-head .num { text-align: right; }
-
-  .row--tx {
-    display: grid;
-    grid-template-columns: 38px minmax(0, 1.5fr) 1fr 0.75fr 0.6fr 110px 100px 40px;
-    gap: 12px;
-    align-items: center;
-  }
-  .row--tx .row-meta { display: none; }
-  .row--tx .amount { text-align: right; }
-  .row--tx .tx-status { justify-self: start; }
-  .row--tx .tx-act { justify-self: end; }
-  .row--tx:hover { background: var(--hover); }
-
-  /* Этап 26: компактная таблица — строки вплотную, как в референсе */
-  .ops-group .list {
-    gap: 0;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    overflow: hidden;
-  }
-  .row--tx {
-    min-height: 44px;
-    padding: 6px 12px;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-    border-top: 1px solid var(--line);
-  }
-  .ops-group .list .row--tx:first-child { border-top: 0; }
-  .ops-group { margin-top: var(--sp-3); }
+/* ---- таблица операций ---- */
+.ops-table-wrap {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
 }
+.ops-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.ops-table th {
+  padding: 10px 12px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text-3);
+  text-align: left; background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+.ops-table td {
+  padding: 8px 12px;
+  font-size: 13px;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--line);
+}
+.ops-table tbody tr:last-child td { border-bottom: 0; }
+.ops-table tbody tr:hover { background: var(--hover); }
+.ops-table .c-date { width: 78px; color: var(--muted); font-family: var(--font-num); white-space: nowrap; }
+.ops-table .c-op { width: auto; }
+.ops-table .c-cat { width: 190px; }
+.ops-table .c-acc { width: 152px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ops-table .c-type { width: 84px; font-weight: 700; }
+.ops-table .c-tags { width: 132px; }
+.ops-table .c-sum {
+  width: 124px; text-align: right;
+  font-family: var(--font-num); font-weight: 800; white-space: nowrap;
+}
+.ops-table th.c-sum { text-align: right; }
+.ops-table .c-act { width: 74px; text-align: right; white-space: nowrap; }
+.ops-table .c-act .mini-btn { width: 26px; min-width: 26px; height: 26px; padding: 0; }
+.ops-table .c-act .mini-btn + .mini-btn { margin-left: 4px; }
+.ops-table .c-act [data-icon] svg { width: 13px; height: 13px; }
+.ops-table .tx-title { font-weight: 600; }
+.mini-btn--ghost { background: transparent; border-color: transparent; color: var(--text-3); }
+.mini-btn--ghost:hover { background: var(--surface-2); border-color: var(--line); color: var(--red); }
+.ops-foot {
+  display: flex; justify-content: space-between; gap: 10px;
+  padding: 10px 4px 0;
+  font-size: 11px; color: var(--text-3);
+}
+
+/* строка таблицы не должна наследовать карточные стили .row */
+tr.row--tx {
+  display: table-row;
+  padding: 0; min-height: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+tr.row--tx:hover { background: transparent; }
+
+.cat-pill { display: inline-flex; align-items: center; gap: 7px; min-width: 0; color: var(--text-2); font-weight: 600; }
+.cat-ico {
+  width: 24px; height: 24px; border-radius: 50%; flex: none;
+  display: inline-grid; place-items: center;
+  background: color-mix(in srgb, var(--c) 18%, transparent);
+  color: var(--c);
+}
+.cat-ico svg { width: 14px; height: 14px; }
+.acc-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--c); margin-right: 6px; vertical-align: middle; }
+.c-tags .tx-tags { margin: 0; }
+
+@media (max-width: 1279px) { .ops-table .c-tags { display: none; } }
+@media (max-width: 1119px) { .ops-table .c-acc { display: none; } }
 .group-head {
   font-size: 12px; font-weight: 700; color: var(--text-3);
   text-transform: capitalize; padding: 0 4px var(--sp-2);

@@ -1032,6 +1032,12 @@
     mutate((db) => { const t = db.transactions.find((x) => x.id === id); if (t) t.status = "paid"; }, "Отмечено как оплачено");
   }
 
+  function deleteTx(id) {
+    mutateWithUndo((db) => {
+      db.transactions = db.transactions.filter((t) => t.id !== id);
+    }, "Операция удалена");
+  }
+
   function remindDebt(studentId) {
     const s = window.DB.students.find((x) => x.id === studentId);
     pushToast(s ? `Напоминание отправлено: ${s.name}` : "Напоминание отправлено", { kind: "info" });
@@ -1332,6 +1338,7 @@
       event.preventDefault();
       const a = actionBtn.dataset.action;
       if (a === "tx-pay") return markTxPaid(Number(actionBtn.dataset.id));
+      if (a === "tx-del") return deleteTx(Number(actionBtn.dataset.id));
       if (a === "remind") return remindDebt(Number(actionBtn.dataset.id));
       if (a === "planned-done") return togglePlannedDone(actionBtn.dataset.title);
       if (a === "goal-add") return contributeGoal(actionBtn.dataset.goal);
