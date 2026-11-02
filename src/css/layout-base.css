@@ -195,21 +195,54 @@
       margin: 0 auto;
     }
 
-    .page-head {
-      margin: 4px 0 14px;
+    /* Этап 18: заголовок раздела и подзаголовок переехали в шапку.
+       Контент начинается сразу с карточек — минус ~70px пустоты сверху. */
+    .header-titles {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 1px;
+      min-width: 0;
+      margin-left: 6px;
     }
 
-    .page-head h1 {
-      margin: 0 0 4px;
-      font-size: clamp(24px, 7vw, 34px);
-      line-height: 1.05;
-      letter-spacing: -0.03em;
+    .header-titles h1 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .page-head p {
+    .header-titles p {
       margin: 0;
       color: var(--muted);
-      font-size: 14px;
+      font-size: 12px;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    @media (max-width: 767.98px) {
+      /* на телефоне кнопке «Mono» места нет — отдаём его заголовку */
+      .header .brand { display: none; }
+      .header-titles { margin-left: 2px; }
+    }
+
+    @media (max-width: 419.98px) {
+      /* на узких экранах подзаголовок не помещается и рвётся многоточием —
+         оставляем только название раздела, чуть уменьшив кегль */
+      .header-titles p { display: none; }
+      .header-titles h1 { font-size: 16px; }
+    }
+
+    @media (max-width: 379.98px) {
+      /* 360px-телефоны: «Планируемые платежи» иначе не влезает на 1px */
+      .header-titles h1 { font-size: 15px; letter-spacing: -0.03em; }
     }
 
     .panel {

@@ -204,7 +204,6 @@
 
   function showSkeleton() {
     pageBody.innerHTML = `
-      <div class="skeleton sk-hero"></div>
       <div class="skeleton sk-card"></div>
       <div class="skeleton sk-row"></div>
       <div class="skeleton sk-row"></div>
