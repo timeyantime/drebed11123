@@ -926,6 +926,51 @@ body.framed .sheet-backdrop { z-index: 260 !important; }
 .ops-sum-val { font-family: var(--font-num); font-weight: 800; font-size: 15px; white-space: nowrap; }
 .ops-sum-sep { width: 1px; align-self: stretch; background: var(--border); }
 .ops-group { margin-top: var(--sp-4); }
+
+/* ---------- Этап 25: операции таблицей на десктопе ----------
+   Референс «Домкнига» /operations: колонки, шапка, сумма справа.
+   На мобиле строка остаётся карточкой (колонки скрыты). */
+.tx-cat, .tx-acc, .tx-type { display: none; }
+.tx-status { display: inline-flex; align-items: center; }
+.tx-act { display: inline-flex; align-items: center; }
+.ops-head { display: none; }
+
+@media (max-width: 1023.98px) {
+  /* на телефоне «Оплачено» не показываем — только проблемные статусы */
+  .tx-status .badge--paid { display: none; }
+}
+
+@media (min-width: 1024px) {
+  .tx-cat { display: inline-flex; align-items: center; gap: 6px; min-width: 0; font-size: 12px; color: var(--text-2); }
+  .tx-cat .cat-dot { flex: none; }
+  .tx-acc { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tx-type { display: block; font-size: 12px; font-weight: 700; }
+
+  .ops-head {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1.5fr) 1fr 0.75fr 0.6fr 110px 100px 40px;
+    gap: 12px;
+    padding: 0 12px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+  .ops-head .num { text-align: right; }
+
+  .row--tx {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1.5fr) 1fr 0.75fr 0.6fr 110px 100px 40px;
+    gap: 12px;
+    align-items: center;
+  }
+  .row--tx .row-meta { display: none; }
+  .row--tx .amount { text-align: right; }
+  .row--tx .tx-status { justify-self: start; }
+  .row--tx .tx-act { justify-self: end; }
+  .row--tx:hover { background: var(--hover); }
+}
 .group-head {
   font-size: 12px; font-weight: 700; color: var(--text-3);
   text-transform: capitalize; padding: 0 4px var(--sp-2);
@@ -939,7 +984,8 @@ body.framed .sheet-backdrop { z-index: 260 !important; }
   background: color-mix(in srgb, var(--c) 16%, transparent); color: var(--c);
 }
 .cat-icon svg, .cat-icon [data-icon] svg { width: 19px; height: 19px; }
-.row--tx { display: flex; align-items: center; gap: var(--sp-3); }
+/* display задаётся ниже (flex на мобиле / grid-таблица на десктопе) */
+.row--tx { align-items: center; gap: var(--sp-3); }
 .chip--sort { display: inline-flex; align-items: center; gap: 6px; }
 .chip--sort svg { width: 14px; height: 14px; }
 .empty-state {
@@ -1216,4 +1262,5 @@ body.framed .sheet-backdrop { z-index: 260 !important; }
   .chip, .seg-btn { min-height: 44px; }
   .mini-btn { min-width: 40px; min-height: 40px; }
 }
+
 
