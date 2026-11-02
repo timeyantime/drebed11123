@@ -9,7 +9,11 @@
   "use strict";
 
   const KEY = "mono-db";
-  const VERSION = 1;
+
+  /* ЭТАП 16: версия схемы 2 — с 14b/15 в planned появились account/_prevStatus/done,
+     в taxes — расширения (paid/due/nextDate/declarations), у accounts — history.
+     Старые v1-снимки несовместимы → сбрасываются на свежие mock-дефолты. */
+  const VERSION = 2;
 
   function load() {
     try {

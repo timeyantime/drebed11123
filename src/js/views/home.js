@@ -8,7 +8,7 @@ window.Views = window.Views || {};
 
   /* ---- общие partials (переиспользуются другими view) ---- */
   function lessonRow(l) {
-    const statusText = { upcoming: "Предстоит", done: "Проведено", canceled: "Отменено" }[l.status] || l.status;
+    const statusText = { upcoming: "Предстоит", done: "Проведено", canceled: "Отменён" }[l.status] || l.status;
     const tone = { upcoming: "badge--accent", done: "badge--paid", canceled: "badge--neutral" }[l.status] || "badge--neutral";
     return `
       <div class="row">
@@ -26,7 +26,7 @@ window.Views = window.Views || {};
     const tone = s.status === "unpaid" ? "badge--pending" : s.status === "active" ? "badge--paid" : "badge--neutral";
     return `
       <div class="row row-link" data-go-route="teacher" data-go-params="student/${s.id}" role="link" tabindex="0" aria-label="Открыть карточку: ${esc(s.name)}">
-        <span class="avatar" style="--c:hsl(${avatarHue(s.id)} 62% 52%)">${esc(s.name[0])}</span>
+        <span class="avatar" style="--c:hsl(${avatarHue(s.id)} 62% 52%)" >${esc(s.name[0])}</span>
         <div class="row-main">
           <div class="row-title">${esc(s.name)}</div>
           <div class="row-meta">${esc(s.subject)} • ${esc(s.next)}</div>
@@ -88,7 +88,41 @@ window.Views = window.Views || {};
       </button>`;
   }
 
+  /* ---- ЭТАП 16: onboarding при первом визите (localStorage mono-onboarded) ----
+     Панель в потоке home, а НЕ модалка: не блокирует клики и не ломает
+     первый запуск (и CI) оверлеем. Кнопка «Начать работу» ставит флаг
+     и перерисовывает home без панели. */
+  let lastCtx = null;
+  if (!window.__monoOnboardBound) {
+    window.__monoOnboardBound = true;
+    document.addEventListener("click", (e) => {
+      if (!e.target.closest("[data-onboard-done]")) return;
+      try { localStorage.setItem("mono-onboarded", "1"); } catch (_) {}
+      if (lastCtx && window.Views && window.Views.home) {
+        window.Views.home(lastCtx); // перерисовка home без панели
+        lastCtx.showToast("Добро пожаловать в Mono!", { kind: "success" });
+      }
+    });
+  }
+
+  function onboardHTML() {
+    let seen = false;
+    try { seen = !!localStorage.getItem("mono-onboarded"); } catch (_) {}
+    if (seen) return "";
+    return `
+      <section class="panel onboard-panel" aria-label="Знакомство с приложением">
+        <h3>Mono — финансы и ученики репетитора в одном месте</h3>
+        <ul class="onboard-list">
+          <li><span data-icon="teacher"></span>Ученики, занятия и статусы оплат</li>
+          <li><span data-icon="wallet"></span>Бюджет, счета и планируемые платежи</li>
+          <li><span data-icon="taxes"></span>Налоги УСН, инвестиции и цели</li>
+        </ul>
+        <button class="primary-btn" data-onboard-done>Начать работу</button>
+      </section>`;
+  }
+
   Views.home = function (ctx) {
+    lastCtx = ctx;
     const DB = ctx.DB;
     const upcoming = DB.lessons.filter((l) => l.status === "upcoming").slice(0, 3);
     const debtors = DB.students.filter((s) => s.status === "unpaid");
@@ -106,6 +140,8 @@ window.Views = window.Views || {};
     const catData = Object.entries(spendByCat).map(([label, value]) => ({ label, value }));
 
     page(`
+      ${onboardHTML()}
+
       <div class="quick-grid">
         ${ctx.quickActions.map(quickCardHTML).join("")}
       </div>
