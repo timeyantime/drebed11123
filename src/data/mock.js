@@ -21,11 +21,11 @@ window.DB = {
 
   transactions: [
     { id: 1, date: "01.11", title: "Оплата: Анна К.", amount: 2400, type: "income", category: "Ученики", status: "paid", account: "Карта" },
-    { id: 2, date: "31.10", title: "Аренда кабинета", amount: -15000, type: "expense", category: "Работа", status: "paid", account: "Карта" },
+    { id: 2, date: "31.10", title: "Аренда кабинета", amount: -15000, type: "expense", category: "Работа", tags: ["кабинет"], status: "paid", account: "Карта" },
     { id: 3, date: "30.10", title: "Оплата: Иван П.", amount: 2000, type: "income", category: "Ученики", status: "pending", account: "Карта" },
-    { id: 4, date: "29.10", title: "Продукты", amount: -3200, type: "expense", category: "Продукты", status: "paid", account: "Наличные" },
+    { id: 4, date: "29.10", title: "Продукты", amount: -3200, type: "expense", category: "Продукты", tags: ["семья"], status: "paid", account: "Наличные" },
     { id: 5, date: "28.10", title: "Оплата: Олег Д.", amount: 2400, type: "income", category: "Ученики", status: "paid", account: "Карта" },
-    { id: 6, date: "27.10", title: "Интернет", amount: -700, type: "expense", category: "Работа", status: "paid", account: "Карта" },
+    { id: 6, date: "27.10", title: "Интернет", amount: -700, type: "expense", category: "Работа", tags: ["кабинет"], status: "paid", account: "Карта" },
     { id: 7, date: "26.10", title: "Учебники", amount: -1800, type: "expense", category: "Развитие", status: "paid", account: "Карта" },
     { id: 8, date: "25.10", title: "Оплата: Дарья Л.", amount: 2200, type: "income", category: "Ученики", status: "paid", account: "Наличные" },
     { id: 9, date: "31.10", title: "Метро", amount: -300, type: "expense", category: "Транспорт", status: "paid", account: "Карта" },
@@ -86,7 +86,19 @@ window.DB = {
     { name: "Подушка безопасности", target: 300000, saved: 214000, deadline: "Март 2027", history: [120000, 150000, 172000, 190000, 205000, 214000] },
     { name: "Ноутбук для работы", target: 120000, saved: 45000, deadline: "Декабрь 2026", history: [5000, 12000, 21000, 30000, 38000, 45000] },
     { name: "Отпуск", target: 90000, saved: 9000, deadline: "Июнь 2027", history: [0, 1500, 3000, 5000, 7000, 9000] }
-  ]
+  ],
+
+  /* Этап 26: справочники для конструктора категорий и тегов */
+  categories: [
+    { name: "Ученики", color: "var(--chart-2)" },
+    { name: "Работа", color: "var(--chart-3)" },
+    { name: "Продукты", color: "var(--chart-1)" },
+    { name: "Транспорт", color: "var(--chart-5)" },
+    { name: "Развлечения", color: "var(--chart-4)" },
+    { name: "Развитие", color: "var(--chart-7)" },
+    { name: "Личное", color: "var(--chart-6)" }
+  ],
+  tags: ["налог", "кабинет", "семья", "здоровье", "подписки"]
 };
 
 /* Эталонная копия mock-данных для мгновенного сброса демо (Store.reset). */

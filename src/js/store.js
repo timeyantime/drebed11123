@@ -10,17 +10,27 @@
 
   const KEY = "mono-db";
 
-  /* ЭТАП 16: версия схемы 2 — с 14b/15 в planned появились account/_prevStatus/done,
-     в taxes — расширения (paid/due/nextDate/declarations), у accounts — history.
-     Старые v1-снимки несовместимы → сбрасываются на свежие mock-дефолты. */
-  const VERSION = 2;
+  /* ЭТАП 26: версия схемы 3 — появились справочники categories/tags.
+     Снимки v2 не сбрасываем: недостающие справочники добираем из mock. */
+  const VERSION = 3;
+
+  function withDefaults(data) {
+    if (!data || typeof data !== "object") return data;
+    if (!Array.isArray(data.categories)) {
+      data.categories = JSON.parse(JSON.stringify((window.DB && window.DB.categories) || []));
+    }
+    if (!Array.isArray(data.tags)) {
+      data.tags = ((window.DB && window.DB.tags) || []).slice();
+    }
+    return data;
+  }
 
   function load() {
     try {
       const raw = localStorage.getItem(KEY);
       if (!raw) return null;
       const parsed = JSON.parse(raw);
-      if (parsed && parsed.__v === VERSION && parsed.data) return parsed.data;
+      if (parsed && parsed.data && parsed.__v >= 2) return withDefaults(parsed.data);
     } catch (_) {}
     return null;
   }
@@ -59,7 +69,7 @@
     if (missing.length) {
       return { ok: false, error: "В файле нет разделов: " + missing.join(", ") };
     }
-    window.DB = data;
+    window.DB = withDefaults(data);
     save();
     return { ok: true };
   }

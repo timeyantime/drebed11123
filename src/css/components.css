@@ -970,12 +970,80 @@ body.framed .sheet-backdrop { z-index: 260 !important; }
   .row--tx .tx-status { justify-self: start; }
   .row--tx .tx-act { justify-self: end; }
   .row--tx:hover { background: var(--hover); }
+
+  /* Этап 26: компактная таблица — строки вплотную, как в референсе */
+  .ops-group .list {
+    gap: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .row--tx {
+    min-height: 44px;
+    padding: 6px 12px;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    border-top: 1px solid var(--line);
+  }
+  .ops-group .list .row--tx:first-child { border-top: 0; }
+  .ops-group { margin-top: var(--sp-3); }
 }
 .group-head {
   font-size: 12px; font-weight: 700; color: var(--text-3);
   text-transform: capitalize; padding: 0 4px var(--sp-2);
   /* Этап 23: дата слева, итог дня справа (референс «Счета и транзакции») */
   display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+}
+
+/* ---------- Этап 26: конструктор категорий/тегов, теги в форме и таблице ---------- */
+.dict-title { margin: 14px 0 8px; font-size: 11px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.dict-title:first-of-type { margin-top: 4px; }
+.dict-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.dict-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 30px; padding: 0 5px 0 10px;
+  border-radius: 999px; border: 1px solid var(--line);
+  background: var(--surface-2); font-size: 12px; font-weight: 600;
+}
+.dict-chip .cat-dot { flex: none; }
+.dict-chip.tag { color: var(--text-2); }
+.dict-del {
+  width: 20px; height: 20px; border-radius: 50%;
+  display: inline-grid; place-items: center;
+  font-size: 14px; line-height: 1; color: var(--muted);
+}
+.dict-del:hover { background: var(--hover); color: var(--red); }
+.dict-form { display: flex; gap: 8px; margin-top: 10px; }
+.dict-form input {
+  flex: 1; min-width: 0; height: 36px;
+  border-radius: 10px; border: 1px solid var(--line);
+  background: var(--surface-2); color: var(--text);
+  padding: 0 10px; font: inherit; font-size: 13px;
+}
+.dict-form input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.tag-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag-opt { position: relative; display: inline-block; }
+.tag-opt input { position: absolute; inset: 0; margin: 0; padding: 0; height: auto; border: 0; background: transparent; opacity: 0; cursor: pointer; }
+.tag-opt span {
+  display: inline-flex; align-items: center; height: 30px; padding: 0 10px;
+  border-radius: 999px; border: 1px solid var(--line); background: var(--surface-2);
+  color: var(--muted); font-size: 12px; font-weight: 600;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.tag-opt input:checked + span { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
+.tag-opt input:focus-visible + span { outline: 2px solid var(--ring); outline-offset: 1px; }
+.tag-empty { margin: 0; font-size: 12px; color: var(--muted); }
+
+.tx-tags { display: inline-flex; gap: 4px; margin-left: 8px; vertical-align: middle; }
+.tx-tags span {
+  font-size: 10px; font-weight: 700; color: var(--text-3);
+  background: var(--hover); border-radius: 999px; padding: 1px 6px;
+}
+@media (max-width: 1023.98px) {
+  .tx-tags { display: none; }
 }
 .group-sum { font-family: var(--font-num); font-size: 12px; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; }
 .cat-icon {

@@ -420,7 +420,8 @@
         { name: "kind", label: "Тип операции", type: "segmented", options: [["expense", "Расход"], ["income", "Доход"]] },
         { name: "title", label: "Название", type: "text", placeholder: "Напр.: Оплата: Анна К.", required: true },
         { name: "amount", label: "Сумма, ₽", type: "number", placeholder: "2400", required: true },
-        { name: "category", label: "Категория", type: "select", options: ["Ученики", "Работа", "Личное", "Развитие"] },
+        { name: "category", label: "Категория", type: "select", options: (window.DB.categories || []).map((c) => c.name) },
+        { name: "tags", label: "Теги", type: "tags" },
         { name: "account", label: "Счёт", type: "select", options: window.DB.accounts.map((a) => a.name) }
       ]
     },
@@ -468,12 +469,18 @@
           <input id="gf-${fl.name}-time" name="${fl.name}_time" type="time" value="18:00" step="900" aria-label="Время занятия">
         </div>`;
       }
+      if (fl.type === "tags") {
+        const list = window.DB.tags || [];
+        if (!list.length) return `<p class="tag-empty">Тегов пока нет — добавьте их в профиле.</p>`;
+        return `<div class="tag-pick">${list.map((t) => `
+          <label class="tag-opt"><input type="checkbox" name="${fl.name}" value="${u.esc(t)}"><span>${u.esc(t)}</span></label>`).join("")}</div>`;
+      }
       return `<input id="gf-${fl.name}" name="${fl.name}" type="${fl.type}" placeholder="${fl.placeholder || ""}" inputmode="${fl.type === "number" ? "decimal" : "text"}">`;
     };
     genericForm.innerHTML = `
       ${f.fields.map((fl) => `
         <div class="field" data-field="${fl.name}">
-          <label${fl.type === "segmented" ? "" : ` for="gf-${fl.name}${fl.type === "datetime" ? "-date" : ""}"`}>${fl.label}${fl.required ? ' <span class="req">*</span>' : ""}</label>
+          <label${fl.type === "segmented" || fl.type === "tags" ? "" : ` for="gf-${fl.name}${fl.type === "datetime" ? "-date" : ""}"`}>${fl.label}${fl.required ? ' <span class="req">*</span>' : ""}</label>
           ${control(fl)}
           <p class="field-error" role="alert"></p>
         </div>`).join("")}
@@ -559,7 +566,9 @@
     e.preventDefault();
     const key = genericModal.dataset.form;
     let extra = {}; try { extra = JSON.parse(genericForm.dataset.extra || "{}"); } catch (_) {}
-    const data = Object.fromEntries(new FormData(genericForm).entries());
+    const fd = new FormData(genericForm);
+    const data = Object.fromEntries(fd.entries());
+    const formTags = fd.getAll("tags");
     // дата+время занятия приходят двумя полями — склеиваем в одно значение
     if (key === "lesson") data.when = data.when_date ? `${data.when_date}T${data.when_time || "18:00"}` : "";
     if (!validateForm(key, data)) { showToast("Проверьте выделенные поля"); return; }
@@ -572,7 +581,7 @@
       const kind = raw < 0 ? "expense" : (data.kind === "income" ? "income" : "expense");
       const amount = (kind === "income" ? 1 : -1) * Math.abs(raw);
       try { localStorage.setItem("mono-tx-kind", kind); } catch (_) {}
-      mutateForm((db) => db.transactions.unshift({ id: Date.now(), date: "сегодня", title: data.title.trim(), amount, type: amount < 0 ? "expense" : "income", category: data.category, status: "pending", account: data.account || "Карта" }), "Операция добавлена");
+      mutateForm((db) => db.transactions.unshift({ id: Date.now(), date: "сегодня", title: data.title.trim(), amount, type: amount < 0 ? "expense" : "income", category: data.category, tags: formTags, status: "pending", account: data.account || "Карта" }), "Операция добавлена");
     } else if (key === "lesson" && data.student) {
       mutateForm((db) => db.lessons.unshift({ id: Date.now(), student: data.student, subject: (db.students.find((s) => s.name === data.student) || {}).subject || "—", when: formatWhen(data.when), duration: data.duration || "60 мин", status: "upcoming" }), `Занятие запланировано: ${data.student}`);
     } else if (key === "contribute" && extra.goalName) {
@@ -836,6 +845,52 @@
   document.addEventListener("click", (e) => {
     const row = e.target.closest("[data-budget]");
     if (row) openBudget(row.dataset.budget);
+  });
+
+  /* ---------- Этап 26: конструктор категорий и тегов ---------- */
+  document.addEventListener("submit", (e) => {
+    const form = e.target.closest("[data-add-category], [data-add-tag]");
+    if (!form) return;
+    e.preventDefault();
+    const name = String(new FormData(form).get("name") || "").trim();
+    if (!name) return;
+    const isCat = form.hasAttribute("data-add-category");
+    const list = isCat ? (window.DB.categories = window.DB.categories || []) : (window.DB.tags = window.DB.tags || []);
+    const exists = list.some((x) => (typeof x === "string" ? x : x.name).toLowerCase() === name.toLowerCase());
+    if (exists) {
+      showToast(isCat ? "Такая категория уже есть" : "Такой тег уже есть", "error");
+      return;
+    }
+    mutateWithUndo((db) => {
+      if (isCat) db.categories.push({ name, color: u.chartColor((db.categories.length + 1) % 8) });
+      else db.tags.push(name);
+    }, isCat ? `Категория добавлена: ${name}` : `Тег добавлен: ${name}`);
+  });
+
+  document.addEventListener("click", (e) => {
+    const delCat = e.target.closest("[data-del-category]");
+    if (delCat) {
+      const name = delCat.dataset.delCategory;
+      const used = (window.DB.transactions || []).filter((t) => t.category === name).length;
+      if (used) {
+        showToast(`Категория используется в ${used} операциях`, "error");
+        return;
+      }
+      mutateWithUndo((db) => {
+        db.categories = (db.categories || []).filter((c) => c.name !== name);
+      }, `Категория удалена: ${name}`);
+      return;
+    }
+    const delTag = e.target.closest("[data-del-tag]");
+    if (delTag) {
+      const tag = delTag.dataset.delTag;
+      mutateWithUndo((db) => {
+        db.tags = (db.tags || []).filter((t) => t !== tag);
+        (db.transactions || []).forEach((t) => {
+          if (Array.isArray(t.tags)) t.tags = t.tags.filter((x) => x !== tag);
+        });
+      }, `Тег удалён: ${tag}`);
+    }
   });
 
   function runQuick(key) {

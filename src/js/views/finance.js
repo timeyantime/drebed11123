@@ -29,7 +29,9 @@ window.Views = window.Views || {};
       <div class="row row--tx">
         ${catIcon(t)}
         <div class="row-main">
-          <div class="row-title">${esc(t.title)}</div>
+          <div class="row-title">${esc(t.title)}${Array.isArray(t.tags) && t.tags.length
+            ? `<span class="tx-tags">${t.tags.slice(0, 3).map((x) => `<span>${esc(x)}</span>`).join("")}</span>`
+            : ""}</div>
           <div class="row-meta">${esc(t.category)} • ${esc(t.account || "Карта")}</div>
         </div>
         <span class="tx-cat"><span class="cat-dot" style="--c:hsl(${hue} 62% 52%)"></span>${esc(t.category)}</span>
