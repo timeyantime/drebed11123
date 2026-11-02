@@ -118,7 +118,7 @@ window.Views = window.Views || {};
               return `<tr class="row row--tx">
                 <td class="c-date">${esc(t.date)}</td>
                 <td class="c-op"><span class="tx-title">${esc(t.title)}</span></td>
-                <td class="c-cat"><span class="cat-pill" style="--c:${cat.color}"><span class="cat-ico" data-icon="${cat.icon}"></span>${esc(t.category)}</span></td>
+                <td class="c-cat"><span class="cat-pill" style="--c:${cat.color}"><span class="cat-icon cat-icon--sm" data-icon="${cat.icon}"></span>${esc(t.category)}</span></td>
                 <td class="c-acc"><span class="acc-dot" style="--c:${(acc && acc.color) || "var(--muted)"}"></span>${esc(t.account || "Карта")}</td>
                 <td class="c-type ${cls}">${t.amount < 0 ? "Расход" : "Доход"}</td>
                 <td class="c-tags">${tagChips(t)}</td>

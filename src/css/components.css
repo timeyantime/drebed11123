@@ -1003,6 +1003,8 @@ tr.row--tx {
 tr.row--tx:hover { background: transparent; }
 
 .cat-pill { display: inline-flex; align-items: center; gap: 7px; min-width: 0; color: var(--text-2); font-weight: 600; }
+.cat-icon--sm { width: 24px; height: 24px; }
+.cat-icon--sm svg, .cat-icon--sm [data-icon] svg { width: 14px; height: 14px; }
 .cat-ico {
   width: 24px; height: 24px; border-radius: 50%; flex: none;
   display: inline-grid; place-items: center;
