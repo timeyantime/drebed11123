@@ -18,13 +18,13 @@ window.Views = window.Views || {};
     return `<span class="cat-icon" style="--c:hsl(${hue} 62% 52%)"><span data-icon="${icon}"></span></span>`;
   }
 
-  /* строка операции с кнопкой «Отметить оплаченным» для pending */
+  /* строка операции с кнопкой «Отметить оплаченным» для pending.
+     Этап 25: на десктопе строка раскладывается в таблицу (grid),
+     на мобиле остаётся карточкой — колонки скрыты. */
   function txRowPayable(t) {
     const cls = t.amount < 0 ? "expense" : "income";
-    const pendingBadge = t.status === "pending"
-      ? `<span class="badge badge--pending"><span class="dot"></span>Ожидает</span>
-         <button class="mini-btn" data-action="tx-pay" data-id="${t.id}" aria-label="Отметить оплаченным: ${esc(t.title)}">✓</button>`
-      : "";
+    const hue = CAT_HUE[t.category] != null ? CAT_HUE[t.category] : ((t.id || 1) * 67) % 360;
+    const pending = t.status === "pending";
     return `
       <div class="row row--tx">
         ${catIcon(t)}
@@ -32,8 +32,16 @@ window.Views = window.Views || {};
           <div class="row-title">${esc(t.title)}</div>
           <div class="row-meta">${esc(t.category)} • ${esc(t.account || "Карта")}</div>
         </div>
-        <div class="amount ${cls}">${money(t.amount)}</div>
-        ${pendingBadge}
+        <span class="tx-cat"><span class="cat-dot" style="--c:hsl(${hue} 62% 52%)"></span>${esc(t.category)}</span>
+        <span class="tx-acc">${esc(t.account || "Карта")}</span>
+        <span class="tx-type ${t.amount < 0 ? "t-expense" : "t-income"}">${t.amount < 0 ? "Расход" : "Доход"}</span>
+        <div class="amount ${cls}">${t.amount > 0 ? "+" : ""}${money(t.amount)}</div>
+        <span class="tx-status">${pending
+          ? `<span class="badge badge--pending">Ожидает</span>`
+          : `<span class="badge badge--paid">Оплачено</span>`}</span>
+        <span class="tx-act">${pending
+          ? `<button class="mini-btn" data-action="tx-pay" data-id="${t.id}" aria-label="Отметить оплаченным: ${esc(t.title)}">✓</button>`
+          : ""}</span>
       </div>`;
   }
 
@@ -108,7 +116,16 @@ window.Views = window.Views || {};
           <h3>Ничего не найдено</h3>
           <p>Измените запрос или сбросьте фильтры.</p>
           <button class="secondary-btn" data-action="reset-ops-filters">Сбросить фильтры</button>
-        </div>` : groups.map((g) => {
+        </div>` : `<div class="ops-head" aria-hidden="true">
+          <span></span>
+          <span>Операция</span>
+          <span>Категория</span>
+          <span>Счёт</span>
+          <span>Тип</span>
+          <span class="num">Сумма</span>
+          <span>Статус</span>
+          <span></span>
+        </div>` + groups.map((g) => {
           // Этап 23: итог дня в заголовке группы (референс «Счета и транзакции»)
           const daySum = g.rows.reduce((s, t) => s + t.amount, 0);
           return `
