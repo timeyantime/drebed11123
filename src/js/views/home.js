@@ -111,13 +111,18 @@ window.Views = window.Views || {};
     if (seen) return "";
     return `
       <section class="panel onboard-panel" aria-label="Знакомство с приложением">
-        <h3>Mono — финансы и ученики репетитора в одном месте</h3>
+        <div class="onboard-head">
+          <div>
+            <h3>Mono — финансы и ученики репетитора в одном месте</h3>
+            <p class="onboard-sub">Три вещи, которые собраны в одном приложении.</p>
+          </div>
+          <button class="primary-btn" data-onboard-done>Начать работу</button>
+        </div>
         <ul class="onboard-list">
-          <li><span data-icon="teacher"></span>Ученики, занятия и статусы оплат</li>
-          <li><span data-icon="wallet"></span>Бюджет, счета и планируемые платежи</li>
-          <li><span data-icon="taxes"></span>Налоги УСН, инвестиции и цели</li>
+          <li><span class="onboard-ico" data-icon="teacher"></span><span class="onboard-txt"><b>Ученики</b>Занятия и статусы оплат</span></li>
+          <li><span class="onboard-ico" data-icon="wallet"></span><span class="onboard-txt"><b>Бюджет</b>Счета и планируемые платежи</span></li>
+          <li><span class="onboard-ico" data-icon="taxes"></span><span class="onboard-txt"><b>Налоги</b>УСН, инвестиции и цели</span></li>
         </ul>
-        <button class="primary-btn" data-onboard-done>Начать работу</button>
       </section>`;
   }
 

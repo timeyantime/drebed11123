@@ -58,6 +58,11 @@ window.Views = window.Views || {};
           <p>${money(fact)} из ${money(plan)} · ${left >= 0 ? "свободно " + money(left) : "перерасход " + money(-left)}</p>
           <span class="bs-pace ${pace}">${paceText}</span>
         </div>
+        <div class="bs-stats">
+          <div class="bs-stat"><span class="bs-stat-label">План</span><span class="bs-stat-value">${money(plan)}</span></div>
+          <div class="bs-stat"><span class="bs-stat-label">Факт</span><span class="bs-stat-value">${money(fact)}</span></div>
+          <div class="bs-stat"><span class="bs-stat-label">${left >= 0 ? "Свободно" : "Перерасход"}</span><span class="bs-stat-value ${left >= 0 ? "t-income" : "t-expense"}">${money(Math.abs(left))}</span></div>
+        </div>
       </div>`;
   }
 
@@ -87,6 +92,7 @@ window.Views = window.Views || {};
     const income = DB.transactions.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0);
     const expense = DB.transactions.filter((t) => t.amount < 0).reduce((s, t) => s + t.amount, 0);
     const balance = income + expense;
+    const savings = income ? Math.round((balance / income) * 100) : 0;
 
     let items = [...DB.transactions];
     if (state.filter === "income") items = items.filter((t) => t.amount > 0);
@@ -125,12 +131,13 @@ window.Views = window.Views || {};
       <div class="kpi-grid">
         <div class="kpi"><span class="kpi-label">Доходы</span><span class="kpi-value t-income">${money(income)}</span></div>
         <div class="kpi"><span class="kpi-label">Расходы</span><span class="kpi-value t-expense">${money(expense)}</span></div>
-        <div class="kpi"><span class="kpi-label">Итог</span><span class="kpi-value">${money(balance)}</span></div>
-        <div class="kpi"><span class="kpi-label">Норма сбережений</span><span class="kpi-value">${income ? Math.round((balance / income) * 100) : 0}%</span><span class="kpi-sub">цель ≥ 20%</span></div>
+        <div class="kpi"><span class="kpi-label">Итог</span><span class="kpi-value ${balance < 0 ? "t-expense" : ""}">${money(balance)}</span></div>
+        <div class="kpi"><span class="kpi-label">Норма сбережений</span><span class="kpi-value ${savings < 0 ? "t-expense" : ""}">${savings}%</span><span class="kpi-sub">цель ≥ 20%</span></div>
       </div>
 
+      ${budgetSummary(DB)}
+
       <div class="dash-grid">
-        ${budgetSummary(DB)}
         <section class="panel">
           <div class="panel-head">
             <h2>Бюджеты по категориям</h2>

@@ -178,10 +178,15 @@
       transition: margin-left 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
 
-    /* Этап 10: «дыра» вместо fixed-хедера только на мобильных
-       (на десктопе место под хедер даёт padding у .content в @media). */
-    @media (max-width: 767.98px) {
-      .app::before { content: none; }
+    /* Этап 17: «дыра» под fixed-хедер нужна на всех размерах.
+       Раньше на мобильных она отключалась (content: none), и заголовок
+       страницы (#page-title) уезжал под шапку на каждом маршруте. */
+
+    /* Этап 17: комфортные touch-таргеты (≥44px) на сенсорных экранах */
+    @media (pointer: coarse) {
+      .icon-btn { width: 44px; height: 44px; }
+      .avatar-btn { width: 40px; height: 40px; }
+      .tab { min-height: 44px; }
     }
 
     .content-inner {
@@ -243,6 +248,9 @@
 
     .list {
       display: grid;
+      /* Этап 17: minmax(0,1fr) — иначе auto-колонка растягивалась по
+         max-content строки, и длинная строка операции вылезала за экран. */
+      grid-template-columns: minmax(0, 1fr);
       gap: 8px;
     }
 
@@ -375,15 +383,27 @@
       place-items: center;
     }
 
+    /* Этап 17: заголовок и подпись — в столбик (раньше оба span были
+       inline и склеивались в одну строку: «Ученик Новый контакт»). */
+    .quick-card > span:last-child {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      min-width: 0;
+    }
+
     .quick-title {
+      display: block;
       font-size: 13px;
       font-weight: 850;
     }
 
     .quick-sub {
+      display: block;
       margin-top: 2px;
       color: var(--muted);
       font-size: 12px;
+      line-height: 1.35;
     }
 
     .dash-grid {
@@ -476,6 +496,12 @@
       align-items: center;
       gap: 12px;
       flex-wrap: wrap;
+    }
+
+    /* Этап 17: в dash-grid панель импорта занимает остаток строки,
+       иначе справа от неё оставалась пустая ячейка. */
+    @media (min-width: 768px) {
+      .dash-grid .import-panel { grid-column: span 2; }
     }
 
     .import-copy {
