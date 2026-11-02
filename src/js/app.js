@@ -177,6 +177,71 @@
   document.addEventListener("focusout", hideChartTip);
   window.addEventListener("scroll", hideChartTip, { passive: true });
 
+  /* ---------- Этап 23: выбор месяца на TrendBars (референс D2) ---------- */
+  document.addEventListener("click", (e) => {
+    const col = e.target.closest("[data-trend-col]");
+    if (!col) return;
+    const root = col.closest("[data-trend]");
+    if (!root) return;
+    root.querySelectorAll("[data-trend-col]").forEach((c) => {
+      const on = c === col;
+      c.classList.toggle("is-sel", on);
+      c.setAttribute("aria-pressed", String(on));
+    });
+    const inc = root.querySelector("[data-trend-income]");
+    const exp = root.querySelector("[data-trend-expense]");
+    const net = root.querySelector("[data-trend-net]");
+    if (inc) inc.textContent = col.dataset.income || "";
+    if (exp) exp.textContent = col.dataset.expense || "";
+    if (net) {
+      net.textContent = col.dataset.net || "";
+      const neg = col.dataset.netNeg === "1";
+      net.classList.toggle("t-expense", neg);
+      net.classList.toggle("t-income", !neg);
+    }
+  });
+
+  /* ---------- Этап 23: donut ↔ легенда (референс D1) ---------- */
+  function setDonutFocus(wrap, idx) {
+    const svg = wrap.querySelector(".donut");
+    if (!svg) return;
+    const off = idx === null || idx === undefined;
+    svg.classList.toggle("is-dim", !off);
+    svg.querySelectorAll(".seg").forEach((s, i) => s.classList.toggle("is-active", i === idx));
+    wrap.querySelectorAll("[data-legend]").forEach((r) => r.classList.toggle("is-active", Number(r.dataset.legend) === idx));
+    const center = svg.querySelector(".donut-center");
+    const caption = svg.querySelector(".donut-caption");
+    if (!center) return;
+    if (off) {
+      center.textContent = svg.dataset.center || center.textContent;
+      if (caption) caption.textContent = svg.dataset.caption || "";
+    } else {
+      const seg = svg.querySelector(`.seg[data-seg="${idx}"]`);
+      if (seg) {
+        center.textContent = seg.dataset.value || "";
+        if (caption) caption.textContent = seg.dataset.label || "";
+      }
+    }
+  }
+
+  document.addEventListener("pointerover", (e) => {
+    const hit = e.target.closest("[data-seg], [data-legend]");
+    if (!hit) return;
+    const wrap = hit.closest(".donut-wrap");
+    if (!wrap) return;
+    const idx = hit.dataset.seg != null ? Number(hit.dataset.seg) : Number(hit.dataset.legend);
+    setDonutFocus(wrap, idx);
+  });
+
+  document.addEventListener("pointerout", (e) => {
+    const hit = e.target.closest("[data-seg], [data-legend]");
+    if (!hit) return;
+    const wrap = hit.closest(".donut-wrap");
+    if (!wrap) return;
+    if (e.relatedTarget && wrap.contains(e.relatedTarget)) return;
+    setDonutFocus(wrap, null);
+  });
+
   /* undo-обёртка: снимок DB до мутации → кнопка «Отменить» в тосте (Этап 6) */
   function snapshot() {
     try { return JSON.parse(JSON.stringify(window.DB)); } catch (_) { return null; }

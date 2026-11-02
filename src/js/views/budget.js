@@ -67,25 +67,9 @@ window.Views = window.Views || {};
   }
 
   function monthBars(months) {
-    const max = Math.max(...months.flatMap((m) => [m.income, m.expense]));
-    return `
-      <div class="bars">
-        ${months.map((m) => {
-          const tip = `${m.m} · Доходы ${money(m.income)} · Расходы ${money(m.expense)}`;
-          return `
-          <div class="bar-col" tabindex="0" role="img" aria-label="${tip}" data-tip="${tip}">
-            <div class="bar-pair">
-              <span class="bar income" style="height:${Math.round((m.income / max) * 100)}%"></span>
-              <span class="bar expense" style="height:${Math.round((m.expense / max) * 100)}%"></span>
-            </div>
-            <span class="bar-label">${m.m}</span>
-          </div>`;
-        }).join("")}
-      </div>
-      <div class="legend" style="margin-top:10px">
-        <div class="legend-item"><span class="cat-dot" style="--c:var(--green)"></span><span class="name">Доходы</span></div>
-        <div class="legend-item"><span class="cat-dot" style="--c:var(--red)"></span><span class="name">Расходы</span></div>
-      </div>`;
+    // Этап 23: единый компонент с «Дашбордами» — сетка, выбранный месяц,
+    // цифры месяца под графиком (референс «Домкнига» TrendBarCard)
+    return u.trendBars(months);
   }
 
   Views.budget = function (ctx) {

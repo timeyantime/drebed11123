@@ -121,6 +121,99 @@
 
 .chart-tip.show { opacity: 1; }
 
+/* ---------- Этап 23: TrendBars — сетка, выбранный месяц, сводка ----------
+   Референс: «Домкнига» TrendBarCard (D2): горизонтальная сетка, активный
+   столбец насыщенный, остальные приглушены, под графиком цифры месяца. */
+.trend { display: grid; gap: 10px; }
+.trend-plot { position: relative; height: 156px; }
+.trend-cols {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+.trend-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  background: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.trend-pair {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 3px;
+}
+.trend-bar {
+  display: block;
+  flex: none;
+  width: 10px;
+  max-width: 14px;
+  border-radius: 4px 4px 2px 2px;
+  transition: height 0.4s ease, opacity 0.18s ease;
+}
+.trend-bar.in { background: var(--green); }
+.trend-bar.ex { background: var(--red); }
+.trend-col:not(.is-sel) .trend-bar { opacity: 0.42; }
+.trend-col:hover .trend-bar { opacity: 0.75; }
+.trend-col.is-sel .trend-bar { opacity: 1; }
+.trend-label { font-size: 10px; line-height: 1; color: var(--muted); white-space: nowrap; }
+.trend-col.is-sel .trend-label { color: var(--text); font-weight: 800; }
+.trend-col:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+.trend-grid {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed var(--line);
+  opacity: 0.75;
+  pointer-events: none;
+}
+.trend-plot::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  border-top: 1px solid var(--line);
+  pointer-events: none;
+}
+.trend-summary { display: flex; gap: 14px; }
+.trend-sum { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.trend-sum span { font-size: 11px; color: var(--muted); }
+.trend-sum b { font-family: var(--font-num); font-size: 16px; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; }
+.trend-under { display: block; height: 2px; border-radius: 2px; margin-top: 5px; }
+.trend-under.in { background: var(--green); }
+.trend-under.ex { background: var(--red); }
+.trend-legend { display: flex; align-items: center; gap: 14px; font-size: 11px; color: var(--muted); }
+.trend-legend .swatch { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+.trend-legend .swatch.in { background: var(--green); }
+.trend-legend .swatch.ex { background: var(--red); }
+.trend-hint { margin-left: auto; color: var(--text-3); font-size: 11px; }
+@media (max-width: 767px) {
+  .trend-plot { height: 132px; }
+  .trend-summary { gap: 10px; }
+  .trend-sum b { font-size: 14px; }
+  .trend-hint { display: none; }
+}
+
+/* ---------- Этап 23: donut ↔ легенда (референс D1) ---------- */
+.donut .seg { transition: opacity 0.15s ease, stroke-width 0.15s ease; }
+.donut.is-dim .seg:not(.is-active) { opacity: 0.32; }
+.donut .seg.is-active { stroke-width: 23; }
+.legend-item { border-radius: 8px; padding: 2px 4px; margin: -2px -4px; transition: background 0.15s ease; cursor: default; }
+.legend-item.is-active { background: var(--hover); }
+
 /* ---------- Сегментированный контрол периода ---------- */
 .segmented.period { display: inline-flex; background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 3px; gap: 2px; }
 .segmented.period .seg-btn { border-radius: 999px; padding: 6px 14px; font-size: 12px; font-weight: 700; color: var(--muted); transition: background 0.15s, color 0.15s; }
@@ -836,7 +929,10 @@ body.framed .sheet-backdrop { z-index: 260 !important; }
 .group-head {
   font-size: 12px; font-weight: 700; color: var(--text-3);
   text-transform: capitalize; padding: 0 4px var(--sp-2);
+  /* Этап 23: дата слева, итог дня справа (референс «Счета и транзакции») */
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
 }
+.group-sum { font-family: var(--font-num); font-size: 12px; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; }
 .cat-icon {
   flex: 0 0 auto; width: 38px; height: 38px; border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
@@ -1083,3 +1179,4 @@ body.framed .sheet-backdrop { z-index: 260 !important; }
   .chip, .seg-btn { min-height: 44px; }
   .mini-btn { min-width: 40px; min-height: 40px; }
 }
+
