@@ -917,3 +917,39 @@ body.framed .sheet-backdrop { z-index: 260 !important; }
    pointer-events:auto, чтобы кнопка «Отменить» была кликабельной. */
 .toast { z-index: 1200 !important; pointer-events: auto; }
 .toast-undo { position: relative; z-index: 1; cursor: pointer; pointer-events: auto; }
+
+/* ============================================================
+   ЭТАП 16 — ученики v3 (секции статусов), onboarding, mobile polish
+   ============================================================ */
+
+/* Секции учеников при фильтре «Все»: счётчик + сумма (долг/выручка) в заголовке */
+.st-group .group-head { display: flex; align-items: center; gap: 8px; text-transform: none; }
+.st-count {
+  min-width: 20px; padding: 1px 7px; border-radius: 999px; text-align: center;
+  background: var(--hover); color: var(--text);
+  font-size: 11px; font-weight: 800;
+}
+.st-sum { font-family: var(--font-num); font-size: 12px; font-weight: 700; margin-left: auto; }
+
+/* Onboarding-панель первого визита (НЕ модалка: не блокирует клики, CI-safe) */
+.onboard-panel { border: 1px solid var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); margin-bottom: var(--sp-4); }
+.onboard-panel h3 { margin: 0 0 10px; font-size: 15px; }
+.onboard-list { display: flex; flex-direction: column; gap: 8px; margin: 0 0 12px; padding: 0; list-style: none; }
+.onboard-list li { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.onboard-list [data-icon] { width: 18px; height: 18px; color: var(--accent); flex: 0 0 auto; }
+.onboard-list [data-icon] svg { width: 18px; height: 18px; }
+
+/* Чипы: маски-градиенты по краям при горизонтальном скролле + snap (как .chip-scroll) */
+.chips {
+  flex-wrap: nowrap;
+  scroll-snap-type: x proximity;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 10px, #000 calc(100% - 10px), transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 10px, #000 calc(100% - 10px), transparent);
+}
+.chips .chip { scroll-snap-align: start; }
+
+/* Touch-таргеты ≥44px только на touch-устройствах (desktop/CI не затронут) */
+@media (pointer: coarse) {
+  .chip, .seg-btn { min-height: 44px; }
+  .mini-btn { min-width: 40px; min-height: 40px; }
+}
