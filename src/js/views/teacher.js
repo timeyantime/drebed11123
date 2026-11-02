@@ -121,20 +121,43 @@ window.Views = window.Views || {};
     const totalDebt = ctx.DB.students.reduce((s, x) => s + (x.debt || 0), 0);
     const monthIncome = ctx.DB.students.reduce((s, x) => s + (x.monthIncome || 0), 0);
 
-    const listHTML = items.length
-      ? `
-        <h2 class="sticky-title">${type === "students" ? "Ученики" : "Занятия"}</h2>
-        <div class="list">
-          ${items.map((it) => (type === "students" ? P().studentRow(it) : P().lessonRow(it))).join("")}
-        </div>`
-      : ctx.emptyHTML(
+    /* ---------- ЭТАП 16: секции учеников при фильтре «Все» ----------
+       Долги всегда сверху (как просрочки в planned), далее активные,
+       затем «без занятий». Внутри секции — текущая сортировка. */
+    const STUDENT_SECTIONS = [
+      { key: "unpaid", label: "С долгами", tone: "t-expense", sumOf: (rows) => rows.reduce((s, x) => s + (x.debt || 0), 0), sumLabel: "долг" },
+      { key: "active", label: "Активные", tone: "t-income", sumOf: (rows) => rows.reduce((s, x) => s + (x.monthIncome || 0), 0), sumLabel: "выручка" },
+      { key: "idle", label: "Без занятий", tone: "", sumOf: null, sumLabel: "" }
+    ];
+    function studentSectionsHTML() {
+      const known = STUDENT_SECTIONS.map((g) => Object.assign({}, g, { rows: items.filter((s) => s.status === g.key) }));
+      const rest = items.filter((s) => !STUDENT_SECTIONS.some((g) => g.key === s.status));
+      const sections = known.filter((g) => g.rows.length);
+      if (rest.length) sections.push({ key: "other", label: "Прочие", tone: "", sumOf: null, sumLabel: "", rows: rest });
+      return sections.map((g) => `
+        <section class="ops-group st-group" aria-label="${esc(g.label)}">
+          <h3 class="group-head">${esc(g.label)}<span class="st-count">${g.rows.length}</span>${g.sumOf ? `<span class="st-sum ${g.tone}">${money(g.sumOf(g.rows))} · ${esc(g.sumLabel)}</span>` : ""}</h3>
+          <div class="list">${g.rows.map((it) => P().studentRow(it)).join("")}</div>
+        </section>`).join("");
+    }
+
+    const grouped = type === "students" && filter === "all" && items.length > 0;
+    const listHTML = !items.length
+      ? ctx.emptyHTML(
           "Ничего не найдено",
           type === "students"
             ? "Под текущий фильтр не попал ни один ученик."
             : "Под текущий фильтр не попало ни одно занятие.",
           type === "students" ? "student" : "lesson",
           type === "students" ? "Добавить ученика" : "Запланировать занятие"
-        );
+        )
+      : grouped
+      ? studentSectionsHTML()
+      : `
+        <h2 class="sticky-title">${type === "students" ? "Ученики" : "Занятия"}</h2>
+        <div class="list">
+          ${items.map((it) => (type === "students" ? P().studentRow(it) : P().lessonRow(it))).join("")}
+        </div>`;
 
     page(`
       <div class="kpi-grid">
