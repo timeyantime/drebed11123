@@ -453,6 +453,13 @@
       margin-bottom: 10px;
     }
 
+    /* Этап 19: на телефоне фильтры занимают строку целиком, а чип
+       сортировки переносится и прижимается вправо — раньше он падал
+       влево и выглядел потерянным. */
+    @media (max-width: 767.98px) {
+      .page-tools > .chip { margin-left: auto; }
+    }
+
     .segmented {
       display: inline-flex;
       padding: 3px;
@@ -483,6 +490,11 @@
       overflow-x: auto;
       padding-bottom: 2px;
       scrollbar-width: none;
+      /* Этап 19: чипы занимают свободное место и скроллятся внутри себя,
+         а чип сортировки остаётся в той же строке (раньше он падал
+         на новую строку и выглядел потерянным). */
+      flex: 1 1 auto;
+      min-width: 0;
     }
 
     .chips::-webkit-scrollbar {

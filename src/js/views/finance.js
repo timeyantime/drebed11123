@@ -356,7 +356,7 @@ window.Views = window.Views || {};
     page(`
       <div class="kpi-grid">
         <div class="kpi"><span class="kpi-label">Стоимость портфеля</span><span class="kpi-value">${money(total)}</span><span class="kpi-sub ${change >= 0 ? "t-income" : "t-expense"}">${change >= 0 ? "+" : ""}${change.toFixed(1).replace(".", ",")}% за месяц</span></div>
-        <div class="kpi"><span class="kpi-label">Доходность за год</span><span class="kpi-value ${weightedGrowth >= 0 ? "t-income" : "t-expense"}">${weightedGrowth >= 0 ? "+" : ""}${weightedGrowth.toFixed(1).replace(".", ",")}% (${Math.round(weightedGrowth / 100 * total)})</span><span class="kpi-sub">взвешенная по активам</span></div>
+        <div class="kpi"><span class="kpi-label">Доходность за год</span><span class="kpi-value ${weightedGrowth >= 0 ? "t-income" : "t-expense"}">${weightedGrowth >= 0 ? "+" : ""}${weightedGrowth.toFixed(1).replace(".", ",")}% (${money(Math.round(weightedGrowth / 100 * total))})</span><span class="kpi-sub">взвешенная по активам</span></div>
         <div class="kpi"><span class="kpi-label">Активов</span><span class="kpi-value">${assets.length}</span><span class="kpi-sub">облигации · вклады · акции · фонды</span></div>
       </div>
       <section class="panel">
@@ -449,14 +449,17 @@ window.Views = window.Views || {};
           <polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           ${net.map((v, i) => `<circle cx="${(i * step + step / 2).toFixed(1)}" cy="${(H - pad - (Math.max(0, v) / maxV) * (H - pad * 2)).toFixed(1)}" r="3" fill="var(--accent)"/>`).join("")}
         </svg>
-        <div class="bars">${m.map((x, i) => `
-          <div class="bar-col" style="animation-delay:${i * 45}ms">
+        <div class="bars">${m.map((x, i) => {
+          const tip = `${x.m} · Доходы ${money(x.income)} · Расходы ${money(x.expense)} · Итог ${money(x.income - x.expense)}`;
+          return `
+          <div class="bar-col" style="animation-delay:${i * 45}ms" tabindex="0" role="img" aria-label="${tip}" data-tip="${tip}">
             <div class="bar-pair">
               <span class="bar income" style="height:${Math.round((x.income / maxV) * 100)}%"></span>
               <span class="bar expense" style="height:${Math.round((x.expense / maxV) * 100)}%"></span>
             </div>
             <span class="bar-label">${x.m}</span>
-          </div>`).join("")}</div>
+          </div>`;
+        }).join("")}</div>
       </div>`;
     })();
 

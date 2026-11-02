@@ -124,6 +124,59 @@
     pushToast(message, opts);
   }
 
+  /* ---------- Этап 19: общий тултип графиков (hover / focus / tap) ----------
+     Бары и точки диаграмм помечаются data-tip. На тач-устройствах title
+     не работает вовсе, поэтому подсказка живёт отдельным fixed-элементом
+     на body (вне transform-контекста рамки устройства). */
+  const chartTip = document.createElement("div");
+  chartTip.className = "chart-tip";
+  chartTip.setAttribute("role", "tooltip");
+  document.body.appendChild(chartTip);
+  let chartTipTimer = 0;
+
+  function placeChartTip(el) {
+    const text = el.getAttribute("data-tip");
+    if (!text) return;
+    chartTip.textContent = text;
+    chartTip.classList.add("show");
+    const r = el.getBoundingClientRect();
+    const tw = chartTip.offsetWidth;
+    const th = chartTip.offsetHeight;
+    const left = Math.min(Math.max(8, r.left + r.width / 2 - tw / 2), window.innerWidth - tw - 8);
+    const top = Math.max(8, r.top - th - 8);
+    chartTip.style.transform = `translate(${Math.round(left)}px, ${Math.round(top)}px)`;
+  }
+
+  function hideChartTip() {
+    chartTip.classList.remove("show");
+    clearTimeout(chartTipTimer);
+  }
+
+  document.addEventListener("pointerover", (e) => {
+    const el = e.target.closest("[data-tip]");
+    if (!el || e.pointerType === "touch") return;
+    placeChartTip(el);
+  });
+  document.addEventListener("pointerout", (e) => {
+    const el = e.target.closest("[data-tip]");
+    if (!el || el.contains(e.relatedTarget)) return;
+    if (e.pointerType !== "touch") hideChartTip();
+  });
+  document.addEventListener("pointerdown", (e) => {
+    if (e.pointerType !== "touch") return;
+    const el = e.target.closest("[data-tip]");
+    if (!el) return;
+    placeChartTip(el);
+    clearTimeout(chartTipTimer);
+    chartTipTimer = setTimeout(hideChartTip, 2600);
+  });
+  document.addEventListener("focusin", (e) => {
+    const el = e.target.closest("[data-tip]");
+    if (el) placeChartTip(el);
+  });
+  document.addEventListener("focusout", hideChartTip);
+  window.addEventListener("scroll", hideChartTip, { passive: true });
+
   /* undo-обёртка: снимок DB до мутации → кнопка «Отменить» в тосте (Этап 6) */
   function snapshot() {
     try { return JSON.parse(JSON.stringify(window.DB)); } catch (_) { return null; }
