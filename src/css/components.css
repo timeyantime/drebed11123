@@ -206,6 +206,9 @@
 @media (max-width: 767px) {
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }
   .donut { width: 112px; height: 112px; }
+  /* Этап 17: нечётный последний KPI (3 карточки на «Учителе», «Счетах»,
+     «Целях» и т.д.) занимает всю строку — иначе справа оставалась дыра. */
+  .kpi-grid > .kpi:last-child:nth-child(odd) { grid-column: 1 / -1; }
 }
 
 /* ---------- Разделитель в тулбаре (Этап 2) ---------- */
@@ -461,6 +464,8 @@ body.sheet-open { overflow: hidden; }
 .frame-toggle:hover { color: var(--text); }
 .frame-toggle.disabled { opacity: 0.45; pointer-events: none; }
 @media (max-width: 900px) { .frame-toggle span:last-child { display: none; } }
+/* Этап 17: на телефоне dev-рамка не нужна, а её чекбокс — тап-таргет 13px */
+@media (max-width: 767.98px) { .frame-toggle { display: none; } }
 
 /* ---- рамка устройства ---- */
 .device-frame { display: none; }
@@ -785,14 +790,26 @@ body.framed .sheet-backdrop { z-index: 260 !important; }
 .budget-row:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; border-radius: 12px; }
 
 /* Сводка месяца с кольцом */
-.budget-summary { display: flex; align-items: center; gap: var(--sp-4); padding: var(--sp-4); }
+/* Этап 17: сводка вынесена из dash-grid во всю ширину — раньше в сетке
+   под ней оставалась «дыра» на высоту соседней высокой панели. */
+.budget-summary { display: flex; align-items: center; gap: var(--sp-4); padding: var(--sp-4); margin-bottom: 12px; }
 .budget-summary .bs-ring { flex: none; }
+.budget-summary .bs-copy { flex: 1 1 auto; min-width: 0; }
 .budget-summary h3 { margin: 0 0 4px; font-size: 15px; }
 .budget-summary p { margin: 0 0 8px; font-size: 13px; color: var(--text-2); font-family: var(--font-num); }
 .bs-pace { display: inline-block; font-size: 12px; line-height: 1.45; padding: 5px 10px; border-radius: 999px; }
 .bs-pace.ahead { background: var(--green-bg); color: var(--green); }
 .bs-pace.behind { background: var(--amber-bg); color: var(--amber); }
 .bs-pace.over { background: var(--red-bg); color: var(--red); }
+/* Этап 17: план/факт/остаток справа — полоса сводки не пустует на широких экранах */
+.bs-stats { display: none; margin-left: auto; gap: 32px; padding-right: var(--sp-2); }
+.bs-stat { display: flex; flex-direction: column; gap: 4px; }
+.bs-stat-label { font-size: 11px; line-height: 1; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.bs-stat-value { font-family: var(--font-num); font-size: 15px; font-weight: 800; white-space: nowrap; }
+@media (min-width: 768px) {
+  .budget-summary p { display: none; }
+  .bs-stats { display: flex; }
+}
 
 /* Счета: спарклайн в списке */
 .acct-spark { flex: none; opacity: 0.9; margin-right: var(--sp-2); }
@@ -932,12 +949,22 @@ body.framed .sheet-backdrop { z-index: 260 !important; }
 .st-sum { font-family: var(--font-num); font-size: 12px; font-weight: 700; margin-left: auto; }
 
 /* Onboarding-панель первого визита (НЕ модалка: не блокирует клики, CI-safe) */
+/* Этап 17: заголовок + CTA в шапке, три пункта — равными карточками,
+   чтобы панель не выглядела пустым баннером на широком экране. */
 .onboard-panel { border: 1px solid var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); margin-bottom: var(--sp-4); }
-.onboard-panel h3 { margin: 0 0 10px; font-size: 15px; }
-.onboard-list { display: flex; flex-direction: column; gap: 8px; margin: 0 0 12px; padding: 0; list-style: none; }
-.onboard-list li { display: flex; align-items: center; gap: 8px; font-size: 13px; }
-.onboard-list [data-icon] { width: 18px; height: 18px; color: var(--accent); flex: 0 0 auto; }
-.onboard-list [data-icon] svg { width: 18px; height: 18px; }
+.onboard-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.onboard-head h3 { margin: 0; font-size: 16px; letter-spacing: -0.01em; }
+.onboard-sub { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+.onboard-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 16px 0 0; padding: 0; list-style: none; }
+.onboard-list li { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border-radius: 14px; background: var(--surface-2); font-size: 12.5px; line-height: 1.35; color: var(--text-2); }
+.onboard-ico { width: 32px; height: 32px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; flex: none; }
+.onboard-ico svg { width: 18px; height: 18px; }
+.onboard-txt { min-width: 0; }
+.onboard-txt b { display: block; color: var(--text); font-size: 13px; margin-bottom: 2px; }
+@media (max-width: 767px) {
+  .onboard-list { grid-template-columns: 1fr; }
+  .onboard-head .primary-btn { width: 100%; }
+}
 
 /* Чипы: маски-градиенты по краям при горизонтальном скролле + snap (как .chip-scroll) */
 .chips {

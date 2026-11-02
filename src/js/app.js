@@ -734,7 +734,7 @@
     }
   }
 
-  function applyPreview(mode) {
+  function applyPreview(mode, silent) {
     if (mode === "desktop") delete root.dataset.preview; else root.dataset.preview = mode;
     try { localStorage.setItem(PREVIEW_KEY, mode); } catch (_) {}
     document.querySelectorAll(".preview-btn").forEach((b) => {
@@ -751,7 +751,9 @@
       if (!ok) { removeFrame(); root.dataset.frame = "off"; try { localStorage.setItem(FRAME_KEY, "off"); } catch (_) {} }
       setFrameToggle(!!ok);
     }
-    showToast(`Режим предпросмотра: ${previewNames[mode]}`, "info");
+    // Этап 17: при старте режим восстанавливается молча — тост «Режим
+    // предпросмотра» на каждой загрузке перекрывал контент.
+    if (!silent) showToast(`Режим предпросмотра: ${previewNames[mode]}`, "info");
   }
   let savedPreview = "auto";
   try { savedPreview = localStorage.getItem(PREVIEW_KEY) || "auto"; } catch (_) {}
@@ -771,7 +773,7 @@
   } catch (_) {}
   u.fillIcons();
   setTheme(root.dataset.theme || "dark", false);
-  applyPreview(initialPreview);
+  applyPreview(initialPreview, true);
 
   /* восстановление рамки устройства из localStorage (Этап 8) */
   let savedFrame = "off";
