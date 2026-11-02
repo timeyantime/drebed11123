@@ -88,7 +88,10 @@
       const v = Math.abs(d.value);
       if (!total || !v) return;
       const frac = v / total;
-      segs += `<circle class="seg" r="${R}" cx="50" cy="50" stroke="${d.color || chartColor(i)}"
+      /* Этап 23: data-атрибуты для наведения — сегмент подсвечивает строку
+         легенды и наоборот (как в референсе «Домкнига» D1) */
+      segs += `<circle class="seg" data-seg="${i}" data-label="${esc(d.label)}" data-value="${esc(money(v))}"
+        r="${R}" cx="50" cy="50" stroke="${d.color || chartColor(i)}"
         stroke-dasharray="${(frac * C - 1.5).toFixed(2)} ${(C - frac * C + 1.5).toFixed(2)}"
         stroke-dashoffset="${(-offset * C).toFixed(2)}"/>`;
       offset += frac;
@@ -97,18 +100,60 @@
       ? `<text x="50" y="49" text-anchor="middle" class="donut-center">${esc(opts.centerText)}</text>
          <text x="50" y="59" text-anchor="middle" class="donut-caption">${esc(opts.caption || "")}</text>`
       : "";
-    return `<svg class="donut" viewBox="0 0 100 100" role="img" aria-label="${esc(opts.aria || "Диаграмма")}${segs ? "" : ""}">${segs}${center}</svg>`;
+    return `<svg class="donut" viewBox="0 0 100 100" role="img" aria-label="${esc(opts.aria || "Диаграмма")}"
+      data-center="${esc(opts.centerText || "")}" data-caption="${esc(opts.caption || "")}">${segs}${center}</svg>`;
   }
 
   function legendHTML(data, opts = {}) {
     const total = data.reduce((s, d) => s + Math.abs(d.value), 0);
     return `<div class="legend">${data.map((d, i) => `
-      <div class="legend-item">
+      <div class="legend-item" data-legend="${i}">
         <span class="cat-dot" style="--c:${d.color || chartColor(i)}"></span>
         <span class="name">${esc(d.label)}</span>
         <span class="val">${opts.raw ? esc(d.text || money(d.value)) : money(d.value)}</span>
         <span class="pct">${pct(Math.abs(d.value), total)}</span>
       </div>`).join("")}</div>`;
+  }
+
+  /* Столбчатая диаграмма «доходы/расходы по месяцам» (Этап 23).
+     Референс: «Домкнига» TrendBarCard — сетка, выбранный месяц,
+     цифры выбранного месяца под графиком, переключение по клику. */
+  function trendBars(months, opts = {}) {
+    if (!months || !months.length) return `<div class="muted">Нет данных</div>`;
+    const max = Math.max(1, ...months.flatMap((m) => [m.income, m.expense]));
+    const sel = months.length - 1;
+    const val = (i, key) => money(months[i][key]);
+    const net = (i) => months[i].income - months[i].expense;
+    return `<div class="trend" data-trend>
+      <div class="trend-plot">
+        <span class="trend-grid" style="bottom:66%"></span>
+        <span class="trend-grid" style="bottom:33%"></span>
+        <div class="trend-cols">
+          ${months.map((m, i) => {
+            const tip = `${m.m} · Доходы ${money(m.income)} · Расходы ${money(m.expense)}`;
+            return `<button type="button" class="trend-col${i === sel ? " is-sel" : ""}" data-trend-col="${i}"
+              data-income="${money(m.income)}" data-expense="${money(m.expense)}" data-net="${money(net(i))}" data-net-neg="${net(i) < 0 ? 1 : 0}"
+              aria-pressed="${i === sel}" aria-label="${esc(tip)}">
+              <span class="trend-pair">
+                <i class="trend-bar in" style="height:${Math.round((m.income / max) * 100)}%"></i>
+                <i class="trend-bar ex" style="height:${Math.round((m.expense / max) * 100)}%"></i>
+              </span>
+              <span class="trend-label">${m.m}</span>
+            </button>`;
+          }).join("")}
+        </div>
+      </div>
+      <div class="trend-summary">
+        <div class="trend-sum"><span>Доход</span><b class="t-income" data-trend-income>${val(sel, "income")}</b><i class="trend-under in"></i></div>
+        <div class="trend-sum"><span>Расход</span><b class="t-expense" data-trend-expense>${val(sel, "expense")}</b><i class="trend-under ex"></i></div>
+        <div class="trend-sum"><span>Итог</span><b class="${net(sel) < 0 ? "t-expense" : "t-income"}" data-trend-net data-net-neg="${net(sel) < 0 ? 1 : 0}">${money(net(sel))}</b></div>
+      </div>
+      <div class="trend-legend">
+        <span><i class="swatch in"></i>Доходы</span>
+        <span><i class="swatch ex"></i>Расходы</span>
+        <span class="trend-hint">${esc(opts.hint || "")}</span>
+      </div>
+    </div>`;
   }
 
   /* Кольцевой прогресс (цели) — Этап 11. ratio 0..1 */
@@ -124,7 +169,9 @@
   }
 
   window.u = {
-    ic, money, pct, fillIcons, esc, chartColor, donutSVG, legendHTML, ringSVG,
+    ic, money, pct, fillIcons, esc, chartColor, donutSVG, legendHTML, ringSVG, trendBars,
     moneyFormatter
   };
 })();
+
+

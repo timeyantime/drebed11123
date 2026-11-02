@@ -108,11 +108,15 @@ window.Views = window.Views || {};
           <h3>Ничего не найдено</h3>
           <p>Измените запрос или сбросьте фильтры.</p>
           <button class="secondary-btn" data-action="reset-ops-filters">Сбросить фильтры</button>
-        </div>` : groups.map((g) => `
+        </div>` : groups.map((g) => {
+          // Этап 23: итог дня в заголовке группы (референс «Счета и транзакции»)
+          const daySum = g.rows.reduce((s, t) => s + t.amount, 0);
+          return `
         <section class="ops-group" aria-label="${esc(g.key)}">
-          <h3 class="group-head">${esc(g.key)}</h3>
+          <h3 class="group-head"><span>${esc(g.key)}</span><span class="group-sum ${daySum < 0 ? "t-expense" : "t-income"}">${daySum < 0 ? "−" : "+"}${money(Math.abs(daySum))}</span></h3>
           <div class="list">${g.rows.map(txRowPayable).join("")}</div>
-        </section>`).join("")}
+        </section>`;
+        }).join("")}
       ${items.length > visible.length ? `<div style="margin-top:10px;display:flex;justify-content:center;"><button class="primary-btn" data-action="load-more-ops">Загрузить ещё (${items.length - visible.length})</button></div>` : ""}
     `);
   };
@@ -437,31 +441,10 @@ window.Views = window.Views || {};
     const dlt = net.length > 1 ? net[net.length - 1] - net[net.length - 2] : 0;
     const dltPct = net.length > 1 && net[net.length - 2] !== 0 ? Math.round((dlt / Math.abs(net[net.length - 2])) * 100) : null;
 
-    // D1: bar-chart с линией нетто-итога поверх
-    const maxV = Math.max(...m.flatMap((x) => [x.income, x.expense]));
-    const barsHTML = (() => {
-      const W = 320, H = 150, pad = 8;
-      const step = W / m.length;
-      const pts = net.map((v, i) => `${(i * step + step / 2).toFixed(1)},${(H - pad - (Math.max(0, v) / maxV) * (H - pad * 2)).toFixed(1)}`).join(" ");
-      return `
-      <div class="db-chart">
-        <svg viewBox="0 0 ${W} ${H}" class="db-net-line" preserveAspectRatio="none" aria-hidden="true">
-          <polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          ${net.map((v, i) => `<circle cx="${(i * step + step / 2).toFixed(1)}" cy="${(H - pad - (Math.max(0, v) / maxV) * (H - pad * 2)).toFixed(1)}" r="3" fill="var(--accent)"/>`).join("")}
-        </svg>
-        <div class="bars">${m.map((x, i) => {
-          const tip = `${x.m} · Доходы ${money(x.income)} · Расходы ${money(x.expense)} · Итог ${money(x.income - x.expense)}`;
-          return `
-          <div class="bar-col" style="animation-delay:${i * 45}ms" tabindex="0" role="img" aria-label="${tip}" data-tip="${tip}">
-            <div class="bar-pair">
-              <span class="bar income" style="height:${Math.round((x.income / maxV) * 100)}%"></span>
-              <span class="bar expense" style="height:${Math.round((x.expense / maxV) * 100)}%"></span>
-            </div>
-            <span class="bar-label">${x.m}</span>
-          </div>`;
-        }).join("")}</div>
-      </div>`;
-    })();
+    // D1: тот же компонент trendBars, что и в «Бюджете» (сетка + выбранный месяц)
+    const barsHTML = u.trendBars(m, { hint: "нажмите на столбец — цифры месяца обновятся" });
+    // шкала для мини-баров в списке «Доходы vs расходы по месяцам»
+    const maxV = Math.max(1, ...m.flatMap((x) => [x.income, x.expense]));
 
     page(`
       <div class="segmented period" role="tablist" aria-label="Период аналитики">
@@ -476,7 +459,7 @@ window.Views = window.Views || {};
         <div class="kpi"><span class="kpi-label">Средний итог</span><span class="kpi-value ${avg >= 0 ? "t-income" : "t-expense"}">${money(avg)}</span><span class="kpi-sub">за ${m.length} мес.</span></div>
       </div>
       <section class="panel">
-        <div class="panel-head"><h2>Доходы и расходы</h2><span class="note"><i class="lg-dot income"></i>доход&nbsp;&nbsp;<i class="lg-dot expense"></i>расход&nbsp;&nbsp;<i class="lg-dot net"></i>итог</span></div>
+        <div class="panel-head"><h2>Доходы и расходы</h2><span class="note">${m.length} мес.</span></div>
         ${barsHTML}
       </section>
       <section class="panel" style="margin-top:16px">
