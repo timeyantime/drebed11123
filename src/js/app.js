@@ -752,6 +752,92 @@
     dataImportFile.value = "";
   });
 
+  /* ---------- Этап 24: детали бюджета категории (референс B2) ---------- */
+  const budgetModal = document.getElementById("budgetModal");
+  const budgetBackdrop = document.getElementById("budgetBackdrop");
+  const budgetDetail = document.getElementById("budgetDetail");
+  const budgetTitle = document.getElementById("budgetTitle");
+  let budgetCurrent = null;
+
+  function budgetDetailRow(t) {
+    return `<div class="bd-row">
+      <span class="bd-row-main"><b>${u.esc(t.title)}</b><span>${u.esc(t.date)}</span></span>
+      <span class="bd-row-amt ${t.amount < 0 ? "t-expense" : "t-income"}">${u.money(t.amount)}</span>
+    </div>`;
+  }
+
+  function renderBudgetDetail(b) {
+    const limit = b.limit || Math.round(b.plan * 1.25);
+    const pc = b.plan ? Math.round((b.fact / b.plan) * 100) : 0;
+    const cls = b.fact > limit ? "over" : b.fact > b.plan ? "warn" : "ok";
+    const denom = Math.max(limit, b.fact, 1);
+    const txs = window.DB.transactions
+      .filter((t) => t.category === b.name || (b.name === "Работа / кабинет" && t.category === "Работа"))
+      .slice(0, 6);
+    budgetTitle.textContent = b.name;
+    const statusLabel = cls === "over" ? "превышен" : cls === "warn" ? "на грани" : "в норме";
+    const statusClass = cls === "over" ? "badge--overdue" : cls === "warn" ? "badge--pending" : "badge--paid";
+    budgetDetail.innerHTML = `
+      <div class="bd-hero">
+        <div class="bd-head">
+          <div class="bd-amount ${b.fact > b.plan ? "t-expense" : ""}">${u.money(b.fact)}</div>
+          <span class="badge ${statusClass}">${statusLabel}</span>
+        </div>
+        <div class="bd-sub">из ${u.money(b.plan)} · ${pc}%${b.fact > limit ? " · лимит превышен" : ""}</div>
+        <div class="dual-bar ${cls}">
+          <span class="db-fill" style="width:${Math.min(100, (b.fact / denom) * 100)}%"></span>
+          <span class="db-plan-mark" style="left:${Math.min(100, (b.plan / denom) * 100)}%"></span>
+        </div>
+      </div>
+      <h3 class="bd-title">Операции категории</h3>
+      ${txs.length
+        ? `<div class="bd-rows">${txs.map(budgetDetailRow).join("")}</div>`
+        : `<p class="bd-empty">Пока нет операций в этой категории.</p>`}
+      <form class="bd-form" data-budget-limit>
+        <label for="bdLimit">Лимит на месяц, ₽</label>
+        <div class="bd-form-row">
+          <input id="bdLimit" name="limit" type="number" min="0" step="100" inputmode="numeric" value="${b.plan}">
+          <button class="primary-btn" type="submit">Сохранить</button>
+        </div>
+      </form>`;
+  }
+
+  function openBudget(name) {
+    const b = window.DB.budgets.find((x) => x.name === name);
+    if (!b) return;
+    budgetCurrent = b;
+    renderBudgetDetail(b);
+    const mScale = frameOn() ? Math.min(1, (deviceFrame.clientHeight - 48) / 560) : 1;
+    budgetModal.style.setProperty("--modal-scale", String(mScale));
+    budgetModal.classList.add("open");
+    budgetBackdrop.classList.add("open");
+  }
+
+  function closeBudget() {
+    budgetModal.classList.remove("open");
+    budgetBackdrop.classList.remove("open");
+  }
+
+  budgetDetail.addEventListener("submit", (e) => {
+    if (!e.target.matches("[data-budget-limit]")) return;
+    e.preventDefault();
+    const val = Number(new FormData(e.target).get("limit"));
+    if (!isFinite(val) || val < 0) return;
+    const name = budgetCurrent ? budgetCurrent.name : "";
+    closeBudget();
+    mutateWithUndo((db) => {
+      const b = db.budgets.find((x) => x.name === name);
+      if (b) b.plan = Math.round(val);
+    }, `Лимит «${name}»: ${u.money(Math.round(val))}`);
+  });
+
+  budgetModal.querySelectorAll('[data-action="close-budget"]').forEach((btn) => btn.addEventListener("click", closeBudget));
+  budgetBackdrop.addEventListener("click", closeBudget);
+  document.addEventListener("click", (e) => {
+    const row = e.target.closest("[data-budget]");
+    if (row) openBudget(row.dataset.budget);
+  });
+
   function runQuick(key) {
     const action = quickActions.find((a) => a.key === key);
     if (!action) return;
@@ -1234,8 +1320,15 @@
         link.click();
         return;
       }
+      const brow = event.target.closest && event.target.closest("[data-budget]");
+      if (brow) {
+        event.preventDefault();
+        brow.click();
+        return;
+      }
     }
     if (event.key !== "Escape") return;
+    if (budgetModal.classList.contains("open")) { closeBudget(); return; }
     if (importModal.classList.contains("open")) { closeImport(); return; }
     if (genericModal.classList.contains("open")) { closeForm(); return; }
     if (isSheetOpen()) { closeSheet(); document.querySelector('[data-action="more"]')?.focus(); return; }

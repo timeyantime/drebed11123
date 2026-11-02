@@ -22,7 +22,7 @@ window.Views = window.Views || {};
           ? `<span class="budget-flag warn">план исчерпан, резерв ${money(limit - b.fact)}</span>`
           : `<span class="budget-flag ok">осталось ${money(rest)} из плана</span>`;
       return `
-        <div class="budget-row" tabindex="0" role="button" aria-label="${esc(b.name)}: ${money(b.fact)} из ${money(b.plan)}">
+        <div class="budget-row" tabindex="0" role="button" data-budget="${esc(b.name)}" aria-label="${esc(b.name)}: ${money(b.fact)} из ${money(b.plan)}">
           <div class="head">
             <span class="name"><span class="cat-dot" style="--c:${u.chartColor(i)}"></span>${b.name}</span>
             <span class="sum ${rest < 0 ? "t-expense" : ""}">${money(b.fact)} <span class="of">/ ${money(b.plan)}</span></span>
@@ -37,6 +37,22 @@ window.Views = window.Views || {};
           </div>
         </div>`;
     }).join("");
+  }
+
+  /* Этап 24: чипы-сводка по статусам (референс B2 BudgetCard) */
+  function budgetStatusChips(DB) {
+    let over = 0, warn = 0, ok = 0;
+    DB.budgets.forEach((b) => {
+      const limit = b.limit || Math.round(b.plan * 1.25);
+      if (b.fact > limit) over += 1;
+      else if (b.fact > b.plan) warn += 1;
+      else ok += 1;
+    });
+    return `<div class="budget-chips" aria-label="Статусы категорий">
+      <span class="bchip over"><i></i>превышено: ${over}</span>
+      <span class="bchip warn"><i></i>на грани: ${warn}</span>
+      <span class="bchip ok"><i></i>в норме: ${ok}</span>
+    </div>`;
   }
 
   function budgetSummary(DB) {
@@ -130,6 +146,7 @@ window.Views = window.Views || {};
             <h2>Бюджеты по категориям</h2>
             <span class="note">ноябрь</span>
           </div>
+          ${budgetStatusChips(DB)}
           ${budgetRows(DB)}
         </section>
 
