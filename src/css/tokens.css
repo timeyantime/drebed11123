@@ -81,6 +81,10 @@
   --line: #262d45;
   --text: #ffffff;
   --muted: #a0a0a8;
+  /* Этап 22: вторичный текст (--text-2/--text-3 использовались, но не были
+     объявлены — элементы молча наследовали цвет основного текста) */
+  --text-2: #cfcfd6;
+  --text-3: #9a9aa3;
 
   --hover: rgba(255, 255, 255, 0.08);
   --selected: rgba(255, 255, 255, 0.14);
@@ -126,6 +130,8 @@
   --line: #e7eaf2;
   --text: #111111;
   --muted: #5f6368;
+  --text-2: #33373a;
+  --text-3: #5f6368;
 
   --hover: rgba(0, 0, 0, 0.06);
   --selected: rgba(0, 0, 0, 0.1);
@@ -139,6 +145,19 @@
     0 10px 26px rgba(15, 23, 42, 0.08),
     0 0 0 1px rgba(15, 23, 42, 0.04);
   --backdrop: rgba(0, 0, 0, 0.24);
+
+  /* Этап 22: на белом фирменные #00b894/#ff6b6b/#e6a700 дают 2.1–2.8:1 —
+     для текста берём затемнённые варианты (4.7–6:1), графики остаются
+     на ярких --chart-* из :root. */
+  --green: #007a63;
+  --red: #c62f2f;
+  --amber: #8a6400;
+  --blue: #0b6bc0;
+
+  --green-bg: rgba(0, 122, 99, 0.1);
+  --red-bg: rgba(198, 47, 47, 0.1);
+  --amber-bg: rgba(138, 100, 0, 0.12);
+  --blue-bg: rgba(11, 107, 192, 0.1);
 }
 
 /* ============================================================
@@ -156,3 +175,4 @@
 .badge--info { background: var(--blue-bg); color: var(--blue); }
 .badge--neutral { background: var(--hover); color: var(--muted); }
 .badge--accent { background: var(--accent-soft); color: var(--accent); }
+

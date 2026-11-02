@@ -6,6 +6,10 @@
   <meta name="theme-color" content="#090909" />
   <title>Mono — репетитор</title>
   <link rel="icon" type="image/png" href="Иконка.png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Mono" />
 
   <script>
     (() => {
@@ -362,6 +366,9 @@
   </section>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- Этап 22: файл для импорта резервной копии -->
+  <input type="file" id="dataImportFile" accept="application/json,.json" hidden />
 
 
   <script src="src/js/core.js"></script>

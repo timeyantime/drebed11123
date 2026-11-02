@@ -39,12 +39,26 @@ window.Views = window.Views || {};
         <div class="panel-head"><h2>Данные</h2><span class="note">хранятся локально (localStorage)</span></div>
         <div class="setting-row">
           <div class="row-main">
+            <div class="row-title">Экспорт данных</div>
+            <div class="row-meta">Скачать JSON: ученики, операции, счета, платежи, цели</div>
+          </div>
+          <button class="secondary-btn" data-action="export-data">Скачать</button>
+        </div>
+        <div class="setting-row">
+          <div class="row-main">
+            <div class="row-title">Импорт данных</div>
+            <div class="row-meta">Заменить текущие данные резервной копией</div>
+          </div>
+          <button class="secondary-btn" data-action="import-data">Загрузить</button>
+        </div>
+        <div class="setting-row">
+          <div class="row-main">
             <div class="row-title">Учеников: ${students}</div>
             <div class="row-meta">Операций: ${txCount} • Счетов: ${ctx.DB.accounts.length} • Целей: ${ctx.DB.goals.length}</div>
           </div>
           <button class="secondary-btn danger" data-action="reset-demo">Сбросить демо</button>
         </div>
-        <p class="row-meta" style="padding:8px 0 2px">Изменения (новые ученики, операции, взносы в цели) сохраняются в браузере. «Сбросить демо» вернёт исходные данные.</p>
+        <p class="row-meta" style="padding:8px 0 2px">Изменения сохраняются в браузере. Экспорт/импорт переносит данные между устройствами, «Сбросить демо» вернёт исходные.</p>
       </section>
 
       <section class="panel" style="margin-top:16px">

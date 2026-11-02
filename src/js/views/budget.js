@@ -170,9 +170,9 @@ window.Views = window.Views || {};
           <span class="quick-icon" data-icon="upload"></span>
           <div class="import-copy">
             <h3>Импорт выписки</h3>
-            <p>CSV / PDF / ручное подтверждение операций — в следующей версии.</p>
+            <p>CSV или PDF из банка: разберём файл и покажем операции перед добавлением.</p>
           </div>
-          <button class="primary-btn" data-quick="statement">Загрузить</button>
+          <button class="primary-btn" data-quick="statement">Импортировать</button>
         </div>
       </section>
 

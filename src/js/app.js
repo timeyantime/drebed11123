@@ -638,6 +638,55 @@
     closeImport();
   });
 
+  /* ---------- Этап 22: экспорт/импорт JSON (профиль) ---------- */
+  const dataImportFile = document.getElementById("dataImportFile");
+
+  function exportData() {
+    const payload = window.Store.dump();
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const d = new Date();
+    a.href = url;
+    a.download = `mono-backup-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+    showToast("Данные выгружены в JSON", "success");
+  }
+
+  function importDataFromFile(file) {
+    if (!file) return;
+    const prev = snapshot();
+    const reader = new FileReader();
+    reader.onload = () => {
+      let parsed = null;
+      try { parsed = JSON.parse(String(reader.result)); } catch (_) {}
+      if (!parsed) { showToast("Не удалось прочитать JSON", "error"); return; }
+      const res = window.Store.importData(parsed);
+      if (!res.ok) { showToast(res.error, "error"); return; }
+      renderRoute(state.route);
+      pushToast(`Импортировано: ${window.DB.transactions.length} операций, ${window.DB.students.length} учеников`, {
+        kind: "success",
+        duration: 4200,
+        onUndo: prev ? () => {
+          window.DB = prev;
+          window.Store.save();
+          renderRoute(state.route);
+          pushToast("Импорт отменён", { kind: "info", duration: 1600 });
+        } : null
+      });
+    };
+    reader.onerror = () => showToast("Не удалось прочитать файл", "error");
+    reader.readAsText(file);
+  }
+
+  dataImportFile.addEventListener("change", () => {
+    importDataFromFile(dataImportFile.files && dataImportFile.files[0]);
+    dataImportFile.value = "";
+  });
+
   function runQuick(key) {
     const action = quickActions.find((a) => a.key === key);
     if (!action) return;
@@ -835,6 +884,8 @@
       return softRender("operations");
     }
     if (name === "close-modal") return closeForm();
+    if (name === "export-data") return exportData();
+    if (name === "import-data") return dataImportFile.click();
     if (name === "more") { isDesktopLayout() ? openFan(document.querySelector(".desktop-fab") || fabWraps[0]) : openSheet(); return; }
     /* fan-toggle больше не нужен: rail-FAB удалён (дублировал нижний FAB, Этап 14a-fix2) */
     if (name === "frame-exit") { setFrame(false); return; }
@@ -1220,4 +1271,12 @@
   fabWraps.forEach((w) => setFanState(w, false));
   updateNavBtns();
   renderWithSkeleton(routeFromHash());
+
+  /* ---------- Этап 22: PWA — офлайн-оболочка ----------
+     На file:// сервис-воркер недоступен, поэтому только http(s). */
+  if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js").catch(() => {});
+    });
+  }
 })();
