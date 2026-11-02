@@ -215,3 +215,18 @@ Smoke: заменён устаревший селектор .progress → .budge
 - Onboarding-модалка при первом запуске (localStorage mono-onboarded).
 - Техдолг: Store __v=2 миграция, ISO-даты вместо «сегодня/DD.MM».
 Публикация: штатный цикл (см. выше) — push -> PR -> squash merge -> CI -> grep Pages. Не коммитить platform snapshot-коммиты в PR-ветку без проверки diff.
+
+## Этап 16 — Ученики v3 (секции), onboarding-панель, mobile polish, Store v2 (2026-11-02)
+Сделано (ветка feature/etap-16):
+1. **Ученики v3** (src/js/views/teacher.js): при фильтре «Все» список группируется секциями .ops-group .st-group — «С долгами» (бейдж-сумма долга) → «Активные» (сумма выручки) → «Без занятий»; статусы вне трёх групп — секция «Прочие». Внутри секции действует текущая сортировка (name/next/balance). Заголовок секции: .st-count (кол-во) + .st-sum (сумма, тон t-expense/t-income/нейтральный). При любом чип-фильтре (Активные/Не оплаченные/Без занятий) — плоский список, как раньше: существующие тесты (smoke/undo/audit) кликают data-filter/data-sort и не затронуты.
+2. **Onboarding** (src/js/views/home.js): панель .onboard-panel на home при первом визите (localStorage mono-onboarded НЕ установлен). СПЕЦИАЛЬНО НЕ модалка: блокирующий оверлей на первом запуске сломал бы CI-тесты (smoke/undo/audit кликают по странице сразу). Кнопка «Начать работу» (data-onboard-done) ставит флаг, перерисовывает home (Views.home(lastCtx)) и показывает тост. Обработчик в home.js, привязка один раз через window.__monoOnboardBound; app.js в этом этапе НЕ менялся.
+3. **Мобильная полировка** (src/css/components.css, блок ЭТАП 16): .chips — white-space:nowrap + scroll-snap + градиентные маски по краям (как .chip-scroll); touch-таргеты ≥44px (min-height) для .chip/.seg-btn/.mini-btn через @media (pointer: coarse) — десктоп и CI не затронуты. Safe-area у sheet/toast/bottom-nav уже покрыта через --safe-bottom (tokens.css + layout-base.css) — дубль не добавлялся.
+4. **Техдолг Store** (src/js/store.js): VERSION 1 → 2 (схемный комментарий). Старые v1-снимки localStorage несовместимы со схемами 14b/15 (planned.account/_prevStatus/done, taxes.paid/due/declarations, accounts.history) — сбрасываются на свежие mock-дефолты при загрузке.
+
+Тесты: JS проверен синтаксически (new Function на каждый файл), байт-сверка с main (меняются только целевые блоки); полный прогон smoke.py/undotest.py/global-audit.py выполняет CI на push в main (deploy-preview.yml) — проверить conclusion после мержа. Этапного t16.py НЕТ: план — добавить в Этапе 17 (секции st-group при «Все», onboarding: панель → клик → панели нет + флаг).
+
+Осталось (Этап 17):
+- ISO-даты вместо DD.MM в моках (группировка операций/planned завязана на /^\d{2}\.\d{2}/ и демо-«сегодня» 02.11.2026 — на реальных датах сломается).
+- docs/t16.py: тесты секций учеников и onboarding-панели.
+- Профиль: экспорт/импорт JSON данных (Store.dump/load).
+
