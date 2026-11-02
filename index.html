@@ -316,7 +316,7 @@
     </ul>
   </section>
 
-<!-- Generic quick-action modal (формы: занятие/ученик/операция/выписка) -->
+<!-- Generic quick-action modal (формы: занятие/ученик/операция) -->
   <div class="modal-backdrop" id="genericBackdrop"></div>
   <section class="modal" id="genericModal" role="dialog" aria-modal="true" aria-labelledby="genericTitle">
     <div class="modal-head">
@@ -326,6 +326,39 @@
       </button>
     </div>
     <form id="genericForm" novalidate></form>
+  </section>
+
+  <!-- Импорт выписки (демо-разбор) — Этап 21 -->
+  <div class="modal-backdrop" id="importBackdrop"></div>
+  <section class="modal import-modal" id="importModal" role="dialog" aria-modal="true" aria-labelledby="importTitle">
+    <div class="modal-head">
+      <h2 id="importTitle">Импорт выписки</h2>
+      <button class="icon-btn" data-action="close-import" aria-label="Закрыть">
+        <span data-icon="close"></span>
+      </button>
+    </div>
+
+    <div class="import-drop" id="importDrop">
+      <span class="import-drop-icon" data-icon="upload"></span>
+      <h3>Перетащите файл сюда</h3>
+      <p>CSV или PDF из банка. В демо файл не читается — покажем пример разбора операций.</p>
+      <button type="button" class="secondary-btn" id="importPick">Выбрать файл</button>
+      <input type="file" id="importFile" accept=".csv,.pdf,text/csv,application/pdf" hidden />
+    </div>
+
+    <div class="import-preview" id="importPreview" hidden>
+      <div class="import-preview-head">
+        <span class="import-file"><b id="importFileName">file.csv</b> · операций: <b id="importCount">0</b></span>
+        <span class="badge badge--info">демо</span>
+      </div>
+      <div class="import-list" id="importList"></div>
+      <button type="button" class="link-btn" id="importAgain">Выбрать другой файл</button>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="secondary-btn" data-action="close-import">Отмена</button>
+      <button type="button" class="primary-btn" id="importSubmit" disabled>Импортировать</button>
+    </div>
   </section>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
