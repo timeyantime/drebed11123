@@ -536,6 +536,17 @@
       opacity: 0.92;
     }
 
+    /* Этап 21: недоступное действие (напр. «Импортировать», пока ничего не выбрано) */
+    .primary-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .primary-btn:disabled:hover {
+      opacity: 0.4;
+    }
+
     .import-panel .import-row {
       display: flex;
       align-items: center;

@@ -364,13 +364,6 @@
       fields: [
         { name: "sum", label: "Сумма взноса, ₽", type: "number", placeholder: "5000", required: true }
       ]
-    },
-    statement: {
-      title: "Загрузить выписку",
-      fields: [
-        { name: "file", label: "Файл выписки", type: "text", placeholder: "CSV / PDF (пока демо)", required: true },
-        { name: "account", label: "Счёт", type: "select", options: window.DB.accounts.map((a) => a.name) }
-      ]
     }
   }; }
 
@@ -519,10 +512,6 @@
       mutateForm((db) => db.lessons.unshift({ id: Date.now(), student: data.student, subject: (db.students.find((s) => s.name === data.student) || {}).subject || "—", when: formatWhen(data.when), duration: data.duration || "60 мин", status: "upcoming" }), `Занятие запланировано: ${data.student}`);
     } else if (key === "contribute" && extra.goalName) {
       mutateForm((db) => { const g = db.goals.find((x) => x.name === extra.goalName); if (g) g.saved = Math.min(g.target, g.saved + Number(data.sum)); }, `Цель пополнена на ${u.money(Number(data.sum))}`);
-    } else if (key === "statement" && data.file) {
-      // Демо-импорт выписки: добавляем «подтверждающую» операцию на выбранный счёт
-      const accName = data.account || "Карта";
-      mutateForm((db) => db.transactions.unshift({ id: Date.now(), date: "сегодня", title: `Импорт выписки: ${data.file}`, amount: 0.01, type: "income", category: "Личное", status: "paid", account: accName }), "Выписка импортирована");
     } else {
       window.Store.save();
       renderRoute(state.route);
@@ -531,11 +520,129 @@
     closeForm();
   });
 
+  /* ---------- Этап 21: импорт выписки (демо-разбор) ----------
+     Вместо фиктивной операции на 0,01 ₽: dropzone → предпросмотр
+     правдоподобных строк → выбор галочками → импорт с undo. */
+  const importModal = document.getElementById("importModal");
+  const importBackdrop = document.getElementById("importBackdrop");
+  const importDrop = document.getElementById("importDrop");
+  const importFile = document.getElementById("importFile");
+  const importPick = document.getElementById("importPick");
+  const importPreview = document.getElementById("importPreview");
+  const importList = document.getElementById("importList");
+  const importCount = document.getElementById("importCount");
+  const importFileName = document.getElementById("importFileName");
+  const importSubmit = document.getElementById("importSubmit");
+  const importAgain = document.getElementById("importAgain");
+  let importRows = [];
+
+  function demoStatementRows() {
+    const fmt = (d) => `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const day = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return fmt(d); };
+    return [
+      { date: day(0), title: "Оплата: Анна К.", category: "Ученики", amount: 2400 },
+      { date: day(0), title: "Кофе", category: "Личное", amount: -350 },
+      { date: day(1), title: "Продукты", category: "Личное", amount: -3200 },
+      { date: day(1), title: "Аренда кабинета", category: "Работа", amount: -15000 },
+      { date: day(2), title: "Оплата: Олег Д.", category: "Ученики", amount: 2400 }
+    ];
+  }
+
+  function updateImportCount() {
+    const n = importList.querySelectorAll("[data-imp-check]:checked").length;
+    importCount.textContent = String(n);
+    importSubmit.disabled = n === 0;
+    importSubmit.textContent = n ? `Импортировать (${n})` : "Импортировать";
+  }
+
+  function renderImportRows() {
+    importList.innerHTML = importRows.map((r, i) => `
+      <label class="imp-row">
+        <input type="checkbox" checked data-imp-check="${i}">
+        <span class="imp-main">
+          <span class="imp-title">${u.esc(r.title)}</span>
+          <span class="imp-meta">${r.date} · ${u.esc(r.category)}</span>
+        </span>
+        <span class="imp-amount ${r.amount < 0 ? "t-expense" : "t-income"}">${r.amount < 0 ? "−" : "+"}${u.money(Math.abs(r.amount))}</span>
+      </label>`).join("");
+    updateImportCount();
+  }
+
+  function handleImportFile(file) {
+    if (!file) return;
+    importRows = demoStatementRows();
+    importFileName.textContent = file.name || "выписка.csv";
+    importDrop.hidden = true;
+    importPreview.hidden = false;
+    renderImportRows();
+  }
+
+  function openImport() {
+    importDrop.hidden = false;
+    importPreview.hidden = true;
+    importRows = [];
+    importFile.value = "";
+    importSubmit.disabled = true;
+    importSubmit.textContent = "Импортировать";
+    const mScale = frameOn() ? Math.min(1, (deviceFrame.clientHeight - 48) / 560) : 1;
+    importModal.style.setProperty("--modal-scale", String(mScale));
+    importModal.classList.add("open");
+    importBackdrop.classList.add("open");
+    importPick.focus();
+  }
+
+  function closeImport() {
+    importModal.classList.remove("open");
+    importBackdrop.classList.remove("open");
+  }
+
+  importPick.addEventListener("click", () => importFile.click());
+  importFile.addEventListener("change", () => handleImportFile(importFile.files[0]));
+  importAgain.addEventListener("click", () => {
+    importDrop.hidden = false;
+    importPreview.hidden = true;
+    importRows = [];
+    importFile.value = "";
+    importSubmit.disabled = true;
+    importSubmit.textContent = "Импортировать";
+  });
+  importList.addEventListener("change", updateImportCount);
+  importModal.querySelectorAll('[data-action="close-import"]').forEach((b) => b.addEventListener("click", closeImport));
+  importBackdrop.addEventListener("click", closeImport);
+  ["dragenter", "dragover"].forEach((ev) => importDrop.addEventListener(ev, (e) => {
+    e.preventDefault();
+    importDrop.classList.add("drag");
+  }));
+  ["dragleave", "dragend", "drop"].forEach((ev) => importDrop.addEventListener(ev, () => importDrop.classList.remove("drag")));
+  importDrop.addEventListener("drop", (e) => {
+    e.preventDefault();
+    handleImportFile(e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files[0] : null);
+  });
+  importSubmit.addEventListener("click", () => {
+    const picked = [...importList.querySelectorAll("[data-imp-check]:checked")]
+      .map((cb) => importRows[Number(cb.dataset.impCheck)]);
+    if (!picked.length) return;
+    const account = (window.DB.accounts[0] || {}).name || "Карта";
+    mutateWithUndo((db) => {
+      picked.forEach((r, i) => db.transactions.unshift({
+        id: Date.now() + i,
+        date: r.date,
+        title: r.title,
+        amount: r.amount,
+        type: r.amount < 0 ? "expense" : "income",
+        category: r.category,
+        status: "paid",
+        account
+      }));
+    }, `Импортировано операций: ${picked.length} (демо)`);
+    closeImport();
+  });
+
   function runQuick(key) {
     const action = quickActions.find((a) => a.key === key);
     if (!action) return;
     try { localStorage.setItem("mono-last-quick", key); } catch (_) {}
-    openForm(key);
+    if (key === "statement") openImport(); else openForm(key);
     closeAllFans();
   }
 
@@ -1013,6 +1120,7 @@
       }
     }
     if (event.key !== "Escape") return;
+    if (importModal.classList.contains("open")) { closeImport(); return; }
     if (genericModal.classList.contains("open")) { closeForm(); return; }
     if (isSheetOpen()) { closeSheet(); document.querySelector('[data-action="more"]')?.focus(); return; }
     if (helpModal.classList.contains("open")) { closeHelp(); return; }
