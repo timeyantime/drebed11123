@@ -346,6 +346,20 @@
       opacity: 0.82;
     }
 
+    /* Этап 29: переводы между счетами — нейтральный тон, не доход/расход */
+    .amount.transfer {
+      font-weight: 760;
+      color: var(--muted, #64748b);
+    }
+
+    /* Этап 29: маска номера счёта в списке счетов (•• 4276) */
+    .acct-mask {
+      font-family: var(--font-num, inherit);
+      font-size: 12px;
+      color: var(--muted, #64748b);
+      letter-spacing: 0.02em;
+    }
+
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
