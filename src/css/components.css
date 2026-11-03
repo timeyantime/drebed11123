@@ -1376,3 +1376,55 @@ tr.row--tx:hover { background: transparent; }
 .legend-more:hover { background: var(--hover); }
 
 
+
+/* ---------- Этап 28: тулбар операций (референс «Домкнига / Операции») ---------- */
+.ops-toolbar { margin-bottom: var(--sp-3); }
+.ops-toolbar-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ops-toolbar .search-box { flex: 1 1 240px; min-width: 0; margin-bottom: 0; }
+.ops-toolbar-actions { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.ops-toolbar-filters {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-top: 10px;
+}
+.ops-toolbar-filters .seg {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: 999px; padding: 3px;
+}
+.ops-toolbar-filters .chip { height: 28px; box-shadow: none; }
+.ops-select {
+  height: 34px; padding: 0 10px;
+  border-radius: 10px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--text);
+  font: inherit; font-size: 12px; font-weight: 700;
+  max-width: 170px;
+}
+.ops-select:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+@media (min-width: 1024px) {
+  /* ПК-вид по референсу: поиск слева, кнопки действий прижаты вправо одной строкой */
+  .ops-toolbar-top { flex-wrap: nowrap; justify-content: space-between; }
+  .ops-toolbar-actions { margin-left: auto; }
+}
+@media (max-width: 767px) {
+  .ops-toolbar-filters { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .ops-toolbar-filters::-webkit-scrollbar { display: none; }
+  .ops-toolbar-filters .seg { flex: 0 0 auto; }
+}
+
+/* колонка «Время» после «Даты» (референс: Дата + Время отдельными колонками) */
+.ops-table .c-date { width: 64px; }
+.ops-table .c-time { width: 56px; color: var(--muted); font-family: var(--font-num); white-space: nowrap; }
+.ops-table .c-act { width: 100px; }
+@media (max-width: 1119px) { .ops-table .c-time { display: none; } }
+
+/* ghost-кнопка редактирования — синяя на hover (удаление остаётся красной) */
+.mini-btn--ghost:hover { color: var(--accent); }
+.mini-btn--ghost[data-action="tx-del"]:hover { color: var(--red); }
+
+/* danger-кнопка в подтверждении удаления */
+.primary-btn--danger { background: var(--red); color: #fff; }
+.primary-btn--danger:hover { filter: brightness(0.94); }
+
+/* модалка подтверждения удаления */
+.modal--confirm { width: min(420px, calc(100vw - 24px)); }
+.confirm-text { margin: 0 0 14px; font-size: 13px; line-height: 1.5; color: var(--muted); }
