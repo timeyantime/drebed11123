@@ -273,6 +273,24 @@ window.Views = window.Views || {};
       fg: "#ffffff",
       mark: '<svg viewBox="0 0 44 44" aria-hidden="true"><path d="M9 13h6l7 14 7-14h6L23 35h-2Z" fill="#fff"/><rect x="12" y="8" width="20" height="3" rx="1.5" fill="#fff" opacity=".75"/><rect x="15" y="38" width="14" height="3" rx="1.5" fill="#fff" opacity=".75"/></svg>',
     },
+    ozon: {
+      name: "Ozon Банк",
+      bg: "linear-gradient(135deg, #FF6B00 0%, #F24236 100%)",
+      fg: "#ffffff",
+      mark: '<svg viewBox="0 0 44 44" aria-hidden="true"><path d="M17.5 9C11.7 9 7 13.4 7 18.8c0 5.4 4.7 9.8 10.5 9.8 1.6 0 3-.3 4.3-.9L20 23a8.6 8.6 0 0 1-2.5.4c-3.4 0-6.1-2.6-6.1-5.7S14.1 12 17.5 12c1.7 0 3.2.8 4.3 2l3.4-3A11 11 0 0 0 17.5 9Z" fill="#fff"/><path d="M28.5 35c5.8 0 10.5-4.4 10.5-9.8 0-5.4-4.7-9.8-10.5-9.8-1.6 0-3 .3-4.3.9l1.8 4.7c.8-.3 1.6-.4 2.5-.4 3.4 0 6.1 2.6 6.1 5.7s-2.7 5.7-6.1 5.7c-1.7 0-3.2-.8-4.3-2l-3.4 3A11 11 0 0 0 28.5 35Z" fill="#fff"/></svg>',
+    },
+    yandexpay: {
+      name: "Яндекс Пэй",
+      bg: "linear-gradient(135deg, #FC3F1D 0%, #FA1414 55%, #111111 100%)",
+      fg: "#ffffff",
+      mark: '<svg viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="13" fill="none" stroke="#fff" stroke-width="3.4"/><path d="M22 9v26" stroke="#fff" stroke-width="3.4"/><path d="M22 22c4-6 8-8 11-8" stroke="#fff" stroke-width="3.4" fill="none" stroke-linecap="round"/></svg>',
+    },
+    otp: {
+      name: "ОТП Банк",
+      bg: "linear-gradient(135deg, #E4002B 0%, #8E0019 100%)",
+      fg: "#ffffff",
+      mark: '<svg viewBox="0 0 44 44" aria-hidden="true"><rect x="8" y="10" width="28" height="24" rx="6" fill="none" stroke="#fff" stroke-width="3"/><path d="M15 18h4v10h-4zM23 18h3.5l3 4 3-4H36v10h-3.5l-1.5-2.5-1.5 2.5H26zM11 23h3v2h-3z" fill="#fff"/></svg>',
+    },
     cash: {
       name: "Наличные",
       bg: "linear-gradient(135deg, #A8B3C5 0%, #64748B 100%)",
@@ -290,6 +308,10 @@ window.Views = window.Views || {};
   const CONTACTLESS_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8a8 8 0 0 1 0 8M11 6a12 12 0 0 1 0 12M15 4a16 16 0 0 1 0 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
 
   const ACCT_TYPE_LABEL = { card: "Дебетовая", savings: "Накопительный", cash: "Наличные", credit: "Кредитная" };
+
+  /* Этап 31: шеврон как в навигации («вперёд/назад»), вместо текстовых ‹ › */
+  const CHEV_LEFT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>';
+  const CHEV_RIGHT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
 
   /* маска номера: видны только последние 4 цифры, остальные группы «••••» */
   function cardNumber(acc) {
@@ -348,22 +370,30 @@ window.Views = window.Views || {};
     return card.offsetWidth + gap;
   }
 
+  /* Этап 31: индекс карточки, ближайшей к центру вьюпорта (общий для точек и панели) */
+  function activeCardIndex(el) {
+    const cards = Array.from(el.querySelectorAll(".bank-card"));
+    if (!cards.length) return 0;
+    const rect = el.getBoundingClientRect();
+    const center = rect.left + rect.width / 2;
+    let page = 0, best = Infinity;
+    cards.forEach((c, i) => {
+      const d = Math.abs(c.getBoundingClientRect().left + c.offsetWidth / 2 - center);
+      if (d < best) { best = d; page = i; }
+    });
+    return page;
+  }
+
   function updateCarouselState() {
     const el = document.getElementById("accountsCarousel");
     if (!el) return;
-    const step = getCardStep(el);
     const dots = document.getElementById("accountsDots");
+    let page = 0;
     if (dots) {
       const cards = Array.from(el.querySelectorAll(".bank-card"));
       /* Этап 30: активная точка — ближайшая к центру вьюпорта карточка
          (корректно и для full-page snap на мобиле, и для proximity-скролла на десктопе) */
-      const rect = el.getBoundingClientRect();
-      const center = rect.left + rect.width / 2;
-      let page = 0, best = Infinity;
-      cards.forEach((c, i) => {
-        const d = Math.abs(c.getBoundingClientRect().left + c.offsetWidth / 2 - center);
-        if (d < best) { best = d; page = i; }
-      });
+      page = activeCardIndex(el);
       dots.innerHTML = Array.from({ length: cards.length }, (_, i) =>
         `<button type="button" class="${i === page ? "on" : ""}" data-page="${i}" aria-label="Счёт ${i + 1}"></button>`).join("");
     }
@@ -374,6 +404,9 @@ window.Views = window.Views || {};
       prev.disabled = el.scrollLeft <= 2;
       next.disabled = el.scrollLeft >= maxScroll;
     }
+    /* Этап 31: панель «последние операции» следует за активной карточкой */
+    const accRecent = document.getElementById("acctRecent");
+    if (accRecent && window.DB && window.DB.accounts) renderActiveAccountPanel(window.DB, page);
   }
 
   /* единократная привязка слушателей к документу (делегирование) */
@@ -439,6 +472,42 @@ window.Views = window.Views || {};
     return `<svg class="acct-spark" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" aria-hidden="true">
       <polyline points="${pts}" fill="none" stroke="${color || "var(--blue)"}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline>
     </svg>`;
+  }
+
+  /* Этап 31: последние операции активной карточки (учитывает входящие переводы) */
+  function recentTxHTML(db, acc, limit = 4) {
+    const txs = db.transactions
+      .filter((t) => t.account === acc.name || (t.type === "transfer" && t.toAccount === acc.name))
+      .slice(0, limit);
+    if (!txs.length) return `<div class="muted" style="padding:10px 12px">Пока нет операций по этому счёту.</div>`;
+    return `<div class="list">${txs.map((t) => {
+      const isTransfer = t.type === "transfer";
+      const incoming = t.type === "income" || (isTransfer && t.toAccount === acc.name && t.account !== acc.name);
+      const sumCls = isTransfer ? "transfer" : (incoming ? "income" : "expense");
+      const sign = isTransfer ? "↔ " : (incoming ? "+ " : "− ");
+      const meta = [u.fmtDM(String(t.date)), t.category].filter(Boolean).join(" · ");
+      return `<button type="button" class="recent-row" data-go-route="accounts" data-go-params="account:${esc(acc.id)}">
+        <span class="recent-main">
+          <span class="recent-title">${esc(t.title)}</span>
+          <span class="recent-meta">${esc(meta)}</span>
+        </span>
+        <span class="recent-sum ${sumCls}">${sign}${money(Math.abs(Number(t.amount) || 0))}</span>
+      </button>`;
+    }).join("")}</div>`;
+  }
+
+  /* панель под каруселью: заголовок + последние N операций активной карты */
+  function renderActiveAccountPanel(db, idx) {
+    const panel = document.getElementById("acctRecent");
+    if (!panel) return;
+    const acc = db.accounts[idx] || db.accounts[0];
+    if (!acc) return;
+    panel.innerHTML = `
+      <div class="acct-recent-head">
+        <h3>${esc(acc.name)} — последние операции</h3>
+        <button class="link-btn" data-go-route="accounts" data-go-params="account:${esc(acc.id)}">Все операции →</button>
+      </div>
+      ${recentTxHTML(db, acc)}`;
   }
 
   Views.accounts = function (ctx) {
@@ -508,13 +577,19 @@ window.Views = window.Views || {};
         <div class="kpi"><span class="kpi-label">Итог</span><span class="kpi-value ${monthIn + monthOut >= 0 ? "t-income" : "t-expense"}">${money(monthIn + monthOut)}</span><span class="kpi-sub">${ctx.DB.accounts.length} счёта(ов)</span></div>
       </div>
       <div class="carousel-wrap">
-        <button class="carousel-arrow left" id="accountsPrev" type="button" aria-label="Предыдущий счёт" data-carousel-scroll="-1">‹</button>
+        <button class="carousel-arrow left" id="accountsPrev" type="button" aria-label="Предыдущий счёт" data-carousel-scroll="-1">${CHEV_LEFT}</button>
         <div class="accounts-carousel${carouselAnimated ? "" : " animated"}" id="accountsCarousel" role="list" aria-label="Счета">
           ${ctx.DB.accounts.map((a, i) => bankCardHTML(a, i)).join("")}
         </div>
-        <button class="carousel-arrow right" id="accountsNext" type="button" aria-label="Следующий счёт" data-carousel-scroll="1">›</button>
+        <button class="carousel-arrow right" id="accountsNext" type="button" aria-label="Следующий счёт" data-carousel-scroll="1">${CHEV_RIGHT}</button>
       </div>
       <div class="carousel-dots" id="accountsDots" aria-label="Навигация по счетам"></div>
+      <!-- Этап 31: действия над счетами + последние операции активной карты -->
+      <div class="accounts-actions">
+        <button class="secondary-btn" data-action="add-account" type="button"><span data-icon="plus"></span>Добавить счёт</button>
+        <button class="secondary-btn" data-action="transfer-between" type="button"><span data-icon="transfer"></span>Перевести между счетами</button>
+      </div>
+      <section class="panel acct-recent" id="acctRecent" aria-live="polite"></section>
       <section class="panel import-panel" style="margin-top:16px">
         <div class="import-row">
           <span class="quick-icon" data-icon="upload"></span>
