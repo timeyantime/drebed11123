@@ -31,7 +31,7 @@
     route: "home",
     teacher: { tab: "students", filter: "all", sort: "name" },
     budget: { filter: "month", sort: "date", limit: 5 },
-    operations: { filter: "all", sort: "date", dir: "desc", limit: 8, query: "", account: "all", category: "all", period: "all", selected: null },
+    operations: { filter: "all", sort: "date", dir: "desc", limit: 8, query: "", account: "all", category: "all", period: "all", selected: null, checked: [] },
     dashboards: { period: "6" },
     detail: null // { kind: "student", id } — детальная страница (Этап 5B)
   };
@@ -420,7 +420,17 @@
   }
 
   /* быстрый мягкий перерендер текущего раздела (фильтры/табы/сортировки) */
-  function softRender(route) { renderRoute(route || state.route, undefined, { soft: true }); }
+  function softRender(route) {
+    renderRoute(route || state.route, undefined, { soft: true });
+    markIndeterminate(); // Этап 34: select-all «полувыбрано» — нативное свойство, ставим после рендера
+  }
+
+  /* Этап 34: после мягкого ререндера таблицы — состояние «полувыбрано»
+     у чекбокса select-all (нативное свойство, в HTML-атрибуте не выражается). */
+  function markIndeterminate() {
+    const all = document.querySelector("[data-action='ops-check-all']");
+    if (all) all.indeterminate = all.dataset.indeterminate === "1" && !all.checked;
+  }
 
   /* ---------- сортировки / циклы ---------- */
   function cycleSort(scope) {
@@ -1222,6 +1232,23 @@
       () => deleteTx(id)
     );
   }
+  /* Этап 34: массовое удаление выбранных чекбоксами операций
+     (референс «операции.html» — bulk-bar с кнопкой «Удалить выбранное»). */
+  function pluralOpsRu(n) {
+    return n % 10 === 1 && n % 100 !== 11 ? "операция" : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? "операции" : "операций";
+  }
+  function confirmDeleteSelectedTx() {
+    const ids = state.operations.checked || [];
+    if (!ids.length) return;
+    openConfirm(
+      "Удалить выбранные операции?",
+      `${ids.length} ${pluralOpsRu(ids.length)} будут удалены. Действие можно отменить одним нажатием «Отменить» в уведомлении.`,
+      "Удалить",
+      () => mutateWithUndo((db) => { db.transactions = db.transactions.filter((t) => !ids.includes(t.id)); },
+        `Удалено ${ids.length} ${pluralOpsRu(ids.length)}`)
+    );
+    state.operations.checked = [];
+  }
   if (confirmOkBtn) confirmOkBtn.addEventListener("click", () => {
     const fn = confirmAction;
     closeConfirm();
@@ -1290,7 +1317,7 @@
     if (name === "load-more") { state.budget.limit += 5; return softRender("budget"); }
     if (name === "load-more-ops") { state.operations.limit += 8; return softRender("operations"); }
     if (name === "reset-ops-filters") {
-      state.operations = { filter: "all", sort: "date", dir: "desc", limit: 8, query: "", account: "all", category: "all", period: "all", selected: null };
+      state.operations = { filter: "all", sort: "date", dir: "desc", limit: 8, query: "", account: "all", category: "all", period: "all", selected: null, checked: [] };
       return softRender("operations");
     }
     if (name === "close-modal") return closeForm();
@@ -1584,12 +1611,17 @@
          Клики по кнопкам внутри строки не должны её выделять. */
       if (a === "tx-select") {
         if (event.target.closest(".mini-btn, .row-btn, .primary-btn, .secondary-btn")) return;
+        /* Этап 34: клик по чекбоксу строки — только выделение, без деталей */
+        if (window.__opsChkTx) return;
         const id = Number(actionBtn.dataset.id);
         state.operations.selected = state.operations.selected === id ? null : id;
         softRender("operations");
         return;
       }
       if (a === "ops-deselect") { state.operations.selected = null; softRender("operations"); return; }
+      /* Этап 34: множественное удаление выбранных чекбоксами */
+      if (a === "ops-check-all-off") { state.operations.checked = []; softRender("operations"); return; }
+      if (a === "ops-del-selected") return confirmDeleteSelectedTx();
       if (a === "tx-pay") return markTxPaid(Number(actionBtn.dataset.id));
       if (a === "tx-del") return confirmDeleteTx(Number(actionBtn.dataset.id));
       if (a === "tx-edit") return openEditTx(Number(actionBtn.dataset.id));
@@ -1684,7 +1716,27 @@
     const accSel = event.target.closest("[data-account-select]");
     if (accSel) { state.operations.account = accSel.value; state.operations.limit = 8; softRender("operations"); return; }
     const catSel = event.target.closest("[data-category-select]");
-    if (catSel) { state.operations.category = catSel.value; state.operations.limit = 8; softRender("operations"); }
+    if (catSel) { state.operations.category = catSel.value; state.operations.limit = 8; softRender("operations"); return; }
+    /* Этап 34: чекбоксы таблицы операций — множественное выделение.
+       Флаг __opsChkTx гасит click-всплытие к строке (не открывать детали). */
+    const chkRow = event.target.closest("[data-action='ops-check-row']");
+    if (chkRow) {
+      window.__opsChkTx = true;
+      setTimeout(() => { window.__opsChkTx = false; }, 0);
+      const id = Number(chkRow.dataset.id);
+      const arr = state.operations.checked || [];
+      state.operations.checked = chkRow.checked ? [...new Set([...arr, id])] : arr.filter((x) => x !== id);
+      softRender("operations");
+      return;
+    }
+    const chkAll = event.target.closest("[data-action='ops-check-all']");
+    if (chkAll) {
+      window.__opsChkTx = true;
+      setTimeout(() => { window.__opsChkTx = false; }, 0);
+      const ids = [...document.querySelectorAll("[data-action='ops-check-row']")].map((el) => Number(el.dataset.id));
+      state.operations.checked = chkAll.checked ? [...new Set(ids)] : [];
+      softRender("operations");
+    }
   });
 
   /* ---------- собственная история навигации (Этап 14c) ---------- */

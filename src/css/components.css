@@ -1460,17 +1460,50 @@ tr.row--tx:hover { background: transparent; }
 
 /* переопределяем раннюю «широкую» раскладку колонок на %-плотность референса */
 .ops-table { min-width: 820px; font-size: 12px; }
-.ops-table .c-date { width: 9%; }
-.ops-table .c-op { width: 24%; }
-.ops-table .c-cat { width: 15%; }
-.ops-table .c-acc { width: 15%; }
+/* Этап 34: ширина колонок пересчитана логически по реальному содержимому
+   демо-данных (макс. длина значения + служебные элементы), а не на глаз:
+   Дата 7% (всегда "ДД.ММ"+время второй строкой — узкая),
+   Операция 20% (названия до ~30 символов — самая широкая текстовая),
+   Категория 12% ("Развлечения" ≈11 симв.), Счёт 16% ("Карта Т-Банк"/
+   "Накопительный счёт" — длинные, с ellipsis), Тип 8% (бейдж из 6 букв),
+   Теги 10% (2 чипа максимум), Сумма 13% (nowrap, табулярные цифры —
+   обрезать нельзя), Действия 9% (до 3 кнопок по 26px). Итого 95% +
+   чекбокс 3% + запас на padding. */
+.ops-table .c-check { width: 3%; text-align: center; padding-left: 12px; padding-right: 0; }
+.ops-table .c-date { width: 7%; }
+.ops-table .c-op { width: 20%; }
+.ops-table .c-cat { width: 12%; }
+.ops-table .c-acc { width: 16%; }
 .ops-table .c-type { width: 8%; font-weight: inherit; color: inherit; }
-.ops-table .c-tags { width: 11%; }
-.ops-table .c-sum { width: 12%; }
+.ops-table .c-tags { width: 10%; }
+.ops-table .c-sum { width: 13%; }
 .ops-table .c-act { width: 9%; }
 .ops-table th { padding: 8px 10px; background: var(--surface-2); }
 .ops-table td { padding: 4px 10px; height: 44px; }
 .ops-table tbody tr:hover { background: var(--surface-2); }
+
+/* чекбоксы таблицы (референс «операции.html»: 14px, accent-color) */
+.ops-table input[type="checkbox"] {
+  width: 14px; height: 14px; margin: 0;
+  accent-color: var(--accent); cursor: pointer; vertical-align: middle;
+}
+.ops-table .c-check { cursor: default; }
+
+/* bulk-bar: панель действий над таблицей при непустом выделении */
+.bulk-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  font-size: 12px;
+}
+.bulk-count { font-weight: 700; }
+.bulk-sum { font-family: var(--font-num); font-weight: 800; color: var(--text-2); }
+.bulk-bar .chip { margin-left: auto; }
+.bulk-bar .chip + .chip { margin-left: 6px; }
+.bulk-bar .chip--danger { color: var(--red); border-color: color-mix(in srgb, var(--red) 35%, var(--line)); }
+.bulk-bar .chip--danger:hover { background: color-mix(in srgb, var(--red) 12%, transparent); }
+.bulk-bar [data-icon] svg { width: 12px; height: 12px; }
 
 /* ячейка даты: число жирно, время — второй строкой (как в референсе) */
 .cell-date {

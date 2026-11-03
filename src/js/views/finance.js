@@ -145,9 +145,23 @@ window.Views = window.Views || {};
       return `<th class="${extraCls} sortable-h${active ? " is-sorted" + (st.dir === "asc" ? "" : " desc") : ""}">` +
         `<button type="button" class="th-sort" data-col="${col}" aria-label="Сортировать по: ${label}">${label}${arrow}</button></th>`;
     };
-    /* Этап 32: выделенная строка (клик по строке) — панель деталей под таблицей */
+    /* Этап 32: выделенная строка (клик по строке) — панель деталей под таблицей.
+       Этап 34: клик по чекбоксу НЕ выделяет строку (checkboxchange-флаг). */
     const selId = st.selected != null ? st.selected : null;
-    const selTx = selId != null ? items.find((t) => t.id === selId) : null;
+    if (selId != null && !items.some((t) => t.id === selId)) st.selected = null;
+    const selTx = st.selected != null ? items.find((t) => t.id === st.selected) : null;
+    /* Этап 34: множественное выделение чекбоксами (референс «операции.html») */
+    const checked = Array.isArray(st.checked) ? st.checked.filter((id) => visible.some((t) => t.id === id)) : [];
+    const allChecked = visible.length > 0 && checked.length >= visible.length;
+    const someChecked = checked.length > 0 && !allChecked;
+    const pluralOps = (n) => (n % 10 === 1 && n % 100 !== 11 ? "операция" : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? "операции" : "операций");
+    const bulkHTML = checked.length === 0 ? "" : `
+      <div class="bulk-bar" role="toolbar" aria-label="Действия с выбранными операциями">
+        <span class="bulk-count">Выбрано: ${checked.length} ${pluralOps(checked.length)}</span>
+        <span class="bulk-sum">${money(checked.reduce((s, id) => { const t = visible.find((x) => x.id === id); return s + ((t && t.type !== "transfer") ? t.amount : 0); }, 0))}</span>
+        <button class="chip" data-action="ops-check-all-off">Снять выделение</button>
+        <button class="chip chip--danger" data-action="ops-del-selected"><span data-icon="trash"></span> Удалить выбранное</button>
+      </div>`;
     const detailHTML = !selTx ? "" : (() => {
       const cat = u.catMeta(selTx.category);
       const isTr = selTx.type === "transfer";
@@ -180,15 +194,23 @@ window.Views = window.Views || {};
     /* Этап 33: таблица приведена к компактной плотности референса
        «операции.html» — без дублирования иконки (в колонке «Операция»
        она уже есть), время объединено с датой второй строкой, тип —
-       бейджем, сумма через .amount; ширина колонок в CSS (%). */
+       бейджем, сумма через .amount.
+       Этап 34: ширина колонок пересчитана логически под реальное
+       содержимое данных (см. CSS): Дата 8% · Операция 20% · Категория
+       13% · Счёт 16% · Тип 8% · Теги 11% · Сумма 13% · Действия 11%,
+       слева колонка чекбоксов 3% (select-all + множественное удаление).
+       Заголовок «Операция» больше не colspan=2 — имя заголовка ровно
+       над своей колонкой, как в референсе. */
     const tableHTML = `
       <div class="ops-desktop-grid">
         <div class="ops-table-window">
+          ${bulkHTML}
           <div class="ops-table-scroll">
             <table class="ops-table" aria-label="Таблица операций">
               <thead><tr>
+                <th class="c-check"><input type="checkbox" data-action="ops-check-all" aria-label="Выбрать все операции на странице" ${allChecked ? "checked" : ""}${someChecked ? ' data-indeterminate="1"' : ""}></th>
                 ${thSort("date", "Дата", "c-date")}
-                <th class="c-op sortable-h" colspan="2"><button type="button" class="th-sort" data-col="merchant" aria-label="Сортировать по: Операция">Операция</button></th>
+                ${thSort("merchant", "Операция", "c-op")}
                 ${thSort("category", "Категория", "c-cat")}
                 ${thSort("account", "Счёт", "c-acc")}
                 <th class="c-type">Тип</th>
@@ -210,6 +232,7 @@ window.Views = window.Views || {};
                     ? `<span class="tag-list">${tagsArr.slice(0, 2).map((x) => `<span class="tag">${esc(x)}</span>`).join("")}${tagsArr.length > 2 ? `<span class="tag more">+${tagsArr.length - 2}</span>` : ""}</span>`
                     : `<span class="muted-cell">—</span>`;
                   return `<tr class="row row--tx${t.id === selId ? " is-selected" : ""}" tabindex="0" role="button" data-action="tx-select" data-id="${t.id}" aria-label="Детали операции: ${esc(t.title)}">
+                    <td class="c-check"><input type="checkbox" data-action="ops-check-row" data-id="${t.id}" aria-label="Выбрать операцию: ${esc(t.title)}"${checked.includes(t.id) ? " checked" : ""}></td>
                     <td class="c-date"><span class="cell-date">${esc(t.date)}${t.time ? `<small>${esc(t.time)}</small>` : ""}</span></td>
                     <td class="c-op"><span class="op-cell"><span class="op-name">${esc(t.title)}</span>${(t.note || pending) ? `<span class="op-note">${pending ? "Ожидает оплаты" : ""}${pending && t.note ? " · " : ""}${t.note ? esc(t.note) : ""}</span>` : ""}</span></td>
                     <td class="c-cat"><span class="meta-cell"><span class="meta-dot" style="--dot-color:${cat.color}"></span><span class="meta-text">${esc(t.category)}</span></span></td>
