@@ -22,6 +22,17 @@
     if (!Array.isArray(data.tags)) {
       data.tags = ((window.DB && window.DB.tags) || []).slice();
     }
+    /* Этап 28: у старых снимков нет поля time — добираем из mock по id,
+       иначе колонка «Время» осталась бы пустой до первой новой операции. */
+    if (Array.isArray(data.transactions)) {
+      const defaults = ((window.DB && window.DB.transactions) || []);
+      data.transactions.forEach((t) => {
+        if (t && t.time === undefined) {
+          const src = defaults.find((x) => x.id === t.id);
+          t.time = src ? src.time : "";
+        }
+      });
+    }
     return data;
   }
 

@@ -420,6 +420,8 @@
         { name: "kind", label: "Тип операции", type: "segmented", options: [["expense", "Расход"], ["income", "Доход"]] },
         { name: "title", label: "Название", type: "text", placeholder: "Напр.: Оплата: Анна К.", required: true },
         { name: "amount", label: "Сумма, ₽", type: "number", placeholder: "2400", required: true },
+        /* Этап 28: у операции есть дата и время (колонка «Время» в таблице) */
+        { name: "when", label: "Дата и время", type: "datetime" },
         { name: "category", label: "Категория", type: "select", options: (window.DB.categories || []).map((c) => c.name) },
         { name: "tags", label: "Теги", type: "tags" },
         { name: "account", label: "Счёт", type: "select", options: window.DB.accounts.map((a) => a.name) }
@@ -444,38 +446,64 @@
     if (!f) return;
     genericTitle.textContent = f.title;
     genericForm.dataset.extra = extra ? JSON.stringify(extra) : "";
+    /* Этап 28: редактирование операции — та же форма с предзаполнением */
+    let editTx = null;
+    if (key === "transaction" && extra && extra.txId) {
+      editTx = (window.DB.transactions || []).find((t) => t.id === Number(extra.txId)) || null;
+      if (editTx) genericTitle.textContent = "Редактирование операции";
+    }
     const todayISO = (() => {
       const d = new Date();
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     })();
+    /* «31.10» текущего года → ISO для нативного input[type=date] */
+    const ddmmToISO = (d) => {
+      const m = /^(\d{2})\.(\d{2})/.exec(d || "");
+      if (!m) return todayISO;
+      const now = new Date();
+      let year = now.getFullYear();
+      if (Number(m[2]) > now.getMonth() + 1 && now.getMonth() < 2) year -= 1; // январь, а данные за декабрь
+      return `${year}-${m[2]}-${m[1]}`;
+    };
     let savedKind = "income";
     try { savedKind = localStorage.getItem("mono-tx-kind") || "income"; } catch (_) {}
+    const pre = (name) => (editTx ? editTx[name] : undefined);
     const control = (fl) => {
       if (fl.type === "select") {
-        return `<select id="gf-${fl.name}" name="${fl.name}">${fl.options.map((o) => `<option>${u.esc(o)}</option>`).join("")}</select>`;
+        const cur = pre(fl.name);
+        const opts = fl.options.includes(cur) ? fl.options : (cur ? [cur, ...fl.options] : fl.options);
+        return `<select id="gf-${fl.name}" name="${fl.name}">${opts.map((o) => `<option ${o === cur ? "selected" : ""}>${u.esc(o)}</option>`).join("")}</select>`;
       }
       if (fl.type === "segmented") {
+        const curSeg = pre(fl.name) || savedKind;
         return `<div class="form-seg" role="radiogroup" aria-label="${fl.label}">
           ${fl.options.map(([val, txt]) => `
             <label class="form-seg-opt">
-              <input type="radio" name="${fl.name}" value="${val}" ${val === savedKind ? "checked" : ""}>
+              <input type="radio" name="${fl.name}" value="${val}" ${val === curSeg ? "checked" : ""}>
               <span>${txt}</span>
             </label>`).join("")}
         </div>`;
       }
       if (fl.type === "datetime") {
+        /* Этап 28: у занятий время по умолчанию 18:00, у операций — пустое поле времени */
+        const isTx = key === "transaction";
+        const dVal = editTx ? ddmmToISO(editTx.date) : todayISO;
+        const tVal = editTx ? (editTx.time || "") : (isTx ? "" : "18:00");
         return `<div class="field-row">
-          <input id="gf-${fl.name}-date" name="${fl.name}_date" type="date" min="${todayISO}" value="${todayISO}" required aria-label="Дата занятия">
-          <input id="gf-${fl.name}-time" name="${fl.name}_time" type="time" value="18:00" step="900" aria-label="Время занятия">
+          <input id="gf-${fl.name}-date" name="${fl.name}_date" type="date" ${isTx ? "" : `min="${todayISO}"`} value="${dVal}" required aria-label="Дата${isTx ? " операции" : " занятия"}">
+          <input id="gf-${fl.name}-time" name="${fl.name}_time" type="time" value="${tVal}" step="900" aria-label="Время${isTx ? " операции" : " занятия"}">
         </div>`;
       }
       if (fl.type === "tags") {
         const list = window.DB.tags || [];
         if (!list.length) return `<p class="tag-empty">Тегов пока нет — добавьте их в профиле.</p>`;
+        const curTags = Array.isArray(pre("tags")) ? pre("tags") : [];
         return `<div class="tag-pick">${list.map((t) => `
-          <label class="tag-opt"><input type="checkbox" name="${fl.name}" value="${u.esc(t)}"><span>${u.esc(t)}</span></label>`).join("")}</div>`;
+          <label class="tag-opt"><input type="checkbox" name="${fl.name}" value="${u.esc(t)}" ${curTags.includes(t) ? "checked" : ""}><span>${u.esc(t)}</span></label>`).join("")}</div>`;
       }
-      return `<input id="gf-${fl.name}" name="${fl.name}" type="${fl.type}" placeholder="${fl.placeholder || ""}" inputmode="${fl.type === "number" ? "decimal" : "text"}">`;
+      const preVal = pre(fl.name);
+      const valAttr = (preVal !== undefined && preVal !== null && fl.type !== "file") ? ` value="${u.esc(String(Math.abs(fl.name === "amount" ? (preVal || "") : preVal)))}"` : "";
+      return `<input id="gf-${fl.name}" name="${fl.name}" type="${fl.type}" placeholder="${fl.placeholder || ""}" inputmode="${fl.type === "number" ? "decimal" : "text"}"${valAttr}>`;
     };
     genericForm.innerHTML = `
       ${f.fields.map((fl) => `
@@ -571,6 +599,12 @@
     const formTags = fd.getAll("tags");
     // дата+время занятия приходят двумя полями — склеиваем в одно значение
     if (key === "lesson") data.when = data.when_date ? `${data.when_date}T${data.when_time || "18:00"}` : "";
+    /* Этап 28: у операции дата+время тоже приходят парой полей */
+    if (key === "transaction") {
+      const m = data.when_date ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(data.when_date) : null;
+      data.txDate = m ? `${m[3]}.${m[2]}` : "сегодня";
+      data.txTime = (data.when_time || "").slice(0, 5);
+    }
     if (!validateForm(key, data)) { showToast("Проверьте выделенные поля"); return; }
     // Мутации через mutateForm: снимок DB до изменения → тост с «Отменить» (Этап 6)
     if (key === "student" && data.name) {
@@ -581,7 +615,23 @@
       const kind = raw < 0 ? "expense" : (data.kind === "income" ? "income" : "expense");
       const amount = (kind === "income" ? 1 : -1) * Math.abs(raw);
       try { localStorage.setItem("mono-tx-kind", kind); } catch (_) {}
-      mutateForm((db) => db.transactions.unshift({ id: Date.now(), date: "сегодня", title: data.title.trim(), amount, type: amount < 0 ? "expense" : "income", category: data.category, tags: formTags, status: "pending", account: data.account || "Карта" }), "Операция добавлена");
+      if (extra.txId) {
+        /* Этап 28: редактирование — обновляем существующую запись на месте */
+        mutateForm((db) => {
+          const t = db.transactions.find((x) => x.id === Number(extra.txId));
+          if (!t) return;
+          t.title = data.title.trim();
+          t.amount = amount;
+          t.type = amount < 0 ? "expense" : "income";
+          t.date = data.txDate;
+          t.time = data.txTime;
+          t.category = data.category;
+          t.account = data.account || "Карта";
+          t.tags = formTags;
+        }, "Операция обновлена");
+      } else {
+        mutateForm((db) => db.transactions.unshift({ id: Date.now(), date: data.txDate, time: data.txTime, title: data.title.trim(), amount, type: amount < 0 ? "expense" : "income", category: data.category, tags: formTags, status: "pending", account: data.account || "Карта" }), "Операция добавлена");
+      }
     } else if (key === "lesson" && data.student) {
       mutateForm((db) => db.lessons.unshift({ id: Date.now(), student: data.student, subject: (db.students.find((s) => s.name === data.student) || {}).subject || "—", when: formatWhen(data.when), duration: data.duration || "60 мин", status: "upcoming" }), `Занятие запланировано: ${data.student}`);
     } else if (key === "contribute" && extra.goalName) {
@@ -1489,6 +1539,14 @@
     }
     const acc = event.target.closest("[data-account-filter]");
     if (acc) { state.operations.account = acc.value; softRender("operations"); }
+  });
+
+  /* Этап 28: селекты счёта/категории в тулбаре операций */
+  document.addEventListener("change", (event) => {
+    const accSel = event.target.closest("[data-account-select]");
+    if (accSel) { state.operations.account = accSel.value; state.operations.limit = 8; softRender("operations"); return; }
+    const catSel = event.target.closest("[data-category-select]");
+    if (catSel) { state.operations.category = catSel.value; state.operations.limit = 8; softRender("operations"); }
   });
 
   /* ---------- собственная история навигации (Этап 14c) ---------- */

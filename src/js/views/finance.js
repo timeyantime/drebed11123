@@ -169,7 +169,7 @@ window.Views = window.Views || {};
       <div class="ops-toolbar">
         <div class="ops-toolbar-top">
           <label class="search-box">
-            <span class="search-icon" data-icon="search"></span>
+            <span class="ic-wrap" data-icon="search"></span>
             <input type="search" placeholder="Поиск по названию или категории…" value="${u.esc(st.query || "")}" data-search aria-label="Поиск операций" />
           </label>
           <div class="ops-toolbar-actions">
