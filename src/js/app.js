@@ -31,7 +31,7 @@
     route: "home",
     teacher: { tab: "students", filter: "all", sort: "name" },
     budget: { filter: "month", sort: "date", limit: 5 },
-    operations: { filter: "all", sort: "date", dir: "desc", limit: 8, query: "", account: "all", category: "all", period: "all" },
+    operations: { filter: "all", sort: "date", dir: "desc", limit: 8, query: "", account: "all", category: "all", period: "all", selected: null },
     dashboards: { period: "6" },
     detail: null // { kind: "student", id } — детальная страница (Этап 5B)
   };
@@ -1290,7 +1290,7 @@
     if (name === "load-more") { state.budget.limit += 5; return softRender("budget"); }
     if (name === "load-more-ops") { state.operations.limit += 8; return softRender("operations"); }
     if (name === "reset-ops-filters") {
-      state.operations = { filter: "all", sort: "date", dir: "desc", limit: 8, query: "", account: "all", category: "all", period: "all" };
+      state.operations = { filter: "all", sort: "date", dir: "desc", limit: 8, query: "", account: "all", category: "all", period: "all", selected: null };
       return softRender("operations");
     }
     if (name === "close-modal") return closeForm();
@@ -1564,10 +1564,32 @@
       return;
     }
 
+    /* Этап 32: клик по заголовку колонки таблицы — сортировка */
+    const thBtn = event.target.closest(".th-sort");
+    if (thBtn) {
+      event.preventDefault();
+      const col = thBtn.dataset.col;
+      const stOps = state.operations;
+      if (stOps.sort === col) stOps.dir = stOps.dir === "desc" ? "asc" : "desc";
+      else { stOps.sort = col; stOps.dir = "desc"; }
+      softRender("operations");
+      return;
+    }
+
     const actionBtn = event.target.closest("[data-action]");
     if (actionBtn) {
       event.preventDefault();
       const a = actionBtn.dataset.action;
+      /* Этап 32: выделение строки таблицы → панель деталей операции.
+         Клики по кнопкам внутри строки не должны её выделять. */
+      if (a === "tx-select") {
+        if (event.target.closest(".mini-btn, .primary-btn, .secondary-btn")) return;
+        const id = Number(actionBtn.dataset.id);
+        state.operations.selected = state.operations.selected === id ? null : id;
+        softRender("operations");
+        return;
+      }
+      if (a === "ops-deselect") { state.operations.selected = null; softRender("operations"); return; }
       if (a === "tx-pay") return markTxPaid(Number(actionBtn.dataset.id));
       if (a === "tx-del") return confirmDeleteTx(Number(actionBtn.dataset.id));
       if (a === "tx-edit") return openEditTx(Number(actionBtn.dataset.id));
@@ -1618,6 +1640,13 @@
       if (brow) {
         event.preventDefault();
         brow.click();
+        return;
+      }
+      /* Этап 32: Enter/Space по строке таблицы операций — выделить */
+      const trow = event.target.closest && event.target.closest("tr.row--tx[data-action='tx-select']");
+      if (trow) {
+        event.preventDefault();
+        trow.click();
         return;
       }
     }

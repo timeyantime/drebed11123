@@ -1425,3 +1425,57 @@ tr.row--tx:hover { background: transparent; }
 /* модалка подтверждения удаления */
 .modal--confirm { width: min(420px, calc(100vw - 24px)); }
 .confirm-text { margin: 0 0 14px; font-size: 13px; line-height: 1.5; color: var(--muted); }
+
+/* ============================================================
+   Этап 32: десктопная таблица операций (по референсу «операции.html»)
+   ============================================================ */
+
+/* сетка: таблица + панель деталей справа на широком экране */
+.ops-desktop-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+@media (min-width: 1460px) {
+  .ops-desktop-grid { grid-template-columns: minmax(0, 1fr) 320px; align-items: start; }
+}
+
+/* sticky-заголовок таблицы при прокрутке */
+.ops-table thead th { position: sticky; top: 0; z-index: 2; }
+
+/* сортировка кликом по заголовку колонки */
+.th-sort {
+  all: unset;
+  cursor: pointer;
+  font: inherit; letter-spacing: inherit; text-transform: inherit;
+  color: inherit;
+  display: inline-flex; align-items: center; gap: 3px;
+}
+.th-sort:hover { color: var(--text); }
+.th-sort:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; border-radius: 4px; }
+.ops-table th.is-sorted { color: var(--text); }
+
+/* строка — интерактивная (клик = детали) */
+.ops-table tbody tr.row--tx { cursor: pointer; }
+.ops-table tbody tr.row--tx.is-selected { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.ops-table tbody tr.row--tx.is-selected td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+.ops-table tbody tr.row--tx:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+
+/* иконка категории в колонке «Операция» */
+.cat-ico--inline { width: 22px; height: 22px; margin-right: 8px; vertical-align: middle; flex: none; }
+.cat-ico--inline svg { width: 13px; height: 13px; }
+
+/* панель деталей выбранной операции */
+.tx-detail {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.tx-detail-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tx-detail-title { margin: 0; font-size: 15px; font-weight: 700; }
+.tx-detail-sum { font-family: var(--font-num); font-size: 20px; font-weight: 800; }
+.tx-detail-list { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.tx-detail-list div { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; }
+.tx-detail-list dt { color: var(--text-3); }
+.tx-detail-list dd { margin: 0; font-weight: 600; text-align: right; }
+.tx-detail-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
+.secondary-btn--danger { color: var(--red); border-color: color-mix(in srgb, var(--red) 35%, var(--line)); }
+.secondary-btn--danger:hover { background: color-mix(in srgb, var(--red) 12%, transparent); }
