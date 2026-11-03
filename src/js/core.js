@@ -242,10 +242,38 @@
     </svg>`;
   }
 
+  /* Этап 29: пересчёт балансов счетов (по аналогии с референсом
+     «Счета и транзакции.html»). balance — производная величина:
+       openingBalance + сумма зачтённых операций по счёту.
+     Переводы (type === "transfer") идут через fromAccount/toAccount:
+       минус с источника, плюс на приёмник — итог на всех счетах не меняется.
+     Статус pending не двигает деньги (как в bank-логике). */
+  function recalcBalances(db) {
+    if (!db || !Array.isArray(db.accounts)) return;
+    const byName = {};
+    db.accounts.forEach((a) => {
+      a.balance = Number(a.openingBalance != null ? a.openingBalance : a.balance) || 0;
+      byName[a.name] = a;
+    });
+    (db.transactions || []).forEach((t) => {
+      if (!t || t.status === "pending") return;
+      if (t.type === "transfer") {
+        const from = byName[t.account || t.fromAccount];
+        const to = byName[t.toAccount];
+        const amt = Math.abs(Number(t.amount) || 0);
+        if (from) from.balance -= amt;
+        if (to) to.balance += amt;
+        return;
+      }
+      const acc = byName[t.account];
+      if (acc && typeof t.amount === "number") acc.balance += t.amount; // income>0, expense<0
+    });
+  }
+
   window.u = {
     ic, money, pct, fillIcons, esc, chartColor, donutSVG, legendHTML, ringSVG, trendBars, catMeta,
     parseDM, fmtDM, dateToISO, isoToDM,
-    moneyFormatter
+    moneyFormatter, recalcBalances
   };
 })();
 

@@ -22,9 +22,14 @@ window.Views = window.Views || {};
      Этап 25: на десктопе строка раскладывается в таблицу (grid),
      на мобиле остаётся карточкой — колонки скрыты. */
   function txRowPayable(t) {
-    const cls = t.amount < 0 ? "expense" : "income";
+    /* Этап 29: переводы — отдельный нейтральный стиль и подпись «Перевод» */
+    const isTr = t.type === "transfer";
+    const cls = isTr ? "transfer" : (t.amount < 0 ? "expense" : "income");
     const hue = CAT_HUE[t.category] != null ? CAT_HUE[t.category] : ((t.id || 1) * 67) % 360;
     const pending = t.status === "pending";
+    const accLabel = isTr && t.toAccount
+      ? `${esc(t.account || "Карта Т-Банк")} → ${esc(t.toAccount)}`
+      : esc(t.account || "Карта Т-Банк");
     return `
       <div class="row row--tx">
         ${catIcon(t)}
@@ -32,12 +37,12 @@ window.Views = window.Views || {};
           <div class="row-title">${esc(t.title)}${Array.isArray(t.tags) && t.tags.length
             ? `<span class="tx-tags">${t.tags.slice(0, 3).map((x) => `<span>${esc(x)}</span>`).join("")}</span>`
             : ""}</div>
-          <div class="row-meta">${[esc(t.date), esc(t.time || ""), esc(t.category), esc(t.account || "Карта Т-Банк")].filter(Boolean).join(" • ")}</div>
+          <div class="row-meta">${[esc(t.date), esc(t.time || ""), esc(t.category), accLabel].filter(Boolean).join(" • ")}</div>
         </div>
         <span class="tx-cat"><span class="cat-dot" style="--c:hsl(${hue} 62% 52%)"></span>${esc(t.category)}</span>
-        <span class="tx-acc">${esc(t.account || "Карта Т-Банк")}</span>
-        <span class="tx-type ${t.amount < 0 ? "t-expense" : "t-income"}">${t.amount < 0 ? "Расход" : "Доход"}</span>
-        <div class="amount ${cls}">${t.amount > 0 ? "+" : ""}${money(t.amount)}</div>
+        <span class="tx-acc">${accLabel}</span>
+        <span class="tx-type ${isTr ? "t-info" : (t.amount < 0 ? "t-expense" : "t-income")}">${isTr ? "Перевод" : (t.amount < 0 ? "Расход" : "Доход")}</span>
+        <div class="amount ${cls}">${isTr ? "↔" : (t.amount > 0 ? "+" : "")}${money(isTr ? Math.abs(t.amount) : t.amount)}</div>
         <span class="tx-status">${pending
           ? `<span class="badge badge--pending">Ожидает</span>`
           : `<span class="badge badge--paid">Оплачено</span>`}</span>

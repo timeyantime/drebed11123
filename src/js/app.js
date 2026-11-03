@@ -257,6 +257,15 @@
     try { return structuredClone(window.DB); } catch (_) { return null; }
   }
 
+  /* Этап 29: единая точка записи — перед сохранением пересчитываем
+     балансы счетов по операциям (включая переводы). Все мутации идут
+     через mutateWithUndo/mutateForm, поэтому balance всегда производная. */
+  const _origSave = window.Store.save.bind(window.Store);
+  window.Store.save = function () {
+    try { window.u.recalcBalances(window.DB); } catch (_) {}
+    _origSave();
+  };
+
   function mutateWithUndo(fn, msg) {
     const prev = snapshot();
     fn(window.DB);
@@ -427,14 +436,16 @@
     transaction: {
       title: "Новая операция",
       fields: [
-        { name: "kind", label: "Тип операции", type: "segmented", options: [["expense", "Расход"], ["income", "Доход"]] },
+        { name: "kind", label: "Тип операции", type: "segmented", options: [["expense", "Расход"], ["income", "Доход"], ["transfer", "Перевод"]] },
         { name: "title", label: "Название", type: "text", placeholder: "Напр.: Оплата: Анна К.", required: true },
         { name: "amount", label: "Сумма, ₽", type: "number", placeholder: "2400", required: true },
         /* Этап 28: у операции есть дата и время (колонка «Время» в таблице) */
         { name: "when", label: "Дата и время", type: "datetime" },
         { name: "category", label: "Категория", type: "select", options: (window.DB.categories || []).map((c) => c.name) },
         { name: "tags", label: "Теги", type: "tags" },
-        { name: "account", label: "Счёт", type: "select", options: window.DB.accounts.map((a) => a.name) }
+        { name: "account", label: "Счёт", type: "select", options: window.DB.accounts.map((a) => a.name) },
+        /* Этап 29: приёмник перевода; поле скрыто, пока тип != «Перевод» */
+        { name: "toAccount", label: "Счёт-приёмник", type: "select", options: window.DB.accounts.map((a) => a.name), transferOnly: true }
       ]
     },
     contribute: {
@@ -518,7 +529,7 @@
     };
     genericForm.innerHTML = `
       ${f.fields.map((fl) => `
-        <div class="field" data-field="${fl.name}">
+        <div class="field" data-field="${fl.name}"${fl.transferOnly ? ' data-transfer-only hidden' : ""}>
           <label${fl.type === "segmented" || fl.type === "tags" ? "" : ` for="gf-${fl.name}${fl.type === "datetime" ? "-date" : ""}"`}>${fl.label}${fl.required ? ' <span class="req">*</span>' : ""}</label>
           ${control(fl)}
           <p class="field-error" role="alert"></p>
@@ -527,6 +538,20 @@
         <button type="button" class="secondary-btn" data-action="close-modal">Отмена</button>
         <button type="submit" class="primary-btn">Сохранить</button>
       </div>`;
+    /* Этап 29: поле «Счёт-приёмник» показываем только при типе «Перевод»;
+       label счёта переименовываем в «Откуда», чтобы форма читалась однозначно */
+    if (key === "transaction") {
+      const syncTransferUI = () => {
+        const kindSel = genericForm.querySelector('input[name="kind"]:checked');
+        const kind = kindSel ? kindSel.value : "expense";
+        const toField = genericForm.querySelector('[data-field="toAccount"]');
+        if (toField) toField.hidden = kind !== "transfer";
+        const accLabel = genericForm.querySelector('[data-field="account"] label');
+        if (accLabel) accLabel.textContent = kind === "transfer" ? "Откуда (счёт)" : "Счёт";
+      };
+      genericForm.querySelectorAll('input[name="kind"]').forEach((r) => r.addEventListener("change", syncTransferUI));
+      syncTransferUI();
+    }
     /* Этап 20: ошибка поля снимается, как только пользователь начал править */
     genericForm.querySelectorAll("input, select").forEach((el) => {
       const ev = el.type === "radio" ? "change" : "input";
@@ -592,6 +617,9 @@
     const f = buildForms()[key];
     let ok = true, firstBad = null;
     f.fields.forEach((fl) => {
+      /* Этап 29: скрытые поля перевода не валидируем (required у них нет,
+         но и пустой toAccount при expense/income — норма) */
+      if (fl.transferOnly && data.kind !== "transfer") return;
       const rules = [fl.required && "required", fl.type === "number" && (fl.name === "amount" ? "amount" : "money")].filter(Boolean);
       const msg = rules.map((r) => validators[r](data[fl.name])).find(Boolean) || "";
       setFieldError(fl.name, msg);
@@ -627,9 +655,18 @@
       mutateForm((db) => db.students.push({ id: Date.now(), name: data.name.trim(), subject: data.subject, next: "Нет записи", balance: "Ожидает", status: "unpaid", debt: 0, rate: Number(data.rate) || 0, monthIncome: 0 }), `Ученик добавлен: ${data.name.trim()}`);
     } else if (key === "transaction" && data.title) {
       const raw = Number(String(data.amount).replace(/\s/g, "").replace(",", ".")) || 0;
+      /* Этап 29: добавился тип «Перевод» — сумма всегда положительная,
+         деньги двигаются между счетами (recalcBalances учтёт обе стороны) */
+      const isTransfer = data.kind === "transfer";
       // минус в поле суммы по-прежнему означает расход, даже если выбран «Доход»
-      const kind = raw < 0 ? "expense" : (data.kind === "income" ? "income" : "expense");
-      const amount = (kind === "income" ? 1 : -1) * Math.abs(raw);
+      const kind = isTransfer ? "transfer" : (raw < 0 ? "expense" : (data.kind === "income" ? "income" : "expense"));
+      const amount = isTransfer ? Math.abs(raw) : (kind === "income" ? 1 : -1) * Math.abs(raw);
+      /* перевод «самому себе» запрещён */
+      if (isTransfer && data.toAccount && data.toAccount === data.account) {
+        setFieldError("toAccount", "Счёт-приёмник должен отличаться от источника");
+        genericForm.querySelector('[name="toAccount"]')?.focus();
+        return;
+      }
       try { localStorage.setItem("mono-tx-kind", kind); } catch (_) {}
       if (extra.txId) {
         /* Этап 28: редактирование — обновляем существующую запись на месте */
@@ -638,15 +675,16 @@
           if (!t) return;
           t.title = data.title.trim();
           t.amount = amount;
-          t.type = amount < 0 ? "expense" : "income";
+          t.type = kind === "transfer" ? "transfer" : (amount < 0 ? "expense" : "income");
           t.date = data.txDate === "сегодня" ? u.fmtDM(new Date()) : data.txDate;
           t.time = data.txTime;
           t.category = data.category;
           t.account = data.account || "Карта Т-Банк";
+          if (kind === "transfer") t.toAccount = data.toAccount; else delete t.toAccount;
           t.tags = formTags;
         }, "Операция обновлена");
       } else {
-        mutateForm((db) => db.transactions.unshift({ id: Date.now(), date: data.txDate, time: data.txTime, title: data.title.trim(), amount, type: amount < 0 ? "expense" : "income", category: data.category, tags: formTags, status: "pending", account: data.account || "Карта Т-Банк" }), "Операция добавлена");
+        mutateForm((db) => db.transactions.unshift({ id: Date.now(), date: data.txDate, time: data.txTime, title: data.title.trim(), amount, type: kind === "transfer" ? "transfer" : (amount < 0 ? "expense" : "income"), category: data.category, tags: formTags, status: "pending", account: data.account || "Карта Т-Банк", ...(kind === "transfer" ? { toAccount: data.toAccount } : {}) }), "Операция добавлена");
       }
     } else if (key === "lesson" && data.student) {
       mutateForm((db) => db.lessons.unshift({ id: Date.now(), student: data.student, subject: (db.students.find((s) => s.name === data.student) || {}).subject || "—", when: formatWhen(data.when), duration: data.duration || "60 мин", status: "upcoming" }), `Занятие запланировано: ${data.student}`);

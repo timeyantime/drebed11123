@@ -50,10 +50,14 @@ window.DB = {
     { m: "Ноя", income: 38600, expense: 28100 }
   ],
 
+  /* Этап 29: у счетов появились mask (номер для карточки) и openingBalance —
+     базовый баланс, от которого U.recalcBalances считает текущий по операциям.
+     Поле balance теперь ПРОИЗВОДНОЕ: пересчитывается при каждой мутации,
+     чтобы не рассинхронизироваться после undo/редактирования/удаления. */
   accounts: [
-    { id: 1, name: "Карта Т-Банк", balance: 84200, kind: "card", color: "var(--blue)", history: [72000, 78500, 69000, 81200, 76400, 84200] },
-    { id: 2, name: "Накопительный счёт", balance: 210000, kind: "savings", color: "var(--green)", history: [150000, 162000, 175000, 188000, 199000, 210000] },
-    { id: 3, name: "Наличные", balance: 6500, kind: "cash", color: "var(--amber)", history: [9000, 7200, 8400, 5100, 7800, 6500] }
+    { id: 1, name: "Карта Т-Банк", balance: 84200, openingBalance: 84200, kind: "card", mask: "•• 4276", color: "var(--blue)", history: [72000, 78500, 69000, 81200, 76400, 84200] },
+    { id: 2, name: "Накопительный счёт", balance: 210000, openingBalance: 210000, kind: "savings", mask: "•• 0119", color: "var(--green)", history: [150000, 162000, 175000, 188000, 199000, 210000] },
+    { id: 3, name: "Наличные", balance: 6500, openingBalance: 6500, kind: "cash", mask: "", color: "var(--amber)", history: [9000, 7200, 8400, 5100, 7800, 6500] }
   ],
 
   planned: [
