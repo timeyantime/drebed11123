@@ -347,6 +347,16 @@
     route = normalizeRoute(route);
     const clean = (params || []).map(normDetailParam);
     const target = "#" + [route, ...clean].join("/");
+    /* Этап 34-fix: hash "#operations" и "#/operations" — один и тот же
+       маршрут для parseHash(), но как строки не равны. Без нормализации
+       мягкий перерендер в пределах раздела (goTo("operations", [])) менял
+       hash с "/"+маршрута на bare-вид → ложный hashchange → скелетон и
+       гонка таймеров (таблица «исчезала» после select-all). Теперь hash
+       перезаписывается только при СМЕНЕ маршрута. */
+    if (parseHash().route === route && (params || []).length === 0 && state.route === route) {
+      renderWithSkeleton();
+      return;
+    }
     if (location.hash !== target) location.hash = target;
     else renderWithSkeleton();
   }
@@ -1600,10 +1610,15 @@
       return;
     }
 
-    /* Этап 32: клик по заголовку колонки таблицы — сортировка */
+    /* Этап 32: клик по заголовку колонки таблицы — сортировка.
+       Этап 34-fix: чекбоксы «выбрать все»/чекбокс строки тоже дают
+       click-всплытие к <tr data-action="tx-select"> и к .th-sort — если
+       не погасить здесь, второй change-обработчик на input отрабатывает
+       повторно (input уже удалён из DOM) и select-all «залипает». */
     const thBtn = event.target.closest(".th-sort");
     if (thBtn) {
       event.preventDefault();
+      if (event.target.closest(".c-check") || event.target.matches("input[type='checkbox']")) return;
       const col = thBtn.dataset.col;
       const stOps = state.operations;
       if (stOps.sort === col) stOps.dir = stOps.dir === "desc" ? "asc" : "desc";
@@ -1611,6 +1626,8 @@
       softRender("operations");
       return;
     }
+
+    if (window.__opsChkTx && event.target.closest("[data-action='ops-check-all'], [data-action='ops-check-row']")) return;
 
     const actionBtn = event.target.closest("[data-action]");
     if (actionBtn) {
@@ -1663,6 +1680,10 @@
       event.preventDefault();
       state.operations.account = decodeURIComponent(opsJump.dataset.goParams.slice("account:".length));
       state.operations.limit = 8;
+      /* Этап 34-fix: если мы УЖЕ на #/operations (например, jump из
+         панели деталей), менять hash нельзя — ложный hashchange зацикливал
+         ререндер со скелетоном. Обновляем фильтр и мягко перерисовываем. */
+      if (state.route === "operations") { softRender("operations"); return; }
       goTo("operations", []);
       return;
     }
