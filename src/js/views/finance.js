@@ -105,7 +105,7 @@ window.Views = window.Views || {};
     const groups = [];
     let curKey = null;
     for (const t of visible) {
-      const key = dateGroup(t.date);
+      const key = dateGroup(t.date, _now);
       if (key !== curKey) { groups.push({ key, rows: [] }); curKey = key; }
       groups[groups.length - 1].rows.push(t);
     }
