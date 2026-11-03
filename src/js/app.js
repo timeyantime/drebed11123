@@ -244,7 +244,7 @@
 
   /* undo-обёртка: снимок DB до мутации → кнопка «Отменить» в тосте (Этап 6) */
   function snapshot() {
-    try { return JSON.parse(JSON.stringify(window.DB)); } catch (_) { return null; }
+    try { return structuredClone(window.DB); } catch (_) { return null; }
   }
 
   function mutateWithUndo(fn, msg) {
@@ -622,11 +622,11 @@
           t.date = data.txDate;
           t.time = data.txTime;
           t.category = data.category;
-          t.account = data.account || "Карта";
+          t.account = data.account || "Карта Т-Банк";
           t.tags = formTags;
         }, "Операция обновлена");
       } else {
-        mutateForm((db) => db.transactions.unshift({ id: Date.now(), date: data.txDate, time: data.txTime, title: data.title.trim(), amount, type: amount < 0 ? "expense" : "income", category: data.category, tags: formTags, status: "pending", account: data.account || "Карта" }), "Операция добавлена");
+        mutateForm((db) => db.transactions.unshift({ id: Date.now(), date: data.txDate, time: data.txTime, title: data.title.trim(), amount, type: amount < 0 ? "expense" : "income", category: data.category, tags: formTags, status: "pending", account: data.account || "Карта Т-Банк" }), "Операция добавлена");
       }
     } else if (key === "lesson" && data.student) {
       mutateForm((db) => db.lessons.unshift({ id: Date.now(), student: data.student, subject: (db.students.find((s) => s.name === data.student) || {}).subject || "—", when: formatWhen(data.when), duration: data.duration || "60 мин", status: "upcoming" }), `Занятие запланировано: ${data.student}`);
@@ -742,7 +742,7 @@
     const picked = [...importList.querySelectorAll("[data-imp-check]:checked")]
       .map((cb) => importRows[Number(cb.dataset.impCheck)]);
     if (!picked.length) return;
-    const account = (window.DB.accounts[0] || {}).name || "Карта";
+    const account = (window.DB.accounts[0] || {}).name || "Карта Т-Банк";
     mutateWithUndo((db) => {
       picked.forEach((r, i) => db.transactions.unshift({
         id: Date.now() + i,
@@ -1146,8 +1146,8 @@
       pl.done = !pl.done;
       if (pl.done) {
         pl.status = "done";
-        db.transactions.unshift({ id: Date.now(), date: "сегодня", title: pl.title, amount: -pl.amount, type: "expense", category: "Личное", status: "paid", account: "Карта" });
-        const acc = db.accounts.find((a) => a.name === "Карта");
+        db.transactions.unshift({ id: Date.now(), date: "сегодня", title: pl.title, amount: -pl.amount, type: "expense", category: "Личное", status: "paid", account: "Карта Т-Банк" });
+        const acc = db.accounts.find((a) => a.name === "Карта Т-Банк");
         if (acc) acc.balance -= pl.amount;
       } else pl.status = pl._prevStatus || "upcoming";
     }, turningDone ? `Оплачено: ${title}` : `Вернули в расписание: ${title}`);

@@ -21,15 +21,15 @@ window.DB = {
 
   transactions: [
     /* Этап 28: у операций появилось время (HH:MM), как в референсе «Домкнига» */
-    { id: 1, date: "01.11", time: "12:40", title: "Оплата: Анна К.", amount: 2400, type: "income", category: "Ученики", status: "paid", account: "Карта" },
-    { id: 2, date: "31.10", time: "18:15", title: "Аренда кабинета", amount: -15000, type: "expense", category: "Работа", tags: ["кабинет"], status: "paid", account: "Карта" },
-    { id: 3, date: "30.10", time: "19:00", title: "Оплата: Иван П.", amount: 2000, type: "income", category: "Ученики", status: "pending", account: "Карта" },
+    { id: 1, date: "01.11", time: "12:40", title: "Оплата: Анна К.", amount: 2400, type: "income", category: "Ученики", status: "paid", account: "Карта Т-Банк" },
+    { id: 2, date: "31.10", time: "18:15", title: "Аренда кабинета", amount: -15000, type: "expense", category: "Работа", tags: ["кабинет"], status: "paid", account: "Карта Т-Банк" },
+    { id: 3, date: "30.10", time: "19:00", title: "Оплата: Иван П.", amount: 2000, type: "income", category: "Ученики", status: "pending", account: "Карта Т-Банк" },
     { id: 4, date: "29.10", time: "10:22", title: "Продукты", amount: -3200, type: "expense", category: "Продукты", tags: ["семья"], status: "paid", account: "Наличные" },
-    { id: 5, date: "28.10", time: "17:30", title: "Оплата: Олег Д.", amount: 2400, type: "income", category: "Ученики", status: "paid", account: "Карта" },
-    { id: 6, date: "27.10", time: "09:05", title: "Интернет", amount: -700, type: "expense", category: "Работа", tags: ["кабинет"], status: "paid", account: "Карта" },
-    { id: 7, date: "26.10", time: "16:44", title: "Учебники", amount: -1800, type: "expense", category: "Развитие", status: "paid", account: "Карта" },
+    { id: 5, date: "28.10", time: "17:30", title: "Оплата: Олег Д.", amount: 2400, type: "income", category: "Ученики", status: "paid", account: "Карта Т-Банк" },
+    { id: 6, date: "27.10", time: "09:05", title: "Интернет", amount: -700, type: "expense", category: "Работа", tags: ["кабинет"], status: "paid", account: "Карта Т-Банк" },
+    { id: 7, date: "26.10", time: "16:44", title: "Учебники", amount: -1800, type: "expense", category: "Развитие", status: "paid", account: "Карта Т-Банк" },
     { id: 8, date: "25.10", time: "11:10", title: "Оплата: Дарья Л.", amount: 2200, type: "income", category: "Ученики", status: "paid", account: "Наличные" },
-    { id: 9, date: "31.10", time: "08:35", title: "Метро", amount: -300, type: "expense", category: "Транспорт", status: "paid", account: "Карта" },
+    { id: 9, date: "31.10", time: "08:35", title: "Метро", amount: -300, type: "expense", category: "Транспорт", status: "paid", account: "Карта Т-Банк" },
     { id: 10, date: "28.10", time: "20:10", title: "Кино", amount: -800, type: "expense", category: "Развлечения", status: "paid", account: "Наличные" }
   ],
 
@@ -103,7 +103,7 @@ window.DB = {
     { name: "Развлечения", kind: "expense", color: "#fd79a8", icon: "gamepad" },
     { name: "Покупки", kind: "expense", color: "#6c5ce7", icon: "bag" },
     { name: "Образование", kind: "expense", color: "#00cec9", icon: "book" },
-    { name: "Развитие", kind: "expense", color: "var(--chart-7)", icon: "book" },
+    { name: "Развитие", kind: "expense", color: "var(--chart-7)", icon: "bulb" },
     { name: "Личное", kind: "expense", color: "var(--chart-6)", icon: "wallet" },
     { name: "Прочее", kind: "expense", color: "#b2bec3", icon: "ellipsis" },
     { name: "Зарплата", kind: "income", color: "#00b894", icon: "banknote" },

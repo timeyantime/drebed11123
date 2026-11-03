@@ -560,9 +560,6 @@
 }
 .panel, .kpi, .hub-tile, .quick-card { animation: fadeUp 0.35s ease both; }
 
-/* Skeleton: базовый shimmer уже определён в layout-base.css (не дублируем @keyframes shimmer) */
-.skeleton { position: relative; }
-
 /* Уважение prefers-reduced-motion уже глобально в layout-base */
 
 /* ============================================================

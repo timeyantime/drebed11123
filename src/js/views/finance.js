@@ -32,10 +32,10 @@ window.Views = window.Views || {};
           <div class="row-title">${esc(t.title)}${Array.isArray(t.tags) && t.tags.length
             ? `<span class="tx-tags">${t.tags.slice(0, 3).map((x) => `<span>${esc(x)}</span>`).join("")}</span>`
             : ""}</div>
-          <div class="row-meta">${[esc(t.date), esc(t.time || ""), esc(t.category), esc(t.account || "Карта")].filter(Boolean).join(" • ")}</div>
+          <div class="row-meta">${[esc(t.date), esc(t.time || ""), esc(t.category), esc(t.account || "Карта Т-Банк")].filter(Boolean).join(" • ")}</div>
         </div>
         <span class="tx-cat"><span class="cat-dot" style="--c:hsl(${hue} 62% 52%)"></span>${esc(t.category)}</span>
-        <span class="tx-acc">${esc(t.account || "Карта")}</span>
+        <span class="tx-acc">${esc(t.account || "Карта Т-Банк")}</span>
         <span class="tx-type ${t.amount < 0 ? "t-expense" : "t-income"}">${t.amount < 0 ? "Расход" : "Доход"}</span>
         <div class="amount ${cls}">${t.amount > 0 ? "+" : ""}${money(t.amount)}</div>
         <span class="tx-status">${pending
@@ -137,7 +137,7 @@ window.Views = window.Views || {};
           <tbody class="ops-group">
             ${visible.map((t) => {
               const cat = u.catMeta(t.category);
-              const acc = ctx.DB.accounts.find((a) => a.name === (t.account || "Карта"));
+              const acc = ctx.DB.accounts.find((a) => a.name === (t.account || "Карта Т-Банк"));
               const cls = t.amount < 0 ? "t-expense" : "t-income";
               const pending = t.status === "pending";
               return `<tr class="row row--tx">
@@ -145,7 +145,7 @@ window.Views = window.Views || {};
                 <td class="c-time">${esc(t.time || "")}</td>
                 <td class="c-op"><span class="tx-title">${esc(t.title)}</span></td>
                 <td class="c-cat"><span class="cat-pill" style="--c:${cat.color}"><span class="cat-ico" data-icon="${cat.icon}"></span>${esc(t.category)}</span></td>
-                <td class="c-acc"><span class="acc-dot" style="--c:${(acc && acc.color) || "var(--muted)"}"></span>${esc(t.account || "Карта")}</td>
+                <td class="c-acc"><span class="acc-dot" style="--c:${(acc && acc.color) || "var(--muted)"}"></span>${esc(t.account || "Карта Т-Банк")}</td>
                 <td class="c-type ${cls}">${t.amount < 0 ? "Расход" : "Доход"}</td>
                 <td class="c-tags">${tagChips(t)}</td>
                 <td class="c-sum ${cls}">${t.amount > 0 ? "+" : ""}${money(t.amount)}</td>

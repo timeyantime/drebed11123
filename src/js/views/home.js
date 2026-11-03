@@ -43,7 +43,7 @@ window.Views = window.Views || {};
       <div class="row">
         <div class="row-main">
           <div class="row-title">${esc(t.title)}</div>
-          <div class="row-meta">${esc(t.date)} • ${esc(t.category)} • ${esc(t.account || "Карта")}${pending}</div>
+          <div class="row-meta">${esc(t.date)} • ${esc(t.category)} • ${esc(t.account || "Карта Т-Банк")}${pending}</div>
         </div>
         <div class="amount ${cls}">${money(t.amount)}</div>
       </div>`;
