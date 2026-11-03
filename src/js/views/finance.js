@@ -47,12 +47,12 @@ window.Views = window.Views || {};
       </div>`;
   }
 
-  /* группировка «dd MMMM» по строке даты "DD.MM" (год — текущий демо) */
+  /* группировка «dd MMMM» по строке даты "DD.MM" (год восстанавливает u.parseDM) */
   const MONTHS_RU = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"];
   function dateGroup(dateStr) {
-    const m = /^(\d{2})\.(\d{2})/.exec(dateStr || "");
-    if (!m) return esc(dateStr || "Без даты");
-    return `${Number(m[1])} ${MONTHS_RU[Number(m[2]) - 1] || ""}`.trim();
+    const p = u.parseDM(dateStr);
+    if (!p) return esc(dateStr || "Без даты");
+    return `${p.d} ${MONTHS_RU[p.m - 1] || ""}`.trim();
   }
 
   /* ---------- Операции ---------- */
@@ -69,26 +69,18 @@ window.Views = window.Views || {};
     if (st.account && st.account !== "all") items = items.filter((t) => t.account === st.account);
     if (st.category && st.category !== "all") items = items.filter((t) => t.category === st.category);
     // сортировка: date — по дате, amount — по модулю суммы; dir — направление.
-    /* Этап 28: год в дате не хранится. Кольцевая шкала «ближе к сегодня»
-       ломала порядок на стыке месяцев (25.10 оказывалось свежее 03.11),
-       поэтому год восстанавливаем по календарю данных: даты >= самой
-       поздней даты набора — текущего года, более ранние — прошлого.
-       Будущие даты (например, только что добавленные) всегда свежее всех. */
+    /* Этап 28: год в дате не хранится — восстанавливаем единым хелпером
+       u.parseDM (core.js): даты позже сегодняшнего дня считаются прошлым
+       годом (демо-набор), «сегодня» и будущие даты текущего месяца —
+       самыми свежими. Раньше кольцевая шкала ломала порядок на стыке
+       месяцев, а maxMd-эвристика уводила новую ноябрьскую операцию в
+       прошлый год (03.11 < 31.10). */
     const _now = new Date();
     _now.setHours(0, 0, 0, 0);
-    const mdOf = (d) => {
-      const m = /^(\d{2})\.(\d{2})/.exec(d || "");
-      if (!m) return null;
-      const dd = Math.min(Number(m[1]), new Date(_now.getFullYear(), Number(m[2]), 0).getDate());
-      return Number(m[2]) * 100 + dd; // 1103 = 03.11
-    };
-    const maxMd = items.reduce((mx, t) => Math.max(mx, mdOf(t.date) || 0), 0);
     const toDia = (d) => {
-      const md = mdOf(d);
-      if (md === null) return Infinity; // «сегодня» и т.п. — всегда самые свежие
-      const mm = Math.floor(md / 100), dd = md % 100;
-      const year = md <= maxMd ? _now.getFullYear() : _now.getFullYear() - 1;
-      return new Date(year, mm - 1, dd).getTime();
+      if (!/^\d{2}\.\d{2}/.test(d || "")) return Infinity; // «сегодня» и т.п. — всегда самые свежие
+      const p = u.parseDM(d, _now);
+      return p ? new Date(p.y, p.m - 1, p.d).getTime() : Infinity;
     };
     const dnum = toDia;
     /* Этап 28: период по референсу (1М/3М/6М/Всё): последние N календарных
@@ -96,7 +88,10 @@ window.Views = window.Views || {};
     const periodMonths = st.period === "1m" ? 1 : st.period === "3m" ? 3 : st.period === "6m" ? 6 : 0;
     if (periodMonths) {
       const from = new Date(_now.getFullYear(), _now.getMonth() - (periodMonths - 1), 1);
-      items = items.filter((t) => !Number.isFinite(toDia(t.date)) || toDia(t.date) >= from.getTime());
+      items = items.filter((t) => {
+        const ms = toDia(t.date);
+        return ms === Infinity || ms >= from.getTime();
+      });
     }
     const dir = st.dir === "asc" ? 1 : -1;
     if (st.sort === "amount") items.sort((a, b) => (Math.abs(b.amount) - Math.abs(a.amount)) * dir);

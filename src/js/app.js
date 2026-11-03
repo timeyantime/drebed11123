@@ -456,23 +456,11 @@
       const d = new Date();
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     })();
-    /* «31.10» → ISO для нативного input[type=date]. Год восстанавливаем так же,
-       как в сортировке операций (finance.js): даты >= самой поздней даты набора —
-       текущего года, более ранние — прошлого. Иначе октябрьская операция при
-       редактировании 3 ноября получила бы дату 3 октября и «уехала» бы из периода. */
-    const ddmmToISO = (d) => {
-      const m = /^(\d{2})\.(\d{2})/.exec(d || "");
-      if (!m) return todayISO;
-      const now = new Date();
-      const mdOf = (s) => {
-        const mm = /^(\d{2})\.(\d{2})/.exec(s || "");
-        return mm ? Number(mm[2]) * 100 + Number(mm[1]) : 0;
-      };
-      const maxMd = (window.DB.transactions || []).reduce((mx, t) => Math.max(mx, mdOf(t.date)), 0);
-      const thisMd = Number(m[2]) * 100 + Number(m[1]);
-      const year = thisMd <= maxMd ? now.getFullYear() : now.getFullYear() - 1;
-      return `${year}-${m[2]}-${m[1]}`;
-    };
+    /* «31.10» → ISO для нативного input[type=date]: год восстанавливает
+       единый хелпер u.parseDM (core.js) — даты позже сегодняшнего считаются
+       прошлым годом, иначе октябрьская операция при редактировании 3 ноября
+       получила бы дату 3 октября и «уехала» бы из периода. */
+    const ddmmToISO = (d) => u.dateToISO(d) || todayISO;
     let savedKind = "income";
     try { savedKind = localStorage.getItem("mono-tx-kind") || "income"; } catch (_) {}
     const pre = (name) => (editTx ? editTx[name] : undefined);

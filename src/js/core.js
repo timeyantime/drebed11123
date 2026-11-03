@@ -93,6 +93,35 @@
     return `var(--chart-${(i % 8) + 1})`;
   }
 
+  /* Этап 28: единый разбор «DD.MM» → {y,m,d} с восстановлением года.
+     Год в данных не хранится; правила: даты позже сегодняшнего дня —
+     прошлого года (демо-набор), «сегодня» и будущие даты текущего
+     месяца — текущего года. Возвращает null для нераспознанных строк. */
+  function parseDM(d, now) {
+    const m = /^(\d{2})\.(\d{2})/.exec(d || "");
+    if (!m) return null;
+    const n = now || new Date();
+    const mm = Number(m[2]), dd = Math.min(Number(m[1]), new Date(n.getFullYear(), mm, 0).getDate());
+    const thisMd = n.getMonth() + 1;
+    const md = mm * 100 + dd, today = thisMd * 100 + n.getDate();
+    let y = n.getFullYear();
+    if (md > today && mm >= thisMd - 1) y -= 1; // дальняя будущая дата — прошлый год; соседняя — «свежая»
+    return { y, m: mm, d: dd };
+  }
+
+  /* «DD.MM» → ISO «ГГГГ-ММ-ДД» (для нативных input[type=date]) */
+  function dateToISO(d, now) {
+    const p = parseDM(d, now);
+    if (!p) return "";
+    return `${p.y}-${String(p.m).padStart(2, "0")}-${String(p.d).padStart(2, "0")}`;
+  }
+
+  /* ISO/«DD.MM» → канонический формат данных «DD.MM» */
+  function isoToDM(iso) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || "");
+    return m ? `${m[3]}.${m[2]}` : (iso || "");
+  }
+
   /* Этап 27: метаданные категории (цвет, иконка, тип) из справочника */
   function catMeta(name) {
     const list = (window.DB && window.DB.categories) || [];
@@ -202,6 +231,7 @@
 
   window.u = {
     ic, money, pct, fillIcons, esc, chartColor, donutSVG, legendHTML, ringSVG, trendBars, catMeta,
+    parseDM, dateToISO, isoToDM,
     moneyFormatter
   };
 })();

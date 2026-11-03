@@ -103,6 +103,14 @@ window.Views = window.Views || {};
     if (state.filter === "students") items = items.filter((t) => t.category === "Ученики");
     if (state.filter === "pending") items = items.filter((t) => t.status === "pending");
     if (state.sort === "amount") items.sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
+    /* Этап 28: «По дате» теперь действительно сортирует: год восстанавливает
+       u.parseDM, поэтому новая ноябрьская операция выше октябрьских. */
+    else items.sort((a, b) => {
+      const pa = u.parseDM(a.date), pb = u.parseDM(b.date);
+      const va = pa ? pa.y * 10000 + pa.m * 100 + pa.d : Infinity;
+      const vb = pb ? pb.y * 10000 + pb.m * 100 + pb.d : Infinity;
+      return vb - va;
+    });
     const visible = items.slice(0, state.limit);
 
     const spendByCat = {};
