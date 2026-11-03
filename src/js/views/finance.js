@@ -158,9 +158,9 @@ window.Views = window.Views || {};
                 <td class="c-op"><span class="tx-title">${esc(t.title)}</span></td>
                 <td class="c-cat"><span class="cat-pill" style="--c:${cat.color}"><span class="cat-ico" data-icon="${cat.icon}"></span>${esc(t.category)}</span></td>
                 <td class="c-acc"><span class="acc-dot" style="--c:${(acc && acc.color) || "var(--muted)"}"></span>${esc(t.account || "Карта Т-Банк")}</td>
-                <td class="c-type ${cls}">${t.amount < 0 ? "Расход" : "Доход"}</td>
+                <td class="c-type ${cls}">${isTrT ? "Перевод" : (t.amount < 0 ? "Расход" : "Доход")}</td>
                 <td class="c-tags">${tagChips(t)}</td>
-                <td class="c-sum ${cls}">${t.amount > 0 ? "+" : ""}${money(t.amount)}</td>
+                <td class="c-sum ${cls}">${isTrT ? "↔ " + esc(t.account || "") + " → " + esc(t.toAccount || "") : (t.amount > 0 ? "+" : "") + money(t.amount)}</td>
                 <td class="c-act">${pending
                   ? `<button class="mini-btn" data-action="tx-pay" data-id="${t.id}" aria-label="Отметить оплаченным: ${esc(t.title)}">✓</button>`
                   : ""}<button class="mini-btn mini-btn--ghost" data-action="tx-edit" data-id="${t.id}" aria-label="Редактировать операцию: ${esc(t.title)}"><span data-icon="pencil"></span></button><button class="mini-btn mini-btn--ghost" data-action="tx-del" data-id="${t.id}" aria-label="Удалить операцию: ${esc(t.title)}"><span data-icon="trash"></span></button></td>
