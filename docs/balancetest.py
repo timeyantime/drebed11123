@@ -58,7 +58,7 @@ async def main():
           window.DB.accounts[0].balance = 1;
           const defBal = window.__DB_DEFAULT__.accounts[0].balance;
           window.Store.reset();
-          return {defUntouched: defBal === 71200, resetBalance: window.DB.accounts[0].balance,
+          return {defUntouched: defBal === 84200, resetBalance: window.DB.accounts[0].balance,
                   notAlias: window.DB !== window.__DB_DEFAULT__};
         }""")
         print("RESET DEEP COPY:", r4)

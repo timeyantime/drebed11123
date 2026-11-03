@@ -117,6 +117,14 @@
     return { y: n.getFullYear() - (fresh ? 0 : 1), m: mm, d: dd };
   }
 
+  /* «DD.MM[.YYYY]» → Date (для getTime/сравнений). Обёртка над parseDM:
+     возвращает null для нераспознанных строк. */
+  function toDate(d, now) {
+    const p = parseDM(d, now);
+    if (!p) return null;
+    return new Date(p.y, p.m - 1, p.d);
+  }
+
   /* Date → каноническое «DD.MM.YYYY» (Этап 28-fix: единый формат дат) */
   function fmtDM(d) {
     return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${d.getFullYear()}`;
@@ -298,8 +306,8 @@
 
   window.u = {
     ic, money, pct, fillIcons, esc, chartColor, donutSVG, legendHTML, ringSVG, trendBars, catMeta,
-    parseDM, fmtDM, dateToISO, isoToDM,
-    moneyFormatter, recalcBalances
+    parseDM, toDate, fmtDM, dateToISO, isoToDM,
+    moneyFormatter, txDelta, recalcBalances
   };
 })();
 

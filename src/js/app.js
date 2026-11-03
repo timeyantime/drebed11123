@@ -481,6 +481,15 @@
       fields: [
         { name: "sum", label: "Сумма взноса, ₽", type: "number", placeholder: "5000", required: true }
       ]
+    },
+    /* Этап 31: создание счёта (кнопка «Добавить счёт» под каруселью) */
+    account: {
+      title: "Добавить счёт",
+      fields: [
+        { name: "name", label: "Название", type: "text", placeholder: "Напр.: Дебетовая ВТБ", required: true },
+        { name: "kind", label: "Тип счёта", type: "select", options: ["Дебетовая карта", "Кредитная карта", "Накопительный счёт", "Наличные"] },
+        { name: "balance", label: "Начальный баланс, ₽", type: "number", placeholder: "0" }
+      ]
     }
   }; }
 
@@ -718,6 +727,16 @@
       mutateForm((db) => db.lessons.unshift({ id: Date.now(), student: data.student, subject: (db.students.find((s) => s.name === data.student) || {}).subject || "—", when: formatWhen(data.when), duration: data.duration || "60 мин", status: "upcoming" }), `Занятие запланировано: ${data.student}`);
     } else if (key === "contribute" && extra.goalName) {
       mutateForm((db) => { const g = db.goals.find((x) => x.name === extra.goalName); if (g) g.saved = Math.min(g.target, g.saved + Number(data.sum)); }, `Цель пополнена на ${u.money(Number(data.sum))}`);
+    } else if (key === "account" && data.name) {
+      /* Этап 31: создание счёта. balance — «открывающий»: recalcBalances
+         хранит appliedTxs и не пересчитывает заново, поэтому прибавляем сразу. */
+      const KIND_MAP = { "Дебетовая карта": "card", "Кредитная карта": "credit", "Накопительный счёт": "savings", "Наличные": "cash" };
+      const kindKey = KIND_MAP[data.kind] || "card";
+      const openBal = Math.abs(Number(String(data.balance).replace(/\s/g, "")) || 0);
+      mutateForm((db) => {
+        db.accounts.push({ id: Date.now(), name: data.name.trim(), kind: kindKey, bankId: kindKey === "cash" ? "cash" : "other", balance: openBal, openingBalance: openBal });
+        if (openBal) db.transactions.unshift({ id: Date.now() - 1, date: u.fmtDM(new Date()), time: "", title: "Открытие счёта", amount: openBal, type: "income", category: "Личное", tags: [], status: "done", account: data.name.trim() });
+      }, `Счёт добавлен: ${data.name.trim()}`);
     } else {
       window.Store.save();
       renderRoute(state.route);
@@ -1276,6 +1295,14 @@
     }
     if (name === "close-modal") return closeForm();
     if (name === "close-confirm") return closeConfirm();
+    /* Этап 31: кнопки под каруселью счетов */
+    if (name === "add-account") { openForm("account"); return; }
+    if (name === "transfer-between") {
+      openForm("transaction");
+      const radio = genericForm.querySelector('[name="kind"][value="transfer"]');
+      if (radio) { radio.checked = true; radio.dispatchEvent(new Event("change", { bubbles: true })); }
+      return;
+    }
     if (name === "export-data") return exportData();
     if (name === "import-data") return dataImportFile.click();
     if (name === "more") { isDesktopLayout() ? openFan(document.querySelector(".desktop-fab") || fabWraps[0]) : openSheet(); return; }
