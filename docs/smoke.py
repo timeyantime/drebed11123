@@ -38,7 +38,7 @@ with sync_playwright() as p:
     pg.click("[data-action='reset-ops-filters']"); pg.wait_for_timeout(300)
     assert "Тест оплата" in pg.inner_text("#page-body"), "form mutation failed"
     # Этап 28: колонка «Время», кнопка редактирования и подтверждение удаления
-    assert pg.locator(".ops-table thead .c-time").count() == 1, "no time column"
+    assert pg.locator(".ops-table tbody .cell-date small").count() >= 1, "no time in date cell"
     first_id = pg.evaluate("window.DB.transactions[0].id")
     assert pg.locator(f"[data-action='tx-edit'][data-id='{first_id}']").count() == 1, "no edit btn"
     pg.click(f"[data-action='tx-edit'][data-id='{first_id}']"); pg.wait_for_timeout(300)
@@ -89,9 +89,9 @@ with sync_playwright() as p:
     pg.evaluate("localStorage.clear()")
     pg.goto("http://localhost:8090/index.html#/operations"); pg.wait_for_timeout(700)
     assert pg.locator(".ops-summary").count() == 1, "no ops summary"
-    assert pg.locator(".ops-group").count() >= 1, "no date groups"
+    assert pg.locator(".ops-group, .ops-table tbody tr.row--tx").count() >= 1, "no rows/groups"
     # Этап 27: на десктопе (.cat-ico в таблице), на мобиле остаётся .cat-icon (карточки)
-    assert pg.locator(".cat-icon, .cat-ico").count() >= 1, "no category icons"
+    assert pg.locator(".cat-icon, .cat-ico, .meta-dot").count() >= 1, "no category markers"
     # Этап 27: на десктопе — таблица (порядок задаёт первая колонка .c-date),
     # на мобиле — карточки с .group-head. Проверяем десктопный вариант.
     before_g = pg.eval_on_selector_all(".ops-table tbody .c-date", "els=>els.map(e=>e.textContent)")
@@ -101,7 +101,7 @@ with sync_playwright() as p:
     pg.fill("[data-search]", "zzzz-nothing"); pg.wait_for_timeout(500)
     assert pg.locator(".empty-state").count() == 1, "no empty state on bad query"
     pg.click("[data-action='reset-ops-filters']"); pg.wait_for_timeout(500)
-    assert pg.locator(".empty-state").count() == 0 and pg.locator(".ops-group").count() >= 1, "reset did not restore list"
+    assert pg.locator(".empty-state").count() == 0 and pg.locator(".ops-group, .ops-table tbody tr.row--tx").count() >= 1, "reset did not restore list"
     print("operations v2 OK")
     # sheet «Ещё» (мобильный) — проверка, что таб существует
     assert pm.locator("[data-action='more']").count() > 0 or True

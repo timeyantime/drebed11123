@@ -103,7 +103,13 @@ window.Views = window.Views || {};
       });
     }
     const dir = st.dir === "asc" ? 1 : -1;
+    /* Этап 33: сортировка по любой колонке референса — дата, сумма,
+       категория, счёт, теги (первый тег), операция (название). */
     if (st.sort === "amount") items.sort((a, b) => (Math.abs(b.amount) - Math.abs(a.amount)) * dir);
+    else if (st.sort === "category") items.sort((a, b) => a.category.localeCompare(b.category, "ru") * dir);
+    else if (st.sort === "account") items.sort((a, b) => String(a.account || "").localeCompare(String(b.account || ""), "ru") * dir);
+    else if (st.sort === "tags") items.sort((a, b) => String((a.tags || [])[0] || "").localeCompare(String((b.tags || [])[0] || ""), "ru") * dir);
+    else if (st.sort === "merchant") items.sort((a, b) => a.title.localeCompare(b.title, "ru") * dir);
     else items.sort((a, b) => (dnum(b.date) - dnum(a.date)) * dir);
     const visible = items.slice(0, st.limit);
     const accounts = [...new Set(ctx.DB.transactions.map((t) => t.account).filter(Boolean))];
@@ -136,7 +142,7 @@ window.Views = window.Views || {};
     const thSort = (col, label, extraCls = "") => {
       const active = st.sort === col;
       const arrow = active ? (st.dir === "asc" ? " ↑" : " ↓") : "";
-      return `<th class="${extraCls}${active ? " is-sorted" : ""}">` +
+      return `<th class="${extraCls} sortable-h${active ? " is-sorted" + (st.dir === "asc" ? "" : " desc") : ""}">` +
         `<button type="button" class="th-sort" data-col="${col}" aria-label="Сортировать по: ${label}">${label}${arrow}</button></th>`;
     };
     /* Этап 32: выделенная строка (клик по строке) — панель деталей под таблицей */
@@ -171,51 +177,60 @@ window.Views = window.Views || {};
           </div>
         </aside>`;
     })();
+    /* Этап 33: таблица приведена к компактной плотности референса
+       «операции.html» — без дублирования иконки (в колонке «Операция»
+       она уже есть), время объединено с датой второй строкой, тип —
+       бейджем, сумма через .amount; ширина колонок в CSS (%). */
     const tableHTML = `
       <div class="ops-desktop-grid">
-        <div class="ops-table-wrap">
-          <table class="ops-table" aria-label="Таблица операций">
-            <thead><tr>
-              ${thSort("date", "Дата", "c-date")}
-              <th class="c-time">Время</th>
-              <th class="c-op">Операция</th>
-              <th class="c-cat">Категория</th>
-              <th class="c-acc">Счёт</th>
-              <th class="c-type">Тип</th>
-              <th class="c-tags">Теги</th>
-              ${thSort("amount", "Сумма", "c-sum")}
-              <th class="c-act" aria-label="Действия"></th>
-            </tr></thead>
-            <tbody class="ops-group">
-              ${visible.map((t) => {
-                const cat = u.catMeta(t.category);
-                const acc = ctx.DB.accounts.find((a) => a.name === (t.account || "Карта Т-Банк"));
-                /* Этап 29: перевод — нейтральный стиль в таблице тоже */
-                const isTrT = t.type === "transfer";
-                const cls = isTrT ? "t-info" : (t.amount < 0 ? "t-expense" : "t-income");
-                const pending = t.status === "pending";
-                return `<tr class="row row--tx${t.id === selId ? " is-selected" : ""}" tabindex="0" role="button" data-action="tx-select" data-id="${t.id}" aria-label="Детали операции: ${esc(t.title)}">
-                  <td class="c-date">${esc(t.date)}</td>
-                  <td class="c-time">${esc(t.time || "")}</td>
-                  <td class="c-op"><span class="cat-ico cat-ico--inline" style="--c:${cat.color}" data-icon="${cat.icon}"></span><span class="tx-title">${esc(t.title)}</span>${pending ? '<span class="badge badge--pending">Ожидает</span>' : ""}</td>
-                  <td class="c-cat"><span class="cat-pill" style="--c:${cat.color}"><span class="cat-ico" data-icon="${cat.icon}"></span>${esc(t.category)}</span></td>
-                  <td class="c-acc"><span class="acc-dot" style="--c:${(acc && acc.color) || "var(--muted)"}"></span>${esc(t.account || "Карта Т-Банк")}</td>
-                  <td class="c-type ${cls}">${isTrT ? "Перевод" : (t.amount < 0 ? "Расход" : "Доход")}</td>
-                  <td class="c-tags">${tagChips(t)}</td>
-                  <td class="c-sum ${cls}">${isTrT ? "↔ " + money(Math.abs(t.amount)) : (t.amount > 0 ? "+" : "") + money(t.amount)}</td>
-                  <td class="c-act">${pending
-                    ? `<button class="mini-btn" data-action="tx-pay" data-id="${t.id}" aria-label="Отметить оплаченным: ${esc(t.title)}">✓</button>`
-                    : ""}<button class="mini-btn mini-btn--ghost" data-action="tx-edit" data-id="${t.id}" aria-label="Редактировать операцию: ${esc(t.title)}"><span data-icon="pencil"></span></button><button class="mini-btn mini-btn--ghost" data-action="tx-del" data-id="${t.id}" aria-label="Удалить операцию: ${esc(t.title)}"><span data-icon="trash"></span></button></td>
-                </tr>`;
-              }).join("")}
-            </tbody>
-          </table>
+        <div class="ops-table-window">
+          <div class="ops-table-scroll">
+            <table class="ops-table" aria-label="Таблица операций">
+              <thead><tr>
+                ${thSort("date", "Дата", "c-date")}
+                <th class="c-op sortable-h" colspan="2"><button type="button" class="th-sort" data-col="merchant" aria-label="Сортировать по: Операция">Операция</button></th>
+                ${thSort("category", "Категория", "c-cat")}
+                ${thSort("account", "Счёт", "c-acc")}
+                <th class="c-type">Тип</th>
+                ${thSort("tags", "Теги", "c-tags")}
+                ${thSort("amount", "Сумма", "c-sum")}
+                <th class="c-act">Действия</th>
+              </tr></thead>
+              <tbody>
+                ${visible.map((t) => {
+                  const cat = u.catMeta(t.category);
+                  const acc = ctx.DB.accounts.find((a) => a.name === (t.account || "Карта Т-Банк"));
+                  /* Этап 29: перевод — нейтральный стиль в таблице тоже */
+                  const isTrT = t.type === "transfer";
+                  const toneCls = isTrT ? "transfer" : (t.amount < 0 ? "expense" : "income");
+                  const typeLabel = isTrT ? "Перевод" : (t.amount < 0 ? "Расход" : "Доход");
+                  const pending = t.status === "pending";
+                  const tagsArr = Array.isArray(t.tags) ? t.tags : [];
+                  const tagCell = tagsArr.length
+                    ? `<span class="tag-list">${tagsArr.slice(0, 2).map((x) => `<span class="tag">${esc(x)}</span>`).join("")}${tagsArr.length > 2 ? `<span class="tag more">+${tagsArr.length - 2}</span>` : ""}</span>`
+                    : `<span class="muted-cell">—</span>`;
+                  return `<tr class="row row--tx${t.id === selId ? " is-selected" : ""}" tabindex="0" role="button" data-action="tx-select" data-id="${t.id}" aria-label="Детали операции: ${esc(t.title)}">
+                    <td class="c-date"><span class="cell-date">${esc(t.date)}${t.time ? `<small>${esc(t.time)}</small>` : ""}</span></td>
+                    <td class="c-op"><span class="op-cell"><span class="op-name">${esc(t.title)}</span>${(t.note || pending) ? `<span class="op-note">${pending ? "Ожидает оплаты" : ""}${pending && t.note ? " · " : ""}${t.note ? esc(t.note) : ""}</span>` : ""}</span></td>
+                    <td class="c-cat"><span class="meta-cell"><span class="meta-dot" style="--dot-color:${cat.color}"></span><span class="meta-text">${esc(t.category)}</span></span></td>
+                    <td class="c-acc"><span class="meta-cell"><span class="meta-dot" style="--dot-color:${(acc && acc.color) || "var(--muted)"}"></span><span class="meta-text">${esc(t.account || "Карта Т-Банк")}</span></span></td>
+                    <td class="c-type"><span class="type-badge ${toneCls}">${typeLabel}</span></td>
+                    <td class="c-tags">${tagCell}</td>
+                    <td class="c-sum"><span class="amount ${toneCls}">${isTrT ? "↔ " + money(Math.abs(t.amount)) : (t.amount > 0 ? "+" : "") + money(t.amount)}</span></td>
+                    <td class="c-act"><span class="row-actions">${pending
+                      ? `<button class="row-btn" data-action="tx-pay" data-id="${t.id}" aria-label="Отметить оплаченным: ${esc(t.title)}">✓</button>`
+                      : ""}<button class="row-btn" data-action="tx-edit" data-id="${t.id}" aria-label="Редактировать операцию: ${esc(t.title)}"><span data-icon="pencil"></span></button><button class="row-btn danger" data-action="tx-del" data-id="${t.id}" aria-label="Удалить операцию: ${esc(t.title)}"><span data-icon="trash"></span></button></span></td>
+                  </tr>`;
+                }).join("")}
+              </tbody>
+            </table>
+          </div>
+          <div class="ops-foot">
+            <span class="page-info">Показано ${visible.length} из ${items.length}</span>
+            ${items.length > visible.length ? `<button class="chip" data-action="load-more-ops">Показать ещё (${items.length - visible.length})</button>` : ""}
+          </div>
         </div>
         ${detailHTML}
-      </div>
-      <div class="ops-foot">
-        <span>1–${visible.length} из ${items.length}</span>
-        <span>стр. 1/${Math.max(1, Math.ceil(items.length / st.limit))}</span>
       </div>`;
     const cardsHTML = groups.map((g) => {
       // итог дня в заголовке группы (референс «Счета и транзакции»);
@@ -228,7 +243,8 @@ window.Views = window.Views || {};
         </section>`;
     }).join("");
 
-    const sortLabel = st.sort === "date" ? "Дата" : "Сумма";
+    const SORT_LABELS = { date: "Дата", amount: "Сумма", category: "Категория", account: "Счёт", tags: "Теги", merchant: "Операция" };
+    const sortLabel = SORT_LABELS[st.sort] || "Дата";
     /* Этап 28: тулбар по референсу «Домкнига / Операции»:
        строка 1 — поиск + кнопки действий справа; строка 2 — сегменты и селекты. */
     const categories = [...new Set(ctx.DB.transactions.map((t) => t.category).filter(Boolean))];

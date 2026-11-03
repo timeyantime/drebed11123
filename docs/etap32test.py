@@ -15,16 +15,16 @@ with sync_playwright() as p:
     pg.wait_for_selector(".ops-table")
 
     # 1. клик по «Сумма» — сортировка по убыванию модуля
-    first_title = pg.locator(".ops-table tbody tr .tx-title").first.inner_text()
+    first_title = pg.locator(".ops-table tbody tr .op-name").first.inner_text()
     pg.click('.th-sort[data-col="amount"]')
     pg.wait_for_timeout(250)
-    sums = pg.eval_on_selector_all(".c-sum", "els => els.slice(0,4).map(e => e.textContent)")
+    sums = pg.eval_on_selector_all("tbody .c-sum", "els => els.slice(0,4).map(e => e.textContent)")
     print("AFTER AMOUNT SORT:", sums[:3])
     assert pg.locator("th.is-sorted .th-sort[data-col='amount']").count() == 1, "no active col highlight"
     # обратный порядок
     pg.click('.th-sort[data-col="amount"]')
     pg.wait_for_timeout(250)
-    sums_asc = pg.eval_on_selector_all(".c-sum", "els => els.slice(0,1).map(e => e.textContent)")
+    sums_asc = pg.eval_on_selector_all("tbody .c-sum", "els => els.slice(0,1).map(e => e.textContent)")
     print("ASC FIRST:", sums_asc)
     assert sums[0] != sums_asc[0], "dir toggle did nothing"
 
@@ -32,7 +32,7 @@ with sync_playwright() as p:
     pg.click('.th-sort[data-col="date"]')  # вернём дату
     pg.wait_for_timeout(200)
     row = pg.locator(".ops-table tbody tr").first
-    title = row.locator(".tx-title").inner_text()
+    title = row.locator(".op-name").inner_text()
     row.click()
     pg.wait_for_timeout(250)
     det = pg.locator(".tx-detail").is_visible()
@@ -43,7 +43,7 @@ with sync_playwright() as p:
 
     # 3. клик по кнопке внутри строки НЕ выделяет/не сбрасывает выделение
     edit_before = pg.locator(".row--tx.is-selected").count()
-    pg.locator(".ops-table tbody tr").nth(1).locator(".mini-btn--ghost").first.click()
+    pg.locator(".ops-table tbody tr").nth(1).locator(".row-btn").first.click()
     pg.wait_for_timeout(300)
     modal_open = pg.locator("#genericForm.open, .modal.open, form.open").count() > 0 or pg.locator("[id*=form][class*=open]").count() > 0
     sel_after = pg.locator(".row--tx.is-selected").count()

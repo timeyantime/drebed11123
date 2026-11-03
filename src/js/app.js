@@ -1583,7 +1583,7 @@
       /* Этап 32: выделение строки таблицы → панель деталей операции.
          Клики по кнопкам внутри строки не должны её выделять. */
       if (a === "tx-select") {
-        if (event.target.closest(".mini-btn, .primary-btn, .secondary-btn")) return;
+        if (event.target.closest(".mini-btn, .row-btn, .primary-btn, .secondary-btn")) return;
         const id = Number(actionBtn.dataset.id);
         state.operations.selected = state.operations.selected === id ? null : id;
         softRender("operations");
