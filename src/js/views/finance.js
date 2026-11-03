@@ -243,6 +243,185 @@ window.Views = window.Views || {};
   };
 
   /* ---------- Счета ---------- */
+  /* ---------- Этап 30: карусель банковских карт (по референсу
+     «Счета и транзакции.html») ---------- */
+
+  /* Визуальные пресеты карт: градиент, цвет текста, логотип-марка.
+     bankId в mock.accounts — ключ; неизвестный id → «other». */
+  const BANK_META = {
+    tbank: {
+      name: "Т-Банк",
+      bg: "linear-gradient(135deg, #FFE95A 0%, #FFC300 100%)",
+      fg: "#151515",
+      mark: '<svg viewBox="0 0 44 44" aria-hidden="true"><rect x="7" y="7" width="30" height="30" rx="10" fill="#151515"/><rect x="14" y="14" width="16" height="5" rx="2.5" fill="#FFDD2D"/><rect x="19.5" y="14" width="5" height="18" rx="2.5" fill="#FFDD2D"/></svg>',
+    },
+    alfa: {
+      name: "Альфа-Банк",
+      bg: "linear-gradient(135deg, #FF5A50 0%, #D80C00 100%)",
+      fg: "#ffffff",
+      mark: '<svg viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="14" fill="none" stroke="#fff" stroke-width="3"/><path d="M22 11 L30 31 H26 L22 21 L18 31 H14 Z" fill="#fff"/><rect x="18" y="24" width="8" height="3" rx="1.5" fill="#fff"/></svg>',
+    },
+    sber: {
+      name: "Сбер",
+      bg: "linear-gradient(135deg, #2FC44D 0%, #128C2A 100%)",
+      fg: "#ffffff",
+      mark: '<svg viewBox="0 0 44 44" aria-hidden="true"><path d="M30 14c0-4.5-4.2-7-9-7s-9 2.5-9 7 4.2 7 9 7 9 2.5 9 7-4.2 7-9 7-9-2.5-9-7" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round"/></svg>',
+    },
+    vtb: {
+      name: "ВТБ",
+      bg: "linear-gradient(135deg, #2596D8 0%, #005BAA 100%)",
+      fg: "#ffffff",
+      mark: '<svg viewBox="0 0 44 44" aria-hidden="true"><path d="M9 13h6l7 14 7-14h6L23 35h-2Z" fill="#fff"/><rect x="12" y="8" width="20" height="3" rx="1.5" fill="#fff" opacity=".75"/><rect x="15" y="38" width="14" height="3" rx="1.5" fill="#fff" opacity=".75"/></svg>',
+    },
+    cash: {
+      name: "Наличные",
+      bg: "linear-gradient(135deg, #A8B3C5 0%, #64748B 100%)",
+      fg: "#ffffff",
+      mark: '<svg viewBox="0 0 44 44" aria-hidden="true"><rect x="7" y="13" width="30" height="18" rx="4" fill="none" stroke="#fff" stroke-width="3"/><circle cx="22" cy="22" r="4" fill="#fff"/><path d="M12 18h4M28 26h4" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>',
+    },
+    other: {
+      name: "Счёт",
+      bg: "linear-gradient(135deg, #8B9BB4 0%, #5F6C85 100%)",
+      fg: "#ffffff",
+      mark: '<svg viewBox="0 0 44 44" aria-hidden="true"><rect x="8" y="12" width="28" height="20" rx="5" fill="none" stroke="#fff" stroke-width="3"/><path d="M8 19h28" stroke="#fff" stroke-width="3"/><circle cx="30" cy="26" r="2" fill="#fff"/></svg>',
+    },
+  };
+
+  const CONTACTLESS_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8a8 8 0 0 1 0 8M11 6a12 12 0 0 1 0 12M15 4a16 16 0 0 1 0 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+
+  const ACCT_TYPE_LABEL = { card: "Дебетовая", savings: "Накопительный", cash: "Наличные", credit: "Кредитная" };
+
+  /* маска номера: видны только последние 4 цифры, остальные группы «••••» */
+  function cardNumber(acc) {
+    const last4 = String(acc.mask || "").match(/\d{4}$/);
+    if (acc.number) {
+      const groups = String(acc.number).trim().split(/\s+/);
+      const tail = last4 ? last4[0] : groups[groups.length - 1];
+      return groups.slice(0, -1).map(() => "••••").concat(tail).join(" ");
+    }
+    return last4 ? `•••• ${last4[0]}` : "";
+  }
+
+  function bankCardInnerHTML(acc) {
+    const meta = BANK_META[acc.bankId] || BANK_META.other;
+    const num = acc.kind === "cash" ? "" : cardNumber(acc);
+    return `
+      <span class="bc-shine"></span>
+      <span class="bc-top">
+        <span class="bc-logo">${meta.mark}</span>
+        <span class="bc-titles">
+          <span class="bc-bank">${esc(meta.name)}</span>
+          <span class="bc-name">${esc(acc.name)}</span>
+        </span>
+        <span class="bc-type">${esc(ACCT_TYPE_LABEL[acc.kind] || "Счёт")}</span>
+      </span>
+      <span class="bc-middle">
+        ${acc.kind === "cash" ? "" : `<span class="bc-chip"></span><span class="bc-contactless">${CONTACTLESS_SVG}</span>`}
+      </span>
+      <span class="bc-bottom">
+        <span class="bc-number">${esc(num)}</span>
+        <span class="bc-balance"><span>Баланс</span><strong>${money(acc.balance)}</strong></span>
+      </span>`;
+  }
+
+  function bankCardHTML(acc, index) {
+    const meta = BANK_META[acc.bankId] || BANK_META.other;
+    return `
+      <button type="button" role="listitem" class="bank-card"
+        data-go-route="accounts" data-go-params="account:${acc.id}"
+        style="--i:${index}; --card-bg:${meta.bg}; --card-fg:${meta.fg}"
+        aria-label="${esc(`${acc.name}, баланс ${money(acc.balance)}`)}">
+        ${bankCardInnerHTML(acc)}
+      </button>`;
+  }
+
+  /* ---- управление каруселью (стрелки/точки/drag) ---- */
+  let carouselAnimated = false;   /* fadeUp-анимация появления — только при первом рендере */
+  let carouselDragged = false;    /* подавить клик после перетаскивания */
+  let carPointer = { active: false, x: 0, moved: false };
+
+  function getCardStep(el) {
+    const card = el && el.querySelector(".bank-card");
+    if (!el || !card) return 300;
+    const st = getComputedStyle(el);
+    const gap = parseFloat(st.columnGap || st.gap || "12") || 12;
+    return card.offsetWidth + gap;
+  }
+
+  function updateCarouselState() {
+    const el = document.getElementById("accountsCarousel");
+    if (!el) return;
+    const step = getCardStep(el);
+    const dots = document.getElementById("accountsDots");
+    if (dots) {
+      const n = el.querySelectorAll(".bank-card").length;
+      const page = Math.max(0, Math.min(n - 1, Math.round(el.scrollLeft / step)));
+      dots.innerHTML = Array.from({ length: n }, (_, i) =>
+        `<button type="button" class="${i === page ? "on" : ""}" data-page="${i}" aria-label="Счёт ${i + 1}"></button>`).join("");
+    }
+    const prev = document.getElementById("accountsPrev");
+    const next = document.getElementById("accountsNext");
+    if (prev && next) {
+      const maxScroll = el.scrollWidth - el.clientWidth - 2;
+      prev.disabled = el.scrollLeft <= 2;
+      next.disabled = el.scrollLeft >= maxScroll;
+    }
+  }
+
+  /* единократная привязка слушателей к документу (делегирование) */
+  let carouselBound = false;
+  function bindCarousel() {
+    if (carouselBound) return;
+    carouselBound = true;
+
+    document.addEventListener("pointerdown", (e) => {
+      const car = e.target.closest("#accountsCarousel");
+      if (!car) return;
+      carPointer = { active: true, x: e.clientX, moved: false };
+    });
+    window.addEventListener("pointermove", (e) => {
+      if (!carPointer.active) return;
+      if (Math.abs(e.clientX - carPointer.x) > 10) carPointer.moved = true;
+    });
+    window.addEventListener("pointerup", () => {
+      if (!carPointer.active) return;
+      if (carPointer.moved) {
+        carouselDragged = true;
+        setTimeout(() => { carouselDragged = false; }, 220);
+      }
+      carPointer.active = false;
+      carPointer.moved = false;
+    });
+    document.addEventListener("scroll", (e) => {
+      if (e.target && e.target.id === "accountsCarousel") updateCarouselState();
+    }, { passive: true, capture: true });
+
+    document.addEventListener("click", (e) => {
+      const arrow = e.target.closest("[data-carousel-scroll]");
+      if (arrow) {
+        const el = document.getElementById("accountsCarousel");
+        if (!el) return;
+        const delta = Number(arrow.dataset.carouselScroll);
+        const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+        el.scrollBy({ left: delta * getCardStep(el), behavior: reduced ? "auto" : "smooth" });
+        return;
+      }
+      const dot = e.target.closest("#accountsDots [data-page]");
+      if (dot) {
+        const el = document.getElementById("accountsCarousel");
+        if (!el) return;
+        const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+        el.scrollTo({ left: Number(dot.dataset.page) * getCardStep(el), behavior: reduced ? "auto" : "smooth" });
+        return;
+      }
+      /* drag по карусели не должен открывать детальную страницу счёта */
+      const card = e.target.closest("#accountsCarousel .bank-card");
+      if (card && carouselDragged) { e.preventDefault(); e.stopPropagation(); }
+    }, true);
+
+    window.addEventListener("resize", updateCarouselState);
+  }
+
   /* ---------- Счета (с детальной страницей #/accounts/account/:id) ---------- */
   function sparkline(values, color) {
     if (!values || values.length < 2) return "";
@@ -320,19 +499,14 @@ window.Views = window.Views || {};
         <div class="kpi"><span class="kpi-label">Минус (мес.)</span><span class="kpi-value t-expense">${money(monthOut)}</span></div>
         <div class="kpi"><span class="kpi-label">Итог</span><span class="kpi-value ${monthIn + monthOut >= 0 ? "t-income" : "t-expense"}">${money(monthIn + monthOut)}</span><span class="kpi-sub">${ctx.DB.accounts.length} счёта(ов)</span></div>
       </div>
-      <div class="list">
-        ${ctx.DB.accounts.map((a, i) => `
-          <div class="row row-link" tabindex="0" role="button" data-go-route="accounts" data-go-params="account:${a.id}" aria-label="${esc(a.name)}, открыть детали">
-            <span class="avatar" style="--c:${a.color || u.chartColor(i)}"><span data-icon="${a.kind === "cash" ? "wallet" : "accounts"}"></span></span>
-            <div class="row-main">
-              <div class="row-title">${esc(a.name)}${a.mask ? ` <span class="acct-mask">${esc(a.mask)}</span>` : ""}</div>
-              <div class="row-meta">${a.kind === "card" ? "Дебетовая карта" : a.kind === "savings" ? "Накопительный счёт" : "Наличные"}</div>
-            </div>
-            ${sparkline(a.history, a.color)}
-            <div class="amount">${money(a.balance)}</div>
-            <span class="chev" data-icon="chevron"></span>
-          </div>`).join("")}
+      <div class="carousel-wrap">
+        <button class="carousel-arrow left" id="accountsPrev" type="button" aria-label="Предыдущий счёт" data-carousel-scroll="-1">‹</button>
+        <div class="accounts-carousel${carouselAnimated ? "" : " animated"}" id="accountsCarousel" role="list" aria-label="Счета">
+          ${ctx.DB.accounts.map((a, i) => bankCardHTML(a, i)).join("")}
+        </div>
+        <button class="carousel-arrow right" id="accountsNext" type="button" aria-label="Следующий счёт" data-carousel-scroll="1">›</button>
       </div>
+      <div class="carousel-dots" id="accountsDots" aria-label="Навигация по счетам"></div>
       <section class="panel import-panel" style="margin-top:16px">
         <div class="import-row">
           <span class="quick-icon" data-icon="upload"></span>
@@ -341,6 +515,10 @@ window.Views = window.Views || {};
         </div>
       </section>
     `);
+    /* Этап 30: инициализация карусели после вставки DOM */
+    bindCarousel();
+    carouselAnimated = true;
+    requestAnimationFrame(updateCarouselState);
   };
 
   /* ---------- Планируемые платежи (v2: группы по срокам) ---------- */

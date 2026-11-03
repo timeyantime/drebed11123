@@ -57,10 +57,12 @@ window.DB = {
      appliedTxs — журнал дельт операций, которые УЖЕ были учтены в balance
      на этапе формирования mock (paid-транзакции). recalcBalances вычитает
      их из суммы дельт — поэтому повторный пересчёт идемпотентен. */
+  /* Этап 30: bankId — ключ визуального стиля карты (BANK_META в finance.js),
+     number — полный номер для маски «•••• XXXX» на лицевой стороне карточки */
   accounts: [
-    { id: 1, name: "Карта Т-Банк", balance: 84200, openingBalance: 84200, kind: "card", mask: "•• 4276", color: "var(--blue)", history: [72000, 78500, 69000, 81200, 76400, 84200] },
-    { id: 2, name: "Накопительный счёт", balance: 210000, openingBalance: 210000, kind: "savings", mask: "•• 0119", color: "var(--green)", history: [150000, 162000, 175000, 188000, 199000, 210000] },
-    { id: 3, name: "Наличные", balance: 6500, openingBalance: 6500, kind: "cash", mask: "", color: "var(--amber)", history: [9000, 7200, 8400, 5100, 7800, 6500] }
+    { id: 1, name: "Карта Т-Банк", balance: 84200, openingBalance: 84200, kind: "card", bankId: "tbank", number: "2200 7000 1234 4276", mask: "•• 4276", color: "var(--blue)", history: [72000, 78500, 69000, 81200, 76400, 84200] },
+    { id: 2, name: "Накопительный счёт", balance: 210000, openingBalance: 210000, kind: "savings", bankId: "tbank", number: "2200 7000 9876 0119", mask: "•• 0119", color: "var(--green)", history: [150000, 162000, 175000, 188000, 199000, 210000] },
+    { id: 3, name: "Наличные", balance: 6500, openingBalance: 6500, kind: "cash", bankId: "cash", number: "", mask: "", color: "var(--amber)", history: [9000, 7200, 8400, 5100, 7800, 6500] }
   ],
 
   /* Этап 29: заполняется ниже IIFE'ом — все paid tx из mock уже отражены
