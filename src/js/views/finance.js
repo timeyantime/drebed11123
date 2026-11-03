@@ -32,7 +32,7 @@ window.Views = window.Views || {};
           <div class="row-title">${esc(t.title)}${Array.isArray(t.tags) && t.tags.length
             ? `<span class="tx-tags">${t.tags.slice(0, 3).map((x) => `<span>${esc(x)}</span>`).join("")}</span>`
             : ""}</div>
-          <div class="row-meta">${esc(t.category)} • ${esc(t.account || "Карта")}</div>
+          <div class="row-meta">${[esc(t.date), esc(t.time || ""), esc(t.category), esc(t.account || "Карта")].filter(Boolean).join(" • ")}</div>
         </div>
         <span class="tx-cat"><span class="cat-dot" style="--c:hsl(${hue} 62% 52%)"></span>${esc(t.category)}</span>
         <span class="tx-acc">${esc(t.account || "Карта")}</span>
@@ -67,8 +67,21 @@ window.Views = window.Views || {};
       items = items.filter((t) => t.title.toLowerCase().includes(q) || t.category.toLowerCase().includes(q));
     }
     if (st.account && st.account !== "all") items = items.filter((t) => t.account === st.account);
+    if (st.category && st.category !== "all") items = items.filter((t) => t.category === st.category);
     // сортировка: date — по дате (DD.MM парсим в число), amount — по модулю суммы; dir — направление
     const dnum = (d) => { const m = /^(\d{2})\.(\d{2})/.exec(d || ""); return m ? Number(m[2]) * 100 + Number(m[1]) : 0; };
+    /* Этап 28: период по референсу (1М/3М/6М/Всё) — месяц операции не дальше N назад от текущего */
+    const nowM = new Date().getMonth() + 1;
+    const periodMonths = st.period === "1m" ? 1 : st.period === "3m" ? 3 : st.period === "6m" ? 6 : 0;
+    if (periodMonths) {
+      items = items.filter((t) => {
+        const m = /^(\d{2})\.(\d{2})/.exec(t.date || "");
+        if (!m) return true; // «сегодня» и т.п. всегда показываем
+        let mm = Number(m[2]);
+        if (mm > nowM) mm -= 12; // декабрьские данные при январском «сейчас» — это прошлый год, но близко
+        return mm > nowM - periodMonths;
+      });
+    }
     const dir = st.dir === "asc" ? 1 : -1;
     if (st.sort === "amount") items.sort((a, b) => (Math.abs(b.amount) - Math.abs(a.amount)) * dir);
     else items.sort((a, b) => (dnum(b.date) - dnum(a.date)) * dir);
@@ -101,6 +114,7 @@ window.Views = window.Views || {};
         <table class="ops-table" aria-label="Таблица операций">
           <thead><tr>
             <th class="c-date">Дата</th>
+            <th class="c-time">Время</th>
             <th class="c-op">Операция</th>
             <th class="c-cat">Категория</th>
             <th class="c-acc">Счёт</th>
@@ -117,6 +131,7 @@ window.Views = window.Views || {};
               const pending = t.status === "pending";
               return `<tr class="row row--tx">
                 <td class="c-date">${esc(t.date)}</td>
+                <td class="c-time">${esc(t.time || "")}</td>
                 <td class="c-op"><span class="tx-title">${esc(t.title)}</span></td>
                 <td class="c-cat"><span class="cat-pill" style="--c:${cat.color}"><span class="cat-ico" data-icon="${cat.icon}"></span>${esc(t.category)}</span></td>
                 <td class="c-acc"><span class="acc-dot" style="--c:${(acc && acc.color) || "var(--muted)"}"></span>${esc(t.account || "Карта")}</td>
@@ -125,7 +140,7 @@ window.Views = window.Views || {};
                 <td class="c-sum ${cls}">${t.amount > 0 ? "+" : ""}${money(t.amount)}</td>
                 <td class="c-act">${pending
                   ? `<button class="mini-btn" data-action="tx-pay" data-id="${t.id}" aria-label="Отметить оплаченным: ${esc(t.title)}">✓</button>`
-                  : ""}<button class="mini-btn mini-btn--ghost" data-action="tx-del" data-id="${t.id}" aria-label="Удалить операцию: ${esc(t.title)}"><span data-icon="trash"></span></button></td>
+                  : ""}<button class="mini-btn mini-btn--ghost" data-action="tx-edit" data-id="${t.id}" aria-label="Редактировать операцию: ${esc(t.title)}"><span data-icon="pencil"></span></button><button class="mini-btn mini-btn--ghost" data-action="tx-del" data-id="${t.id}" aria-label="Удалить операцию: ${esc(t.title)}"><span data-icon="trash"></span></button></td>
               </tr>`;
             }).join("")}
           </tbody>
@@ -146,6 +161,43 @@ window.Views = window.Views || {};
     }).join("");
 
     const sortLabel = st.sort === "date" ? "Дата" : "Сумма";
+    /* Этап 28: тулбар по референсу «Домкнига / Операции»:
+       строка 1 — поиск + кнопки действий справа; строка 2 — сегменты и селекты. */
+    const categories = [...new Set(ctx.DB.transactions.map((t) => t.category).filter(Boolean))];
+    const periodDefs = [["1m", "1М"], ["3m", "3М"], ["6m", "6М"], ["all", "Всё"]];
+    const toolbarHTML = `
+      <div class="ops-toolbar">
+        <div class="ops-toolbar-top">
+          <label class="search-box">
+            <span class="search-icon" data-icon="search"></span>
+            <input type="search" placeholder="Поиск по названию или категории…" value="${u.esc(st.query || "")}" data-search aria-label="Поиск операций" />
+          </label>
+          <div class="ops-toolbar-actions">
+            <button class="chip chip--sort" data-sort="operations" title="Дата ↓ → Дата ↑ → Сумма ↓ → Сумма ↑">
+              ${sortLabel} <span data-icon="${st.dir === "asc" ? "arrow-up" : "arrow-down"}"></span>
+            </button>
+            <button class="chip" data-action="reset-ops-filters">Сбросить</button>
+          </div>
+        </div>
+        <div class="ops-toolbar-filters">
+          <div class="seg" role="group" aria-label="Тип операций">
+            ${[["all", "Все"], ["income", "Доходы"], ["expense", "Расходы"], ["pending", "Ожидает"]].map(([k, l]) => `
+              <button class="chip ${st.filter === k ? "is-active" : ""}" data-filter="${k}" data-scope="operations">${l}</button>`).join("")}
+          </div>
+          <div class="seg" role="group" aria-label="Период">
+            ${periodDefs.map(([k, l]) => `
+              <button class="chip ${(st.period || "all") === k ? "is-active" : ""}" data-period-btn="${k}">${l}</button>`).join("")}
+          </div>
+          <select class="ops-select" data-account-select aria-label="Счёт">
+            <option value="all">Все счета</option>
+            ${accounts.map((a) => `<option value="${u.esc(a)}" ${st.account === a ? "selected" : ""}>${u.esc(a)}</option>`).join("")}
+          </select>
+          <select class="ops-select" data-category-select aria-label="Категория">
+            <option value="all">Все категории</option>
+            ${categories.map((c) => `<option value="${u.esc(c)}" ${st.category === c ? "selected" : ""}>${u.esc(c)}</option>`).join("")}
+          </select>
+        </div>
+      </div>`;
     page(`
       <div class="ops-summary">
         <div class="ops-sum"><span class="ops-sum-label">Доходы</span><span class="ops-sum-val t-income">+${money(sumIn).replace("−", "")}</span></div>
@@ -154,23 +206,7 @@ window.Views = window.Views || {};
         <div class="ops-sum-sep"></div>
         <div class="ops-sum"><span class="ops-sum-label">Итог</span><span class="ops-sum-val ${sumIn + sumOut >= 0 ? "t-income" : "t-expense"}">${money(sumIn + sumOut)}</span></div>
       </div>
-      <label class="search-box">
-        <span class="search-icon" data-icon="search"></span>
-        <input type="search" placeholder="Поиск по названию или категории…" value="${u.esc(st.query || "")}" data-search aria-label="Поиск операций" />
-      </label>
-      <div class="page-tools">
-        <div class="chips">
-          ${[["all", "Все"], ["income", "Доходы"], ["expense", "Расходы"], ["pending", "Ожидает"]].map(([k, l]) => `
-            <button class="chip ${st.filter === k ? "is-active" : ""}" data-filter="${k}" data-scope="operations">${l}</button>`).join("")}
-        </div>
-        <button class="chip chip--sort" data-sort="operations" title="Дата ↓ → Дата ↑ → Сумма ↓ → Сумма ↑">
-          ${sortLabel} <span data-icon="${st.dir === "asc" ? "arrow-up" : "arrow-down"}"></span>
-        </button>
-      </div>
-      <div class="chips" aria-label="Фильтр по счетам">
-        <button class="chip ${!st.account || st.account === "all" ? "is-active" : ""}" data-account-btn="all">Все счета</button>
-        ${accounts.map((a) => `<button class="chip ${st.account === a ? "is-active" : ""}" data-account-btn="${u.esc(a)}">${u.esc(a)}</button>`).join("")}
-      </div>
+      ${toolbarHTML}
       ${items.length === 0 ? `
         <div class="empty-state">
           <span class="empty-icon" data-icon="search"></span>
