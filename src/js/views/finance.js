@@ -68,18 +68,33 @@ window.Views = window.Views || {};
     }
     if (st.account && st.account !== "all") items = items.filter((t) => t.account === st.account);
     if (st.category && st.category !== "all") items = items.filter((t) => t.category === st.category);
-    // сортировка: date — по дате (DD.MM парсим в число), amount — по модулю суммы; dir — направление
-    const dnum = (d) => { const m = /^(\d{2})\.(\d{2})/.exec(d || ""); return m ? Number(m[2]) * 100 + Number(m[1]) : 0; };
-    /* Этап 28: период по референсу (1М/3М/6М/Всё) — месяц операции не дальше N назад от текущего */
+    // сортировка: date — по дате, amount — по модулю суммы; dir — направление.
+    /* Этап 28: год в дате не хранится, поэтому дата приводится к кольцевой
+       шкале относительно «сегодня»: свежие даты (последние ~полгода) больше,
+       прошлогодние уходят вниз независимо от месяца. */
+    const nowNum = (new Date().getMonth() + 1) * 100 + new Date().getDate();
+    const dnum = (d) => {
+      const m = /^(\d{2})\.(\d{2})/.exec(d || "");
+      if (!m) return nowNum + 1; // «сегодня» и т.п. — всегда самые свежие
+      let v = Number(m[2]) * 100 + Number(m[1]);
+      if (v > nowNum + 650) v -= 1200;        // сильно впереди → это прошлый год (напр. декабрь при феврале)
+      else if (v < nowNum - 650) v += 1200;   // сильно позади → будущий месяц текущего цикла (редко)
+      return v;
+    };
+    /* Этап 28: период по референсу (1М/3М/6М/Всё). Год не хранится в дате,
+       поэтому считаем календарный сдвиг от текущего месяца с переходом через
+       январь/декабрь. */
     const nowM = new Date().getMonth() + 1;
     const periodMonths = st.period === "1m" ? 1 : st.period === "3m" ? 3 : st.period === "6m" ? 6 : 0;
     if (periodMonths) {
       items = items.filter((t) => {
         const m = /^(\d{2})\.(\d{2})/.exec(t.date || "");
         if (!m) return true; // «сегодня» и т.п. всегда показываем
-        let mm = Number(m[2]);
-        if (mm > nowM) mm -= 12; // декабрьские данные при январском «сейчас» — это прошлый год, но близко
-        return mm > nowM - periodMonths;
+        const mm = Number(m[2]);
+        let delta = nowM - mm;               // 0 — текущий месяц
+        if (delta < -6) delta += 12;         // декабрь при январе/феврале — прошлый год, близко
+        if (delta > 6) delta -= 12;          // наоборот: январские данные при декабре
+        return delta >= 0 && delta < periodMonths;
       });
     }
     const dir = st.dir === "asc" ? 1 : -1;
