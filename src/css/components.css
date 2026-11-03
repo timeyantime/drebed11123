@@ -1356,4 +1356,23 @@ tr.row--tx:hover { background: transparent; }
   .mini-btn { min-width: 40px; min-height: 40px; }
 }
 
+/* ---------- Легенда donut (Этап 28, референс D1) ---------- */
+/* Иконка категории вместо точки: цветной квадрат со скруглением, белая SVG-иконка внутри */
+.legend-ic {
+  width: 18px; height: 18px; border-radius: 6px; flex: 0 0 auto;
+  background: color-mix(in srgb, var(--c, var(--accent)) 18%, transparent);
+  color: var(--c, var(--accent));
+  display: grid; place-items: center;
+}
+.legend-ic svg { width: 12px; height: 12px; }
+/* Скрытые строки при maxVisible — «+N ещё» разворачивает их на месте (app.js) */
+.legend-hidden { display: none; }
+.legend-more {
+  align-self: flex-start;
+  border: none; background: none; padding: 2px 4px; cursor: pointer;
+  font-size: 12px; font-weight: 600; color: var(--accent);
+  border-radius: 6px;
+}
+.legend-more:hover { background: var(--hover); }
+
 
