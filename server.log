@@ -1,18 +1,129 @@
-Traceback (most recent call last):
-  File "<frozen runpy>", line 198, in _run_module_as_main
-  File "<frozen runpy>", line 88, in _run_code
-  File "/usr/local/lib/python3.12/http/server.py", line 1314, in <module>
-    test(
-  File "/usr/local/lib/python3.12/http/server.py", line 1261, in test
-    with ServerClass(addr, HandlerClass) as httpd:
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.12/socketserver.py", line 457, in __init__
-    self.server_bind()
-  File "/usr/local/lib/python3.12/http/server.py", line 1308, in server_bind
-    return super().server_bind()
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/local/lib/python3.12/http/server.py", line 136, in server_bind
-    socketserver.TCPServer.server_bind(self)
-  File "/usr/local/lib/python3.12/socketserver.py", line 478, in server_bind
-    self.socket.bind(self.server_address)
-OSError: [Errno 98] Address already in use
+127.0.0.1 - - [03/Nov/2026 18:33:25] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:44] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:44] "GET /src/css/tokens.css HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:44] "GET /src/css/layout-base.css HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:44] "GET /src/data/mock.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:44] "GET /src/css/components.css HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:44] "GET /src/js/core.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:44] "GET /src/js/store.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:44] "GET /src/js/views/home.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:44] "GET /src/js/views/teacher.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:44] "GET /src/js/views/budget.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:44] "GET /src/js/views/finance.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:44] "GET /src/js/views/profile.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:44] "GET /src/js/app.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:44] "GET /sw.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:44] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:44] "GET /manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:44] "GET /icon-192.png HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:44] "GET /icon-512.png HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:58] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:58] "GET /src/css/tokens.css HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:58] "GET /src/css/layout-base.css HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:58] "GET /src/css/components.css HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:58] "GET /src/js/core.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:58] "GET /src/data/mock.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:59] "GET /src/js/store.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:59] "GET /src/js/views/home.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:59] "GET /src/js/views/teacher.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:59] "GET /src/js/views/budget.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:59] "GET /src/js/views/finance.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:59] "GET /src/js/views/profile.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:59] "GET /src/js/app.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:59] "GET /sw.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:59] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:59] "GET /manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:59] "GET /icon-192.png HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:33:59] "GET /icon-512.png HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:05] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:05] "GET /src/css/tokens.css HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:05] "GET /src/css/layout-base.css HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:05] "GET /src/css/components.css HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:05] "GET /src/js/core.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:05] "GET /src/data/mock.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:05] "GET /src/js/store.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:05] "GET /src/js/views/home.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:05] "GET /src/js/views/teacher.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:05] "GET /src/js/views/budget.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:05] "GET /src/js/views/finance.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:05] "GET /src/js/views/profile.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:05] "GET /src/js/app.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:05] "GET /sw.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:05] "GET /manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:05] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:05] "GET /icon-192.png HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:05] "GET /icon-512.png HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:12] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:12] "GET /src/css/tokens.css HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:12] "GET /src/css/layout-base.css HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:12] "GET /src/css/components.css HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:12] "GET /src/js/core.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:12] "GET /src/data/mock.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:12] "GET /src/js/store.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:12] "GET /src/js/views/home.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:12] "GET /src/js/views/teacher.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:12] "GET /src/js/views/budget.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:12] "GET /src/js/views/finance.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:12] "GET /src/js/views/profile.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:12] "GET /src/js/app.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:12] "GET /sw.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:13] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:13] "GET /manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:13] "GET /icon-192.png HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:13] "GET /icon-512.png HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:20] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:20] "GET /src/css/tokens.css HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:20] "GET /src/css/layout-base.css HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:20] "GET /src/css/components.css HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:20] "GET /src/js/core.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:20] "GET /src/data/mock.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:20] "GET /src/js/store.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:20] "GET /src/js/views/home.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:20] "GET /src/js/views/teacher.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:20] "GET /src/js/views/budget.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:20] "GET /src/js/views/finance.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:20] "GET /src/js/views/profile.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:20] "GET /src/js/app.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:20] "GET /sw.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:20] "GET /manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:20] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:20] "GET /icon-192.png HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:20] "GET /icon-512.png HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:25] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:25] "GET /src/css/tokens.css HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:25] "GET /src/css/layout-base.css HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:25] "GET /src/css/components.css HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:25] "GET /src/js/core.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:25] "GET /src/data/mock.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:25] "GET /src/js/store.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:25] "GET /src/js/views/home.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:25] "GET /src/js/views/teacher.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:25] "GET /src/js/views/budget.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:25] "GET /src/js/views/finance.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:25] "GET /src/js/views/profile.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:25] "GET /src/js/app.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:25] "GET /sw.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:25] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:25] "GET /manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:25] "GET /icon-192.png HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:25] "GET /icon-512.png HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:33] "GET /sw.js HTTP/1.1" 304 -
+127.0.0.1 - - [03/Nov/2026 18:34:39] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:39] "GET /src/css/tokens.css HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:39] "GET /src/css/layout-base.css HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:39] "GET /src/css/components.css HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:39] "GET /src/js/core.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:39] "GET /src/data/mock.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:39] "GET /src/js/store.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:39] "GET /src/js/views/teacher.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:39] "GET /src/js/views/home.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:39] "GET /src/js/views/budget.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:39] "GET /src/js/views/finance.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:39] "GET /src/js/views/profile.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:39] "GET /src/js/app.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:39] "GET /sw.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:39] "GET /index.html HTTP/1.1" 304 -
+127.0.0.1 - - [03/Nov/2026 18:34:39] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:39] "GET /manifest.json HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:39] "GET /icon-192.png HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2026 18:34:39] "GET /icon-512.png HTTP/1.1" 200 -
