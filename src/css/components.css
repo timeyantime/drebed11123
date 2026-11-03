@@ -1436,8 +1436,149 @@ tr.row--tx:hover { background: transparent; }
   .ops-desktop-grid { grid-template-columns: minmax(0, 1fr) 320px; align-items: start; }
 }
 
+/* ============================================================
+   Этап 33: компактная плотность таблицы по референсу
+   «Операции/операции.html» — окно со скроллом, тонкие строки,
+   колонки в %, дата+время одной ячейкой, бейджи типа, row-btn.
+   ============================================================ */
+
+/* окно-карточка: рамка + скругление + футер пагинации внутри */
+.ops-table-window {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.ops-table-scroll {
+  width: 100%;
+  max-height: min(70vh, 780px);
+  overflow: auto;
+  scrollbar-width: thin;
+}
+.ops-table-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.ops-table-scroll::-webkit-scrollbar-thumb { background: var(--line); border-radius: 999px; }
+
+/* переопределяем раннюю «широкую» раскладку колонок на %-плотность референса */
+.ops-table { min-width: 820px; font-size: 12px; }
+.ops-table .c-date { width: 9%; }
+.ops-table .c-op { width: 24%; }
+.ops-table .c-cat { width: 15%; }
+.ops-table .c-acc { width: 15%; }
+.ops-table .c-type { width: 8%; font-weight: inherit; color: inherit; }
+.ops-table .c-tags { width: 11%; }
+.ops-table .c-sum { width: 12%; }
+.ops-table .c-act { width: 9%; }
+.ops-table th { padding: 8px 10px; background: var(--surface-2); }
+.ops-table td { padding: 4px 10px; height: 44px; }
+.ops-table tbody tr:hover { background: var(--surface-2); }
+
+/* ячейка даты: число жирно, время — второй строкой (как в референсе) */
+.cell-date {
+  display: block;
+  font-family: var(--font-num);
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1.15;
+  white-space: nowrap;
+  color: var(--text);
+}
+.cell-date small {
+  display: block;
+  margin-top: 1px;
+  color: var(--text-3);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* ячейка операции: название + примечание/статус второй строкой */
+.op-cell { display: block; min-width: 0; }
+.op-name {
+  display: block;
+  font-weight: 700;
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.op-note {
+  display: block;
+  margin-top: 1px;
+  color: var(--text-3);
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* категории и счета — единый компактный формат «точка + текст» */
+.meta-cell { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; }
+.meta-dot {
+  width: 7px; height: 7px; border-radius: 3px; flex: none;
+  background: var(--dot-color, var(--muted));
+}
+.meta-text {
+  min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-weight: 600; font-size: 12px; color: var(--text-2);
+}
+
+/* бейдж типа операции (Доход/Расход/Перевод) */
+.type-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 18px; padding: 0 7px; border-radius: 999px;
+  font-size: 10px; font-weight: 800; white-space: nowrap;
+  background: color-mix(in srgb, var(--muted) 12%, transparent);
+  color: var(--text-3);
+}
+.type-badge.income { background: color-mix(in srgb, var(--green) 12%, transparent); color: var(--green); }
+.type-badge.expense { background: color-mix(in srgb, var(--red) 12%, transparent); color: var(--red); }
+.type-badge.transfer { background: var(--accent-soft); color: var(--accent); }
+
+/* теги в таблице — компактные чипы как в референсе */
+.c-tags .tag-list { display: flex; align-items: center; gap: 3px; min-width: 0; overflow: hidden; white-space: nowrap; }
+.c-tags .tag {
+  display: inline-flex; align-items: center; height: 16px; max-width: 72px;
+  border-radius: 5px; padding: 0 5px;
+  background: var(--accent-soft); color: var(--accent);
+  font-size: 10px; font-weight: 700;
+  overflow: hidden; text-overflow: ellipsis; flex: 0 0 auto;
+}
+.c-tags .tag.more { background: var(--surface-2); color: var(--text-3); border: 1px solid var(--line); max-width: 34px; }
+.muted-cell { color: var(--text-3); font-size: 11px; font-weight: 600; opacity: 0.65; }
+
+/* сумма в таблице — тонкая типографика референса */
+.ops-table .amount { font-size: 12.5px; }
+
+/* кнопки действий в строке — квадратные icon-btn как в референсе */
+.row-actions { display: inline-flex; align-items: center; gap: 3px; justify-content: flex-end; }
+.row-btn {
+  width: 24px; height: 24px; border-radius: 7px;
+  border: 1px solid var(--line); background: var(--surface);
+  color: var(--text-3); cursor: pointer;
+  display: inline-grid; place-items: center; padding: 0;
+  font-size: 11px; line-height: 1;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
+}
+.row-btn:hover { background: var(--surface-2); color: var(--text); border-color: var(--muted); }
+.row-btn:active { transform: scale(0.96); }
+.row-btn.danger:hover { color: var(--red); border-color: color-mix(in srgb, var(--red) 35%, var(--line)); background: color-mix(in srgb, var(--red) 8%, transparent); }
+.row-btn [data-icon] svg { width: 13px; height: 13px; }
+
+/* футер окна таблицы: счётчик + «показать ещё» (референс pagination) */
+.ops-table-window .ops-foot {
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+  padding: 8px 12px;
+  margin: 0;
+}
+.ops-foot .page-info { font-weight: 700; }
+
 /* sticky-заголовок таблицы при прокрутке */
 .ops-table thead th { position: sticky; top: 0; z-index: 2; }
+.ops-table th.sortable-h { cursor: pointer; transition: color 0.15s, background 0.15s; user-select: none; }
+.ops-table th.sortable-h:hover { color: var(--text); background: var(--hover); }
+.ops-table th.is-sorted { color: var(--text); }
 
 /* сортировка кликом по заголовку колонки */
 .th-sort {

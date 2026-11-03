@@ -1,3 +1,2 @@
-*.pid
-*.pid
-server.log
+__pycache__/
+*.pyc
