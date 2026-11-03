@@ -32,10 +32,38 @@ with sync_playwright() as p:
     pg.fill("#gf-title", "Тест оплата")
     pg.fill("#gf-amount", "1000")
     pg.click("#genericForm button[type=submit]"); pg.wait_for_timeout(200)
-    # проверка мутации — на странице «Операции» (ученик-деталь/список занятий не показывают транзакции)
+    # Этап 28: у новой операции дата сегодняшняя, а демо-данные — за октябрь;
+    # период по умолчанию «1М» их отсекает, поэтому перед проверкой сбрасываем фильтры.
     pg.evaluate("location.hash='#operations'"); pg.wait_for_timeout(700)
+    pg.click("[data-action='reset-ops-filters']"); pg.wait_for_timeout(300)
     assert "Тест оплата" in pg.inner_text("#page-body"), "form mutation failed"
-    print("form+fan OK")
+    # Этап 28: колонка «Время», кнопка редактирования и подтверждение удаления
+    assert pg.locator(".ops-table thead .c-time").count() == 1, "no time column"
+    first_id = pg.evaluate("window.DB.transactions[0].id")
+    assert pg.locator(f"[data-action='tx-edit'][data-id='{first_id}']").count() == 1, "no edit btn"
+    pg.click(f"[data-action='tx-edit'][data-id='{first_id}']"); pg.wait_for_timeout(300)
+    assert "Редактирование операции" in pg.inner_text("#genericTitle"), "edit title wrong"
+    assert pg.input_value("#gf-title") == "Тест оплата", "edit not prefilled"
+    pg.fill("#gf-title", "Тест оплата ред."); pg.fill("#gf-amount", "1500")
+    pg.click("#genericForm button[type=submit]"); pg.wait_for_timeout(400)
+    assert pg.evaluate("window.DB.transactions.length") == 11, "edit created new tx"
+    assert "Тест оплата ред." in pg.inner_text("#page-body"), "edit not visible"
+    before_del = pg.evaluate("window.DB.transactions.length")
+    pg.click(f"[data-action='tx-del'][data-id='{first_id}']"); pg.wait_for_timeout(300)
+    assert pg.evaluate("document.getElementById('confirmModal').classList.contains('open')"), "no confirm modal"
+    assert "Удалить операцию" in pg.inner_text("#confirmTitle"), "confirm title wrong"
+    pg.click("#confirmModal [data-action='close-confirm']"); pg.wait_for_timeout(300)
+    assert pg.evaluate("window.DB.transactions.length") == before_del, "cancel deleted anyway"
+    pg.click(f"[data-action='tx-del'][data-id='{first_id}']"); pg.wait_for_timeout(300)
+    pg.click("#confirmOk"); pg.wait_for_timeout(400)
+    assert pg.evaluate("window.DB.transactions.length") == before_del - 1, "confirm-ok did not delete"
+    # тулбар по референсу: сегменты периода + селекты счёта/категории
+    assert pg.locator(".ops-toolbar [data-period-btn]").count() >= 4, "no period seg"
+    assert pg.locator(".ops-toolbar [data-account-select]").count() == 1, "no account select"
+    assert pg.locator(".ops-toolbar [data-category-select]").count() == 1, "no category select"
+    pg.click("[data-period-btn='1m']"); pg.wait_for_timeout(300)
+    assert pg.evaluate("document.querySelector(\"[data-period-btn='1m']\").classList.contains('is-active')"), "period not active"
+    print("form+fan OK, etap28 ops UI OK")
     # theme toggle
     before = pg.evaluate("document.documentElement.dataset.theme")
     pg.click("[data-action='theme']"); pg.wait_for_timeout(100)
