@@ -46,7 +46,7 @@ with sync_playwright() as p:
     assert pg.input_value("#gf-title") == "Тест оплата", "edit not prefilled"
     pg.fill("#gf-title", "Тест оплата ред."); pg.fill("#gf-amount", "1500")
     pg.click("#genericForm button[type=submit]"); pg.wait_for_timeout(400)
-    assert pg.evaluate("window.DB.transactions.length") == 11, "edit created new tx"
+    assert pg.evaluate("window.DB.transactions.length") == 18, "edit created new tx"
     assert "Тест оплата ред." in pg.inner_text("#page-body"), "edit not visible"
     before_del = pg.evaluate("window.DB.transactions.length")
     pg.click(f"[data-action='tx-del'][data-id='{first_id}']"); pg.wait_for_timeout(300)

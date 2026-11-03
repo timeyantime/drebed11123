@@ -480,7 +480,7 @@ window.Views = window.Views || {};
      поэтому сортировка стабильная: существующий порядок сохраняется внутри
      одинаковых дат. */
   function recentTxHTML(db, acc, limit = 4) {
-    const parseDate = (d) => { const p = window.u && u.parseDM ? u.parseDM(String(d)) : null; return p ? p.getTime() : 0; };
+    const parseDate = (d) => { const p = window.u && u.toDate ? u.toDate(String(d)) : null; return p ? p.getTime() : 0; };
     const txs = db.transactions
       .filter((t) => t.account === acc.name || (t.type === "transfer" && t.toAccount === acc.name))
       .map((t, i) => ({ t, i }))
@@ -493,7 +493,9 @@ window.Views = window.Views || {};
       const incoming = t.type === "income" || (isTransfer && t.toAccount === acc.name && t.account !== acc.name);
       const sumCls = isTransfer ? "transfer" : (incoming ? "income" : "expense");
       const sign = isTransfer ? "↔ " : (incoming ? "+ " : "− ");
-      const meta = [u.fmtDM(String(t.date)), t.category].filter(Boolean).join(" · ");
+      /* Этап 31: fmtDM ждёт Date — дата уже каноническая «DD.MM.YYYY»,
+         String() сюда вызывал d.getDate на строке (TypeError). */
+      const meta = [t.date, t.category].filter(Boolean).join(" · ");
       return `<button type="button" class="recent-row" data-go-route="accounts" data-go-params="account:${esc(acc.id)}">
         <span class="recent-main">
           <span class="recent-title">${esc(t.title)}</span>
