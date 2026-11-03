@@ -123,15 +123,27 @@
       data-center="${esc(opts.centerText || "")}" data-caption="${esc(opts.caption || "")}">${segs}${center}</svg>`;
   }
 
+  /* Легенда donut (Этап 28 — референс D1): иконки категорий из справочника,
+     «+N ещё» для длинных списков (клик разворачивает остальные строки). */
   function legendHTML(data, opts = {}) {
     const total = data.reduce((s, d) => s + Math.abs(d.value), 0);
-    return `<div class="legend">${data.map((d, i) => `
-      <div class="legend-item" data-legend="${i}">
-        <span class="cat-dot" style="--c:${d.color || chartColor(i)}"></span>
+    const max = opts.maxVisible || 0;
+    const iconOf = (d, i) => {
+      if (!d.icon) return "";
+      return `<span class="legend-ic" style="--c:${d.color || chartColor(i)}" data-icon="${d.icon}"></span>`;
+    };
+    const row = (d, i) => `
+      <div class="legend-item${max && i >= max ? " legend-hidden" : ""}" data-legend="${i}">
+        ${d.icon ? iconOf(d, i) : `<span class="cat-dot" style="--c:${d.color || chartColor(i)}"></span>`}
         <span class="name">${esc(d.label)}</span>
         <span class="val">${opts.raw ? esc(d.text || money(d.value)) : money(d.value)}</span>
         <span class="pct">${pct(Math.abs(d.value), total)}</span>
-      </div>`).join("")}</div>`;
+      </div>`;
+    const rows = data.map(row).join("");
+    const more = max && data.length > max
+      ? `<button type="button" class="legend-more" data-action="legend-more">+${data.length - max} ещё ↓</button>`
+      : "";
+    return `<div class="legend">${rows}${more}</div>`;
   }
 
   /* Столбчатая диаграмма «доходы/расходы по месяцам» (Этап 23).

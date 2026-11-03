@@ -528,8 +528,11 @@ window.Views = window.Views || {};
         ${(() => {
           const by = {};
           ctx.DB.budgets.forEach((b) => { by[b.name] = b.fact; });
-          const data = Object.entries(by).map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value);
-          return `<div class="donut-wrap">${donutSVG(data, { centerText: money(data.reduce((s, d) => s + d.value, 0)), caption: "всего" }) + legendHTML(data)}</div>`;
+          /* Этап 28: иконка/цвет категории из справочника, сортировка по сумме */
+          const data = Object.entries(by)
+            .map(([label, value]) => ({ label, value, ...u.catMeta(label) }))
+            .sort((a, b) => b.value - a.value);
+          return `<div class="donut-wrap">${donutSVG(data, { centerText: money(data.reduce((s, d) => s + d.value, 0)), caption: "всего" }) + legendHTML(data, { maxVisible: 6 })}</div>`;
         })()}
       </section>
       <section class="panel" style="margin-top:16px">

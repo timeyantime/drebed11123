@@ -6,7 +6,7 @@
 window.Views = window.Views || {};
 
 (function () {
-  const { money, donutSVG, legendHTML, esc } = u;
+  const { money, donutSVG, legendHTML, esc, catMeta } = u;
 
   function budgetRows(DB) {
     return DB.budgets.map((b, i) => {
@@ -109,7 +109,10 @@ window.Views = window.Views || {};
     DB.transactions.filter((t) => t.amount < 0).forEach((t) => {
       spendByCat[t.category] = (spendByCat[t.category] || 0) + Math.abs(t.amount);
     });
-    const catData = Object.entries(spendByCat).map(([label, value]) => ({ label, value }));
+    /* Этап 28: цвет/иконка из справочника категорий + сортировка по сумме */
+    const catData = Object.entries(spendByCat)
+      .map(([label, value]) => ({ label, value, ...catMeta(label) }))
+      .sort((a, b) => b.value - a.value);
 
     const chips = [
       { key: "month", label: "Период" },
@@ -161,7 +164,7 @@ window.Views = window.Views || {};
         <section class="panel">
           <div class="panel-head"><h2>Структура расходов</h2></div>
           <div class="donut-wrap">
-            ${catData.length ? donutSVG(catData, { centerText: money(Math.abs(expense)), caption: "за период" }) + legendHTML(catData) : `<div class="muted">Нет данных</div>`}
+            ${catData.length ? donutSVG(catData, { centerText: money(Math.abs(expense)), caption: "за период" }) + legendHTML(catData, { maxVisible: 6 }) : `<div class="muted">Нет данных</div>`}
           </div>
         </section>
       </div>

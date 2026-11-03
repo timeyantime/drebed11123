@@ -4,7 +4,7 @@
 window.Views = window.Views || {};
 
 (function () {
-  const { money, donutSVG, legendHTML, esc } = u;
+  const { money, donutSVG, legendHTML, esc, catMeta } = u;
 
   /* ---- общие partials (переиспользуются другими view) ---- */
   function lessonRow(l) {
@@ -142,7 +142,10 @@ window.Views = window.Views || {};
     DB.transactions.filter((t) => t.amount < 0).forEach((t) => {
       spendByCat[t.category] = (spendByCat[t.category] || 0) + Math.abs(t.amount);
     });
-    const catData = Object.entries(spendByCat).map(([label, value]) => ({ label, value }));
+    /* Этап 28: цвет/иконка из справочника категорий + сортировка по сумме */
+    const catData = Object.entries(spendByCat)
+      .map(([label, value]) => ({ label, value, ...catMeta(label) }))
+      .sort((a, b) => b.value - a.value);
 
     page(`
       ${onboardHTML()}
@@ -174,7 +177,7 @@ window.Views = window.Views || {};
             <button class="link-btn" data-route="budget">Бюджет →</button>
           </div>
           <div class="donut-wrap">
-            ${catData.length ? donutSVG(catData, { centerText: money(Math.abs(expense)).replace(/\u00a0/g, " "), caption: "расходы" }) + legendHTML(catData) : `<div class="muted">Нет расходов за период</div>`}
+            ${catData.length ? donutSVG(catData, { centerText: money(Math.abs(expense)).replace(/\u00a0/g, " "), caption: "расходы" }) + legendHTML(catData, { maxVisible: 6 }) : `<div class="muted">Нет расходов за период</div>`}
           </div>
         </section>
 
