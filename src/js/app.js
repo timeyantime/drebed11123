@@ -510,7 +510,10 @@
           <label class="tag-opt"><input type="checkbox" name="${fl.name}" value="${u.esc(t)}" ${curTags.includes(t) ? "checked" : ""}><span>${u.esc(t)}</span></label>`).join("")}</div>`;
       }
       const preVal = pre(fl.name);
-      const valAttr = (preVal !== undefined && preVal !== null && fl.type !== "file") ? ` value="${u.esc(String(Math.abs(fl.name === "amount" ? (preVal || "") : preVal)))}"` : "";
+      /* Этап 28-fix: Math.abs применялся к строке «Тест оплата» → NaN в поле title.
+         Модуль нужен только для amount (в БД хранение со знаком), для остальных полей — как есть. */
+      const dispVal = fl.name === "amount" ? Math.abs(Number(preVal) || 0) : preVal;
+      const valAttr = (preVal !== undefined && preVal !== null && fl.type !== "file") ? ` value="${u.esc(String(dispVal))}"` : "";
       return `<input id="gf-${fl.name}" name="${fl.name}" type="${fl.type}" placeholder="${fl.placeholder || ""}" inputmode="${fl.type === "number" ? "decimal" : "text"}"${valAttr}>`;
     };
     genericForm.innerHTML = `
@@ -1129,7 +1132,7 @@
     if (!t) return;
     openConfirm(
       "Удалить операцию?",
-      `«${t.title}» (${t.date}${t.time ? ", " + t.time : ""}, ${money(t.amount)}) будет удалена. Действие можно отменить.`,
+      `«${t.title}» (${t.date}${t.time ? ", " + t.time : ""}, ${u.money(t.amount)}) будет удалена. Действие можно отменить.`,
       "Удалить",
       () => deleteTx(id)
     );
@@ -1181,7 +1184,7 @@
     const t = window.DB.taxes;
     const add = Math.min(Number(amount) || (t.due - t.paid), t.due - t.paid);
     if (add <= 0) return pushToast("Налог уже закрыт", { kind: "info" });
-    mutateWithUndo((db) => { db.taxes.paid += add; }, `Отложено на налог: ${money(add)}`);
+    mutateWithUndo((db) => { db.taxes.paid += add; }, `Отложено на налог: ${u.money(add)}`);
   }
   function taxDeclPay(name) {
     const d = window.DB.taxes.declarations.find((x) => x.name === name);
