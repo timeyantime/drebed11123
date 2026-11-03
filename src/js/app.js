@@ -1247,7 +1247,13 @@
       "Удалить выбранные операции?",
       `${ids.length} ${pluralOpsRu(ids.length)} будут удалены. Действие можно отменить одним нажатием «Отменить» в уведомлении.`,
       "Удалить",
-      () => mutateWithUndo((db) => { db.transactions = db.transactions.filter((t) => !ids.includes(t.id)); },
+      () => mutateWithUndo((db) => {
+        /* Этап 34: удаляем и саму операцию, и её запись в журнале appliedTxs —
+           иначе recalcBalances посчитает дельту удалённой tx как «новую»
+           (полную сумму) и баланс счёта изменится при удалении. */
+        db.transactions = db.transactions.filter((t) => !ids.includes(t.id));
+        if (db.appliedTxs) ids.forEach((id) => { delete db.appliedTxs[id]; });
+      },
         `Удалено ${ids.length} ${pluralOpsRu(ids.length)}`)
     );
     state.operations.checked = [];
@@ -1738,7 +1744,45 @@
     if (chkAll) {
       window.__opsChkTx = true;
       setTimeout(() => { window.__opsChkTx = false; }, 0);
-      const ids = [...document.querySelectorAll("[data-action='ops-check-row']")].map((el) => Number(el.dataset.id));
+      /* Этап 34: «выбрать все» — ровно текущая видимая страница таблицы.
+         Дублируем пайплайн фильтрации из Views.operations (finance.js),
+         иначе чекбокс в шапке не совпадёт с содержимым tbody. */
+      const st = state.operations;
+      const now = new Date(); now.setHours(0, 0, 0, 0);
+      let list = (window.DB.transactions || []).slice();
+      if (st.filter === "income") list = list.filter((t) => t.type !== "transfer" && t.amount > 0);
+      if (st.filter === "expense") list = list.filter((t) => t.type !== "transfer" && t.amount < 0);
+      if (st.filter === "transfer") list = list.filter((t) => t.type === "transfer");
+      if (st.filter === "pending") list = list.filter((t) => t.status === "pending");
+      if (st.query) {
+        const q = String(st.query).toLowerCase();
+        list = list.filter((t) => t.title.toLowerCase().includes(q) || t.category.toLowerCase().includes(q));
+      }
+      if (st.account && st.account !== "all") list = list.filter((t) => t.account === st.account || t.toAccount === st.account);
+      if (st.category && st.category !== "all") list = list.filter((t) => t.category === st.category);
+      const pm = st.period === "1m" ? 1 : st.period === "3m" ? 3 : st.period === "6m" ? 6 : 0;
+      if (pm) {
+        const from = new Date(now.getFullYear(), now.getMonth() - (pm - 1), 1);
+        list = list.filter((t) => {
+          const p = /^(\d{2})\.(\d{2})/.test(t.date || "") ? u.parseDM(t.date, now) : null;
+          if (!p) return true; // «сегодня» и т.п. — всегда свежие
+          return new Date(p.y, p.m - 1, p.d).getTime() >= from.getTime();
+        });
+      }
+      const sdir = st.dir === "asc" ? 1 : -1;
+      if (st.sort === "amount") list.sort((a, b) => (Math.abs(b.amount) - Math.abs(a.amount)) * sdir);
+      else if (st.sort === "category") list.sort((a, b) => a.category.localeCompare(b.category, "ru") * sdir);
+      else if (st.sort === "account") list.sort((a, b) => String(a.account || "").localeCompare(String(b.account || ""), "ru") * sdir);
+      else if (st.sort === "tags") list.sort((a, b) => String((a.tags || [])[0] || "").localeCompare(String((b.tags || [])[0] || ""), "ru") * sdir);
+      else if (st.sort === "merchant") list.sort((a, b) => a.title.localeCompare(b.title, "ru") * sdir);
+      else list.sort((a, b) => {
+        const da = /^(\d{2})\.(\d{2})/.test(a.date || "") ? u.parseDM(a.date, now) : null;
+        const dbb = /^(\d{2})\.(\d{2})/.test(b.date || "") ? u.parseDM(b.date, now) : null;
+        const ta = da ? new Date(da.y, da.m - 1, da.d).getTime() : Infinity;
+        const tb = dbb ? new Date(dbb.y, dbb.m - 1, dbb.d).getTime() : Infinity;
+        return (tb - ta) * (st.dir === "asc" ? -1 : 1);
+      });
+      const ids = list.slice(0, st.limit).map((t) => Number(t.id));
       state.operations.checked = chkAll.checked ? [...new Set(ids)] : [];
       softRender("operations");
     }

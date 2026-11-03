@@ -42,6 +42,7 @@ with sync_playwright() as p:
 
     # 4. удаление выбранной (confirm -> OK), счётчик транзакций уменьшается
     total_before = pg.evaluate("window.DB.transactions.length")
+    bal_before = pg.evaluate("JSON.stringify(window.DB.accounts.map(a => a.balance))")
     pg.click('[data-action="ops-del-selected"]')
     pg.wait_for_timeout(250)
     assert pg.locator(".modal--confirm").count() == 1, "confirm modal missing"
@@ -51,6 +52,10 @@ with sync_playwright() as p:
     print("TX BEFORE:", total_before, "AFTER:", total_after)
     assert total_after == total_before - 1, "bulk delete removed wrong count"
     assert pg.locator(".bulk-bar").count() == 0, "bulk bar stayed after delete"
+    # Этап 34 fix: appliedTxs чистится при удалении → баланс не «прыгает»
+    bal_after = pg.evaluate("JSON.stringify(window.DB.accounts.map(a => a.balance))")
+    print("BALANCES UNCHANGED AFTER DELETE:", bal_before == bal_after)
+    assert bal_before == bal_after, "balances changed after bulk delete (appliedTxs leak)"
 
     # 5. undo возвращает удалённую операцию
     pg.wait_for_selector(".toast.show .toast-undo", timeout=3000)
