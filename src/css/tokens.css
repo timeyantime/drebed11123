@@ -46,7 +46,8 @@
   --sp-4: 16px;
   --sp-5: 24px;
 
-  --ring: color-mix(in srgb, var(--text) 28%, transparent);
+  /* фолбэк #111 на случай, если --ring вычислится раньше, чем определён --text */
+  --ring: color-mix(in srgb, var(--text, #111) 28%, transparent);
 
   /* ---- Мобильные размеры / layout-константы (из исходного layout.html) ---- */
   --bottom-nav-h: 62px;
