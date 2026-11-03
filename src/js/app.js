@@ -31,7 +31,7 @@
     route: "home",
     teacher: { tab: "students", filter: "all", sort: "name" },
     budget: { filter: "month", sort: "date", limit: 5 },
-    operations: { filter: "all", sort: "date", dir: "desc", limit: 8, query: "", account: "all" },
+    operations: { filter: "all", sort: "date", dir: "desc", limit: 8, query: "", account: "all", category: "all", period: "all" },
     dashboards: { period: "6" },
     detail: null // { kind: "student", id } — детальная страница (Этап 5B)
   };
@@ -1038,6 +1038,53 @@
     }, "Операция удалена");
   }
 
+  /* Этап 28: подтверждение удаления (референс «Домкнига / Операции» —
+     перед удалением спрашивает уверенность, чтобы не терять данные кликом). */
+  const confirmModal = document.getElementById("confirmModal");
+  const confirmBackdrop = document.getElementById("confirmBackdrop");
+  const confirmTitleEl = document.getElementById("confirmTitle");
+  const confirmTextEl = document.getElementById("confirmText");
+  const confirmOkBtn = document.getElementById("confirmOk");
+  let confirmAction = null;
+
+  function openConfirm(title, text, okLabel, onOk) {
+    confirmTitleEl.textContent = title;
+    confirmTextEl.textContent = text;
+    confirmOkBtn.textContent = okLabel;
+    confirmAction = onOk;
+    confirmModal.classList.add("open");
+    confirmBackdrop.classList.add("open");
+    confirmOkBtn.focus();
+  }
+  function closeConfirm() {
+    confirmModal.classList.remove("open");
+    confirmBackdrop.classList.remove("open");
+    confirmAction = null;
+  }
+  function confirmDeleteTx(id) {
+    const t = (window.DB.transactions || []).find((x) => x.id === id);
+    if (!t) return;
+    openConfirm(
+      "Удалить операцию?",
+      `«${t.title}» (${t.date}${t.time ? ", " + t.time : ""}, ${money(t.amount)}) будет удалена. Действие можно отменить.`,
+      "Удалить",
+      () => deleteTx(id)
+    );
+  }
+  if (confirmOkBtn) confirmOkBtn.addEventListener("click", () => {
+    const fn = confirmAction;
+    closeConfirm();
+    if (fn) fn();
+  });
+  if (confirmBackdrop) confirmBackdrop.addEventListener("click", closeConfirm);
+
+  /* Этап 28: редактирование операции — та же форма с предзаполнением */
+  function openEditTx(id) {
+    const t = (window.DB.transactions || []).find((x) => x.id === id);
+    if (!t) return;
+    openForm("transaction", { txId: id });
+  }
+
   function remindDebt(studentId) {
     const s = window.DB.students.find((x) => x.id === studentId);
     pushToast(s ? `Напоминание отправлено: ${s.name}` : "Напоминание отправлено", { kind: "info" });
@@ -1092,7 +1139,7 @@
     if (name === "load-more") { state.budget.limit += 5; return softRender("budget"); }
     if (name === "load-more-ops") { state.operations.limit += 8; return softRender("operations"); }
     if (name === "reset-ops-filters") {
-      state.operations = { filter: "all", sort: "date", dir: "desc", limit: 8, query: "", account: "all" };
+      state.operations = { filter: "all", sort: "date", dir: "desc", limit: 8, query: "", account: "all", category: "all", period: "all" };
       return softRender("operations");
     }
     if (name === "close-modal") return closeForm();
@@ -1328,6 +1375,16 @@
     const accChip = event.target.closest("[data-account-btn]");
     if (accChip) { event.preventDefault(); state.operations.account = accChip.dataset.accountBtn; softRender("operations"); return; }
 
+    /* Этап 28: сегмент периода в тулбаре операций */
+    const periodChip = event.target.closest("[data-period-btn]");
+    if (periodChip) {
+      event.preventDefault();
+      state.operations.period = periodChip.dataset.periodBtn;
+      state.operations.limit = 8;
+      softRender("operations");
+      return;
+    }
+
     const sortBtn = event.target.closest("[data-sort]");
     if (sortBtn) { event.preventDefault(); cycleSort(sortBtn.dataset.sort); return; }
 
@@ -1352,7 +1409,8 @@
       event.preventDefault();
       const a = actionBtn.dataset.action;
       if (a === "tx-pay") return markTxPaid(Number(actionBtn.dataset.id));
-      if (a === "tx-del") return deleteTx(Number(actionBtn.dataset.id));
+      if (a === "tx-del") return confirmDeleteTx(Number(actionBtn.dataset.id));
+      if (a === "tx-edit") return openEditTx(Number(actionBtn.dataset.id));
       if (a === "remind") return remindDebt(Number(actionBtn.dataset.id));
       if (a === "planned-done") return togglePlannedDone(actionBtn.dataset.title);
       if (a === "goal-add") return contributeGoal(actionBtn.dataset.goal);
