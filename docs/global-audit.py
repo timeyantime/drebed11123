@@ -71,14 +71,14 @@ def run(p):
         print("ok: goal-add opens form")
         pg.keyboard.press("Escape"); pg.wait_for_timeout(300)
 
-    # 6. account detail back & forward via Enter key on row-link
+    # 6. account detail back & forward via Enter key on card (Этап 30: карусель карт вместо строк)
     pg.goto(BASE + "#/accounts"); pg.wait_for_timeout(600)
-    rl = pg.locator(".row-link[data-go-route='accounts']").first
+    rl = pg.locator(".bank-card[data-go-route='accounts']").first
     rl.focus(); pg.keyboard.press("Enter"); pg.wait_for_timeout(700)
     assert "account/" in pg.url, pg.url
     sub = pg.text_content("#page-subtitle")
     assert "Детали счёта" in (sub or ""), sub
-    print("ok: Enter on row-link navigates to account detail; subtitle:", sub)
+    print("ok: Enter on bank-card navigates to account detail; subtitle:", sub)
 
     # 7. sheet «Ещё» on mobile preview
     pg.goto(BASE); pg.wait_for_timeout(500)

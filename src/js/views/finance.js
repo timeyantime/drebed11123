@@ -354,9 +354,17 @@ window.Views = window.Views || {};
     const step = getCardStep(el);
     const dots = document.getElementById("accountsDots");
     if (dots) {
-      const n = el.querySelectorAll(".bank-card").length;
-      const page = Math.max(0, Math.min(n - 1, Math.round(el.scrollLeft / step)));
-      dots.innerHTML = Array.from({ length: n }, (_, i) =>
+      const cards = Array.from(el.querySelectorAll(".bank-card"));
+      /* Этап 30: активная точка — ближайшая к центру вьюпорта карточка
+         (корректно и для full-page snap на мобиле, и для proximity-скролла на десктопе) */
+      const rect = el.getBoundingClientRect();
+      const center = rect.left + rect.width / 2;
+      let page = 0, best = Infinity;
+      cards.forEach((c, i) => {
+        const d = Math.abs(c.getBoundingClientRect().left + c.offsetWidth / 2 - center);
+        if (d < best) { best = d; page = i; }
+      });
+      dots.innerHTML = Array.from({ length: cards.length }, (_, i) =>
         `<button type="button" class="${i === page ? "on" : ""}" data-page="${i}" aria-label="Счёт ${i + 1}"></button>`).join("");
     }
     const prev = document.getElementById("accountsPrev");
