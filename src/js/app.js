@@ -353,6 +353,9 @@
 
   function setActiveRoute(route) {
     state.route = route;
+    /* Этап 34: роут на <html data-route> — CSS-правило полноширинной
+       таблицы операций (:root[data-route="operations"][data-frame="off"]) */
+    root.dataset.route = route;
     document.querySelectorAll("[data-route]").forEach((btn) => {
       const isActive = btn.dataset.route === route;
       btn.classList.toggle("is-active", isActive);
@@ -1611,8 +1614,10 @@
          Клики по кнопкам внутри строки не должны её выделять. */
       if (a === "tx-select") {
         if (event.target.closest(".mini-btn, .row-btn, .primary-btn, .secondary-btn")) return;
-        /* Этап 34: клик по чекбоксу строки — только выделение, без деталей */
-        if (window.__opsChkTx) return;
+        /* Этап 34: клик по чекбоксу строки — только выделение, без деталей.
+           Флаг ставится в change-обработчике раньше click-всплытия; на
+           всякий случай проверяем и сам target (label/checkbox). */
+        if (window.__opsChkTx || event.target.matches("input[type='checkbox']")) return;
         const id = Number(actionBtn.dataset.id);
         state.operations.selected = state.operations.selected === id ? null : id;
         softRender("operations");
