@@ -466,11 +466,13 @@
       const d = new Date();
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     })();
-    /* «31.10» → ISO для нативного input[type=date]: год восстанавливает
-       единый хелпер u.parseDM (core.js) — даты позже сегодняшнего считаются
-       прошлым годом, иначе октябрьская операция при редактировании 3 ноября
-       получила бы дату 3 октября и «уехала» бы из периода. */
-    const ddmmToISO = (d) => u.dateToISO(d) || todayISO;
+    /* «DD.MM.YYYY» (канон) → ISO; для старых коротких дат год восстанавливает
+       u.parseDM. Без фолбэка на todayISO редкая дата («01.12») из локального
+      снимка уезжала в прошлый год и терялась при редактировании. */
+    const ddmmToISO = (d) => {
+      if (/^\d{2}\.\d{2}\.\d{4}$/.test(d || "")) return `${d.slice(6, 10)}-${d.slice(3, 5)}-${d.slice(0, 2)}`;
+      return u.dateToISO(d) || todayISO;
+    };
     let savedKind = "income";
     try { savedKind = localStorage.getItem("mono-tx-kind") || "income"; } catch (_) {}
     const pre = (name) => (editTx ? editTx[name] : undefined);
@@ -607,8 +609,13 @@
     if (key === "lesson") data.when = data.when_date ? `${data.when_date}T${data.when_time || "18:00"}` : "";
     /* Этап 28: у операции дата+время тоже приходят парой полей */
     if (key === "transaction") {
+      /* Этап 28-fix: канонический формат даты — «DD.MM.YYYY».
+         Раньше сохранялось «DD.MM» без года: u.parseDM восстанавливал год
+         эвристикой и свежая ноябрьская операция уезжала в прошлый год —
+         фильтр периода её отсекал, сортировка «по дате» прятала вниз,
+         smoke-тест падал на «form mutation failed». */
       const m = data.when_date ? /^(\d{4})-(\d{2})-(\d{2})$/.exec(data.when_date) : null;
-      data.txDate = m ? `${m[3]}.${m[2]}` : "сегодня";
+      data.txDate = m ? `${m[3]}.${m[2]}.${m[1]}` : "сегодня";
       data.txTime = (data.when_time || "").slice(0, 5);
     }
     if (!validateForm(key, data)) { showToast("Проверьте выделенные поля"); return; }
@@ -629,7 +636,7 @@
           t.title = data.title.trim();
           t.amount = amount;
           t.type = amount < 0 ? "expense" : "income";
-          t.date = data.txDate;
+          t.date = data.txDate === "сегодня" ? u.fmtDM(new Date()) : data.txDate;
           t.time = data.txTime;
           t.category = data.category;
           t.account = data.account || "Карта Т-Банк";
@@ -667,7 +674,7 @@
   let importRows = [];
 
   function demoStatementRows() {
-    const fmt = (d) => `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const fmt = (d) => u.fmtDM(d);
     const day = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return fmt(d); };
     return [
       { date: day(0), title: "Оплата: Анна К.", category: "Ученики", amount: 2400 },
@@ -1156,7 +1163,7 @@
       pl.done = !pl.done;
       if (pl.done) {
         pl.status = "done";
-        db.transactions.unshift({ id: Date.now(), date: "сегодня", title: pl.title, amount: -pl.amount, type: "expense", category: "Личное", status: "paid", account: "Карта Т-Банк" });
+        db.transactions.unshift({ id: Date.now(), date: u.fmtDM(new Date()), title: pl.title, amount: -pl.amount, type: "expense", category: "Личное", status: "paid", account: "Карта Т-Банк" });
         const acc = db.accounts.find((a) => a.name === "Карта Т-Банк");
         if (acc) acc.balance -= pl.amount;
       } else pl.status = pl._prevStatus || "upcoming";

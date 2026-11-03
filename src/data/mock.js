@@ -21,16 +21,16 @@ window.DB = {
 
   transactions: [
     /* Этап 28: у операций появилось время (HH:MM), как в референсе «Домкнига» */
-    { id: 1, date: "01.11", time: "12:40", title: "Оплата: Анна К.", amount: 2400, type: "income", category: "Ученики", status: "paid", account: "Карта Т-Банк" },
-    { id: 2, date: "31.10", time: "18:15", title: "Аренда кабинета", amount: -15000, type: "expense", category: "Работа", tags: ["кабинет"], status: "paid", account: "Карта Т-Банк" },
-    { id: 3, date: "30.10", time: "19:00", title: "Оплата: Иван П.", amount: 2000, type: "income", category: "Ученики", status: "pending", account: "Карта Т-Банк" },
-    { id: 4, date: "29.10", time: "10:22", title: "Продукты", amount: -3200, type: "expense", category: "Продукты", tags: ["семья"], status: "paid", account: "Наличные" },
-    { id: 5, date: "28.10", time: "17:30", title: "Оплата: Олег Д.", amount: 2400, type: "income", category: "Ученики", status: "paid", account: "Карта Т-Банк" },
-    { id: 6, date: "27.10", time: "09:05", title: "Интернет", amount: -700, type: "expense", category: "Работа", tags: ["кабинет"], status: "paid", account: "Карта Т-Банк" },
-    { id: 7, date: "26.10", time: "16:44", title: "Учебники", amount: -1800, type: "expense", category: "Развитие", status: "paid", account: "Карта Т-Банк" },
-    { id: 8, date: "25.10", time: "11:10", title: "Оплата: Дарья Л.", amount: 2200, type: "income", category: "Ученики", status: "paid", account: "Наличные" },
-    { id: 9, date: "31.10", time: "08:35", title: "Метро", amount: -300, type: "expense", category: "Транспорт", status: "paid", account: "Карта Т-Банк" },
-    { id: 10, date: "28.10", time: "20:10", title: "Кино", amount: -800, type: "expense", category: "Развлечения", status: "paid", account: "Наличные" }
+    { id: 1, date: "01.11.2026", time: "12:40", title: "Оплата: Анна К.", amount: 2400, type: "income", category: "Ученики", status: "paid", account: "Карта Т-Банк" },
+    { id: 2, date: "31.10.2026", time: "18:15", title: "Аренда кабинета", amount: -15000, type: "expense", category: "Работа", tags: ["кабинет"], status: "paid", account: "Карта Т-Банк" },
+    { id: 3, date: "30.10.2026", time: "19:00", title: "Оплата: Иван П.", amount: 2000, type: "income", category: "Ученики", status: "pending", account: "Карта Т-Банк" },
+    { id: 4, date: "29.10.2026", time: "10:22", title: "Продукты", amount: -3200, type: "expense", category: "Продукты", tags: ["семья"], status: "paid", account: "Наличные" },
+    { id: 5, date: "28.10.2026", time: "17:30", title: "Оплата: Олег Д.", amount: 2400, type: "income", category: "Ученики", status: "paid", account: "Карта Т-Банк" },
+    { id: 6, date: "27.10.2026", time: "09:05", title: "Интернет", amount: -700, type: "expense", category: "Работа", tags: ["кабинет"], status: "paid", account: "Карта Т-Банк" },
+    { id: 7, date: "26.10.2026", time: "16:44", title: "Учебники", amount: -1800, type: "expense", category: "Развитие", status: "paid", account: "Карта Т-Банк" },
+    { id: 8, date: "25.10.2026", time: "11:10", title: "Оплата: Дарья Л.", amount: 2200, type: "income", category: "Ученики", status: "paid", account: "Наличные" },
+    { id: 9, date: "31.10.2026", time: "08:35", title: "Метро", amount: -300, type: "expense", category: "Транспорт", status: "paid", account: "Карта Т-Банк" },
+    { id: 10, date: "28.10.2026", time: "20:10", title: "Кино", amount: -800, type: "expense", category: "Развлечения", status: "paid", account: "Наличные" }
   ],
 
   budgets: [
@@ -57,10 +57,10 @@ window.DB = {
   ],
 
   planned: [
-    { title: "Налог УСН 6%", date: "25.11", amount: 8400, status: "upcoming", account: "Карта Т-Банк" },
-    { title: "Аренда кабинета", date: "01.12", amount: 15000, status: "upcoming", account: "Карта Т-Банк" },
-    { title: "Подписка на сервис", date: "05.12", amount: 990, status: "upcoming", account: "Карта Т-Банк" },
-    { title: "Кредит (просрочен)", date: "20.10", amount: 12000, status: "overdue", account: "Карта Т-Банк" }
+    { title: "Налог УСН 6%", date: "25.11.2026", amount: 8400, status: "upcoming", account: "Карта Т-Банк" },
+    { title: "Аренда кабинета", date: "01.12.2026", amount: 15000, status: "upcoming", account: "Карта Т-Банк" },
+    { title: "Подписка на сервис", date: "05.12.2026", amount: 990, status: "upcoming", account: "Карта Т-Банк" },
+    { title: "Кредит (просрочен)", date: "20.10.2026", amount: 12000, status: "overdue", account: "Карта Т-Банк" }
   ],
 
   taxes: {
