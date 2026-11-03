@@ -474,11 +474,19 @@ window.Views = window.Views || {};
     </svg>`;
   }
 
-  /* Этап 31: последние операции активной карточки (учитывает входящие переводы) */
+  /* Этап 31: последние операции активной карточки (учитывает входящие переводы).
+     tx в mock хранятся в хронологическом порядке сверху вниз; новые операции
+     добавляются через unshift, но редактирование дату менять не обязано —
+     поэтому сортировка стабильная: существующий порядок сохраняется внутри
+     одинаковых дат. */
   function recentTxHTML(db, acc, limit = 4) {
+    const parseDate = (d) => { const p = window.u && u.parseDM ? u.parseDM(String(d)) : null; return p ? p.getTime() : 0; };
     const txs = db.transactions
       .filter((t) => t.account === acc.name || (t.type === "transfer" && t.toAccount === acc.name))
-      .slice(0, limit);
+      .map((t, i) => ({ t, i }))
+      .sort((a, b) => parseDate(b.t.date) - parseDate(a.t.date) || a.i - b.i)
+      .slice(0, limit)
+      .map((x) => x.t);
     if (!txs.length) return `<div class="muted" style="padding:10px 12px">Пока нет операций по этому счёту.</div>`;
     return `<div class="list">${txs.map((t) => {
       const isTransfer = t.type === "transfer";
@@ -530,7 +538,7 @@ window.Views = window.Views || {};
           <span class="quick-icon hero-icon" data-icon="${acc.kind === "cash" ? "wallet" : "accounts"}"></span>
           <div class="hero-copy">
             <h2>${esc(acc.name)}</h2>
-            <p class="hero-sub">${acc.kind === "card" ? "Дебетовая карта" : acc.kind === "savings" ? "Накопительный счёт" : "Наличные"}</p>
+            <p class="hero-sub">${ACCT_TYPE_LABEL[acc.kind] ? ACCT_TYPE_LABEL[acc.kind] + (acc.kind === "credit" || acc.kind === "card" ? " карта" : "") : "Счёт"}</p>
             <div class="hero-balance">${money(acc.balance)}</div>
           </div>
         </section>

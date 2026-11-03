@@ -299,7 +299,7 @@
   window.u = {
     ic, money, pct, fillIcons, esc, chartColor, donutSVG, legendHTML, ringSVG, trendBars, catMeta,
     parseDM, fmtDM, dateToISO, isoToDM,
-    moneyFormatter, recalcBalances
+    moneyFormatter, txDelta, recalcBalances
   };
 })();
 

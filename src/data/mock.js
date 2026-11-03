@@ -30,7 +30,18 @@ window.DB = {
     { id: 7, date: "26.10.2026", time: "16:44", title: "Учебники", amount: -1800, type: "expense", category: "Развитие", status: "paid", account: "Карта Т-Банк" },
     { id: 8, date: "25.10.2026", time: "11:10", title: "Оплата: Дарья Л.", amount: 2200, type: "income", category: "Ученики", status: "paid", account: "Наличные" },
     { id: 9, date: "31.10.2026", time: "08:35", title: "Метро", amount: -300, type: "expense", category: "Транспорт", status: "paid", account: "Карта Т-Банк" },
-    { id: 10, date: "28.10.2026", time: "20:10", title: "Кино", amount: -800, type: "expense", category: "Развлечения", status: "paid", account: "Наличные" }
+    { id: 10, date: "28.10.2026", time: "20:10", title: "Кино", amount: -800, type: "expense", category: "Развлечения", status: "paid", account: "Наличные" },
+    /* Этап 31: операции по новым счетам (Ozon/Яндекс Пэй/ОТП/Альфа) — чтобы
+       карточка в карусели показывала «последние операции». Идемпотентно:
+       balance = openingBalance + Σ paid tx (recalcBalances). pending не
+       двигает деньги — балансы остаются как в accounts выше. */
+    { id: 11, date: "02.11.2026", time: "14:05", title: "Заказ на Ozon", amount: -3490, type: "expense", category: "Покупки", tags: ["маркетплейс"], status: "paid", account: "Ozon Карта" },
+    { id: 12, date: "30.10.2026", time: "11:20", title: "Кэшбэк Ozon", amount: 640, type: "income", category: "Подарки", status: "paid", account: "Ozon Карта" },
+    { id: 13, date: "29.10.2026", time: "19:40", title: "Такси Яндекс", amount: -580, type: "expense", category: "Транспорт", status: "paid", account: "Яндекс Пэй" },
+    { id: 14, date: "27.10.2026", time: "13:15", title: "Яндекс Плюс подписка", amount: -449, type: "expense", category: "Развлечения", status: "pending", account: "Яндекс Пэй" },
+    { id: 15, date: "01.11.2026", time: "10:00", title: "Платёж по кредиту ОТП", amount: -8500, type: "expense", category: "Обязательства", status: "paid", account: "ОТП Кредитная" },
+    { id: 16, date: "26.10.2026", time: "16:30", title: "Продукты Лента", amount: -2750, type: "expense", category: "Продукты", status: "paid", account: "Альфа Карта" },
+    { id: 17, date: "24.10.2026", time: "09:50", title: "Перевод с Альфы на накопительный", amount: 20000, type: "transfer", category: "Накопления", status: "paid", account: "Альфа Карта", toAccount: "Накопительный счёт" }
   ],
 
   budgets: [
@@ -62,7 +73,13 @@ window.DB = {
   accounts: [
     { id: 1, name: "Карта Т-Банк", balance: 84200, openingBalance: 84200, kind: "card", bankId: "tbank", number: "2200 7000 1234 4276", mask: "•• 4276", color: "var(--blue)", history: [72000, 78500, 69000, 81200, 76400, 84200] },
     { id: 2, name: "Накопительный счёт", balance: 210000, openingBalance: 210000, kind: "savings", bankId: "tbank", number: "2200 7000 9876 0119", mask: "•• 0119", color: "var(--green)", history: [150000, 162000, 175000, 188000, 199000, 210000] },
-    { id: 3, name: "Наличные", balance: 6500, openingBalance: 6500, kind: "cash", bankId: "cash", number: "", mask: "", color: "var(--amber)", history: [9000, 7200, 8400, 5100, 7800, 6500] }
+    { id: 3, name: "Наличные", balance: 6500, openingBalance: 6500, kind: "cash", bankId: "cash", number: "", mask: "", color: "var(--amber)", history: [9000, 7200, 8400, 5100, 7800, 6500] },
+    /* Этап 31: новые счета под BANK_META-превью (Ozon/Яндекс Пэй/ОТП/Альфа),
+       чтобы все дизайны карт были видны в демо без ручного добавления. */
+    { id: 4, name: "Ozon Карта", balance: 23400, openingBalance: 23400, kind: "card", bankId: "ozon", number: "2201 1000 5555 8812", mask: "•• 8812", color: "var(--blue)", history: [18000, 20500, 19200, 22100, 21400, 23400] },
+    { id: 5, name: "Яндекс Пэй", balance: 8750, openingBalance: 8750, kind: "card", bankId: "yandexpay", number: "2202 2000 3344 1067", mask: "•• 1067", color: "var(--red)", history: [12000, 10400, 9800, 9100, 8200, 8750] },
+    { id: 6, name: "ОТП Кредитная", balance: -34500, openingBalance: -34500, kind: "credit", bankId: "otp", number: "2203 3000 7788 4520", mask: "•• 4520", color: "var(--red)", history: [-28000, -30500, -29100, -32400, -33800, -34500] },
+    { id: 7, name: "Альфа Карта", balance: 51200, openingBalance: 51200, kind: "card", bankId: "alfa", number: "2205 5000 6611 9034", mask: "•• 9034", color: "var(--amber)", history: [44000, 46800, 45200, 48900, 50300, 51200] }
   ],
 
   /* Этап 29: заполняется ниже IIFE'ом — все paid tx из mock уже отражены
@@ -132,16 +149,23 @@ window.DB = {
 
 /* Этап 29: seed appliedTxs — все paid/non-transfer операции из mock уже
    отражены в balance счетов. recalcBalances при первом вызове вычтет эти
-   дельты из суммы всех tx → баланс не изменится (идемпотентность). */
-(function seedApplied() {
+   дельты из суммы всех tx → баланс не изменится (идемпотентность).
+   Переводы (type === "transfer") тоже сидятся: их дельта двусторонняя,
+   а в balance-дефолтах они уже учтены обеими сторонами.
+   Этап 31: перенесён ПОСЛЕ снятия эталона __DB_DEFAULT__, иначе заполненный
+   appliedTxs попадал в эталон и reset() возвращал «грязный» журнал. */
+function seedApplied() {
   const byName = {};
   window.DB.accounts.forEach((a) => { byName[a.name] = a; });
   window.DB.transactions.forEach((t) => {
-    if (!t || t.status === "pending" || t.type === "transfer") return;
-    if (typeof t.amount !== "number" || !byName[t.account]) return;
-    window.DB.appliedTxs[String(t.id)] = { [t.account]: t.amount };
+    if (!t || t.status === "pending") return;
+    const d = window.u && window.u.txDelta ? window.u.txDelta(t, byName) : null;
+    if (d && Object.keys(d).length) window.DB.appliedTxs[String(t.id)] = d;
   });
-})();
+}
 
-/* Эталонная копия mock-данных для мгновенного сброса демо (Store.reset). */
+/* Эталонная копия mock-данных для мгновенного сброса демо (Store.reset):
+   appliedTxs пустой — ровно как чистый профиль до первого Store.save(). */
 window.__DB_DEFAULT__ = JSON.parse(JSON.stringify(window.DB));
+
+seedApplied();
