@@ -1143,6 +1143,7 @@
       return softRender("operations");
     }
     if (name === "close-modal") return closeForm();
+    if (name === "close-confirm") return closeConfirm();
     if (name === "export-data") return exportData();
     if (name === "import-data") return dataImportFile.click();
     if (name === "more") { isDesktopLayout() ? openFan(document.querySelector(".desktop-fab") || fabWraps[0]) : openSheet(); return; }
@@ -1462,6 +1463,7 @@
       }
     }
     if (event.key !== "Escape") return;
+    if (confirmModal.classList.contains("open")) { closeConfirm(); return; }
     if (budgetModal.classList.contains("open")) { closeBudget(); return; }
     if (importModal.classList.contains("open")) { closeImport(); return; }
     if (genericModal.classList.contains("open")) { closeForm(); return; }

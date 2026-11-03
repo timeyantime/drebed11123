@@ -377,6 +377,22 @@
     <div id="budgetDetail"></div>
   </section>
 
+  <!-- Этап 28: подтверждение удаления операции -->
+  <div class="modal-backdrop" id="confirmBackdrop"></div>
+  <section class="modal modal--confirm" id="confirmModal" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmText">
+    <div class="modal-head">
+      <h2 id="confirmTitle">Удалить операцию?</h2>
+      <button class="icon-btn" data-action="close-confirm" aria-label="Закрыть">
+        <span data-icon="close"></span>
+      </button>
+    </div>
+    <p class="confirm-text" id="confirmText"></p>
+    <div class="form-actions">
+      <button type="button" class="secondary-btn" data-action="close-confirm">Отмена</button>
+      <button type="button" class="primary-btn primary-btn--danger" id="confirmOk">Удалить</button>
+    </div>
+  </section>
+
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <!-- Этап 22: файл для импорта резервной копии -->
