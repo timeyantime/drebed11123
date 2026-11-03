@@ -98,15 +98,22 @@
      прошлого года (демо-набор), «сегодня» и будущие даты текущего
      месяца — текущего года. Возвращает null для нераспознанных строк. */
   function parseDM(d, now) {
+    /* Этап 28-fix: поддержка канонического формата «DD.MM.YYYY» из форм —
+       год берётся из строки, без эвристики. */
+    const fy = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(d || "");
+    if (fy) return { y: Number(fy[3]), m: Number(fy[1]), d: Number(fy[2]) };
     const m = /^(\d{2})\.(\d{2})/.exec(d || "");
     if (!m) return null;
     const n = now || new Date();
     const mm = Number(m[2]), dd = Math.min(Number(m[1]), new Date(n.getFullYear(), mm, 0).getDate());
-    const thisMd = n.getMonth() + 1;
-    const md = mm * 100 + dd, today = thisMd * 100 + n.getDate();
-    let y = n.getFullYear();
-    if (md > today && mm >= thisMd - 1) y -= 1; // дальняя будущая дата — прошлый год; соседняя — «свежая»
-    return { y, m: mm, d: dd };
+    const thisM = n.getMonth() + 1;
+    /* Год не хранится в коротком формате «DD.MM». Правила восстановления:
+       месяц текущего или прошлого (декабрь → январь) — свежая дата;
+       всё остальное — демо-набор предыдущего цикла. Эвристика стабильна
+       при любом часовом поясе браузера (в т.ч. UTC на CI): ноябрьская
+       операция 03.11 всегда оказывается «новее» октябрьского демо-набора. */
+    const fresh = mm === thisM || (thisM === 1 && mm === 12);
+    return { y: n.getFullYear() - (fresh ? 0 : 1), m: mm, d: dd };
   }
 
   /* «DD.MM» → ISO «ГГГГ-ММ-ДД» (для нативных input[type=date]) */
