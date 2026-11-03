@@ -69,22 +69,26 @@ window.Views = window.Views || {};
     if (st.account && st.account !== "all") items = items.filter((t) => t.account === st.account);
     if (st.category && st.category !== "all") items = items.filter((t) => t.category === st.category);
     // сортировка: date — по дате, amount — по модулю суммы; dir — направление.
-    /* Этап 28: год в дате не хранится, поэтому дата приводится к кольцевой
-       шкале относительно «сегодня»: берём тот год (текущий/±1), при котором
-       дата ближе всего к сегодняшней (разброс демо-данных < полугода). */
+    /* Этап 28: год в дате не хранится. Кольцевая шкала «ближе к сегодня»
+       ломала порядок на стыке месяцев (25.10 оказывалось свежее 03.11),
+       поэтому год восстанавливаем по календарю данных: даты >= самой
+       поздней даты набора — текущего года, более ранние — прошлого.
+       Будущие даты (например, только что добавленные) всегда свежее всех. */
     const _now = new Date();
     _now.setHours(0, 0, 0, 0);
-    const toDia = (d) => {
+    const mdOf = (d) => {
       const m = /^(\d{2})\.(\d{2})/.exec(d || "");
-      if (!m) return -Infinity; // «сегодня» и т.п. — всегда самые свежие
+      if (!m) return null;
       const dd = Math.min(Number(m[1]), new Date(_now.getFullYear(), Number(m[2]), 0).getDate());
-      let best = null;
-      for (const y of [_now.getFullYear() - 1, _now.getFullYear(), _now.getFullYear() + 1]) {
-        const t = new Date(y, Number(m[2]) - 1, dd);
-        const dist = Math.abs(t - _now);
-        if (!best || dist < best.dist) best = { t, dist };
-      }
-      return best.t.getTime();
+      return Number(m[2]) * 100 + dd; // 1103 = 03.11
+    };
+    const maxMd = items.reduce((mx, t) => Math.max(mx, mdOf(t.date) || 0), 0);
+    const toDia = (d) => {
+      const md = mdOf(d);
+      if (md === null) return Infinity; // «сегодня» и т.п. — всегда самые свежие
+      const mm = Math.floor(md / 100), dd = md % 100;
+      const year = md <= maxMd ? _now.getFullYear() : _now.getFullYear() - 1;
+      return new Date(year, mm - 1, dd).getTime();
     };
     const dnum = toDia;
     /* Этап 28: период по референсу (1М/3М/6М/Всё): последние N календарных
@@ -92,7 +96,7 @@ window.Views = window.Views || {};
     const periodMonths = st.period === "1m" ? 1 : st.period === "3m" ? 3 : st.period === "6m" ? 6 : 0;
     if (periodMonths) {
       const from = new Date(_now.getFullYear(), _now.getMonth() - (periodMonths - 1), 1);
-      items = items.filter((t) => toDia(t.date) === -Infinity || toDia(t.date) >= from.getTime());
+      items = items.filter((t) => !Number.isFinite(toDia(t.date)) || toDia(t.date) >= from.getTime());
     }
     const dir = st.dir === "asc" ? 1 : -1;
     if (st.sort === "amount") items.sort((a, b) => (Math.abs(b.amount) - Math.abs(a.amount)) * dir);
