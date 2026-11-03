@@ -86,11 +86,15 @@
   /* ---------- тосты: очередь + undo (Этап 6) ---------- */
   const toastQueue = [];
   let toastShowing = false;
+  /* Этап 28-fix: отложенное скрытие — если за время выхода уже пришёл новый
+     тост, не затираем его и НЕ чистим _onUndo (иначе «Отменить» пропадало). */
+  let toastSeq = 0;
 
   function nextToast() {
     if (!toastQueue.length) { toastShowing = false; return; }
     const item = toastQueue.shift();
     toastShowing = true;
+    const mySeq = ++toastSeq;
     const iconKind = item.kind || (item.onUndo ? "undo" : "info");
     toast.className = "toast show toast--" + iconKind;
     toast.innerHTML =
@@ -106,9 +110,15 @@
 
   function hideToast() {
     clearTimeout(toastTimer);
+    const seqAtHide = toastSeq;
     toast.classList.remove("show");
     toastTimer = setTimeout(() => {
-      if (!toast.classList.contains("show")) { toast.innerHTML = ""; toast._onUndo = null; nextToast(); }
+      /* Если за время выхода появился новый тост (seq изменился) или текущий
+         всё ещё .show — ничего не трогаем: иначе затирался следующий тост и
+         терялся _onUndo («Отменить» исчезало, undo был недоступен). */
+      if (toastSeq === seqAtHide && !toast.classList.contains("show")) {
+        toast.innerHTML = ""; toast._onUndo = null; nextToast();
+      }
     }, 220);
   }
 
