@@ -130,48 +130,92 @@ window.Views = window.Views || {};
     const tagChips = (t) => (Array.isArray(t.tags) && t.tags.length
       ? `<span class="tx-tags">${t.tags.slice(0, 2).map((x) => `<span>${esc(x)}</span>`).join("")}</span>`
       : "");
+    /* Этап 32: сортировка кликом по заголовку колонки (референс
+       «операции.html»): активная колонка подсвечена, стрелка показывает
+       направление; клик по другой колонке — сброс на убывание. */
+    const thSort = (col, label, extraCls = "") => {
+      const active = st.sort === col;
+      const arrow = active ? (st.dir === "asc" ? " ↑" : " ↓") : "";
+      return `<th class="${extraCls}${active ? " is-sorted" : ""}">` +
+        `<button type="button" class="th-sort" data-col="${col}" aria-label="Сортировать по: ${label}">${label}${arrow}</button></th>`;
+    };
+    /* Этап 32: выделенная строка (клик по строке) — панель деталей под таблицей */
+    const selId = st.selected != null ? st.selected : null;
+    const selTx = selId != null ? items.find((t) => t.id === selId) : null;
+    const detailHTML = !selTx ? "" : (() => {
+      const cat = u.catMeta(selTx.category);
+      const isTr = selTx.type === "transfer";
+      const sumCls = isTr ? "t-info" : (selTx.amount < 0 ? "t-expense" : "t-income");
+      const rows = [
+        ["Дата", `${esc(selTx.date)}${selTx.time ? " · " + esc(selTx.time) : ""}`],
+        ["Категория", esc(selTx.category)],
+        ["Счёт", isTr ? `${esc(selTx.account || "—")} → ${esc(selTx.toAccount || "—")}` : esc(selTx.account || "Карта Т-Банк")],
+        ["Тип", isTr ? "Перевод между счетами" : (selTx.amount < 0 ? "Расход" : "Доход")],
+        ["Статус", selTx.status === "pending" ? "Ожидает оплаты" : "Оплачено"],
+      ];
+      if (Array.isArray(selTx.tags) && selTx.tags.length) rows.push(["Теги", selTx.tags.map(esc).join(", ")]);
+      if (selTx.note) rows.push(["Заметка", esc(selTx.note)]);
+      return `
+        <aside class="tx-detail" aria-label="Детали операции">
+          <div class="tx-detail-head">
+            <span class="cat-pill" style="--c:${cat.color}"><span class="cat-ico" data-icon="${cat.icon}"></span>${esc(selTx.category)}</span>
+            <button class="mini-btn mini-btn--ghost" data-action="ops-deselect" aria-label="Закрыть детали операции"><span data-icon="close"></span></button>
+          </div>
+          <h3 class="tx-detail-title">${esc(selTx.title)}</h3>
+          <div class="tx-detail-sum ${sumCls}">${isTr ? "↔ " + money(Math.abs(selTx.amount)) : (selTx.amount > 0 ? "+" : "") + money(selTx.amount)}</div>
+          <dl class="tx-detail-list">${rows.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>
+          <div class="tx-detail-actions">
+            ${selTx.status === "pending" ? `<button class="secondary-btn" data-action="tx-pay" data-id="${selTx.id}">Отметить оплаченным</button>` : ""}
+            <button class="secondary-btn" data-action="tx-edit" data-id="${selTx.id}"><span data-icon="pencil"></span> Редактировать</button>
+            <button class="secondary-btn secondary-btn--danger" data-action="tx-del" data-id="${selTx.id}"><span data-icon="trash"></span> Удалить</button>
+          </div>
+        </aside>`;
+    })();
     const tableHTML = `
-      <div class="ops-table-wrap">
-        <table class="ops-table" aria-label="Таблица операций">
-          <thead><tr>
-            <th class="c-date">Дата</th>
-            <th class="c-time">Время</th>
-            <th class="c-op">Операция</th>
-            <th class="c-cat">Категория</th>
-            <th class="c-acc">Счёт</th>
-            <th class="c-type">Тип</th>
-            <th class="c-tags">Теги</th>
-            <th class="c-sum">Сумма</th>
-            <th class="c-act" aria-label="Действия"></th>
-          </tr></thead>
-          <tbody class="ops-group">
-            ${visible.map((t) => {
-              const cat = u.catMeta(t.category);
-              const acc = ctx.DB.accounts.find((a) => a.name === (t.account || "Карта Т-Банк"));
-              /* Этап 29: перевод — нейтральный стиль в таблице тоже */
-              const isTrT = t.type === "transfer";
-              const cls = isTrT ? "t-info" : (t.amount < 0 ? "t-expense" : "t-income");
-              const pending = t.status === "pending";
-              return `<tr class="row row--tx">
-                <td class="c-date">${esc(t.date)}</td>
-                <td class="c-time">${esc(t.time || "")}</td>
-                <td class="c-op"><span class="tx-title">${esc(t.title)}</span></td>
-                <td class="c-cat"><span class="cat-pill" style="--c:${cat.color}"><span class="cat-ico" data-icon="${cat.icon}"></span>${esc(t.category)}</span></td>
-                <td class="c-acc"><span class="acc-dot" style="--c:${(acc && acc.color) || "var(--muted)"}"></span>${esc(t.account || "Карта Т-Банк")}</td>
-                <td class="c-type ${cls}">${isTrT ? "Перевод" : (t.amount < 0 ? "Расход" : "Доход")}</td>
-                <td class="c-tags">${tagChips(t)}</td>
-                <td class="c-sum ${cls}">${isTrT ? "↔ " + esc(t.account || "") + " → " + esc(t.toAccount || "") : (t.amount > 0 ? "+" : "") + money(t.amount)}</td>
-                <td class="c-act">${pending
-                  ? `<button class="mini-btn" data-action="tx-pay" data-id="${t.id}" aria-label="Отметить оплаченным: ${esc(t.title)}">✓</button>`
-                  : ""}<button class="mini-btn mini-btn--ghost" data-action="tx-edit" data-id="${t.id}" aria-label="Редактировать операцию: ${esc(t.title)}"><span data-icon="pencil"></span></button><button class="mini-btn mini-btn--ghost" data-action="tx-del" data-id="${t.id}" aria-label="Удалить операцию: ${esc(t.title)}"><span data-icon="trash"></span></button></td>
-              </tr>`;
-            }).join("")}
-          </tbody>
-        </table>
+      <div class="ops-desktop-grid">
+        <div class="ops-table-wrap">
+          <table class="ops-table" aria-label="Таблица операций">
+            <thead><tr>
+              ${thSort("date", "Дата", "c-date")}
+              <th class="c-time">Время</th>
+              <th class="c-op">Операция</th>
+              <th class="c-cat">Категория</th>
+              <th class="c-acc">Счёт</th>
+              <th class="c-type">Тип</th>
+              <th class="c-tags">Теги</th>
+              ${thSort("amount", "Сумма", "c-sum")}
+              <th class="c-act" aria-label="Действия"></th>
+            </tr></thead>
+            <tbody class="ops-group">
+              ${visible.map((t) => {
+                const cat = u.catMeta(t.category);
+                const acc = ctx.DB.accounts.find((a) => a.name === (t.account || "Карта Т-Банк"));
+                /* Этап 29: перевод — нейтральный стиль в таблице тоже */
+                const isTrT = t.type === "transfer";
+                const cls = isTrT ? "t-info" : (t.amount < 0 ? "t-expense" : "t-income");
+                const pending = t.status === "pending";
+                return `<tr class="row row--tx${t.id === selId ? " is-selected" : ""}" tabindex="0" role="button" data-action="tx-select" data-id="${t.id}" aria-label="Детали операции: ${esc(t.title)}">
+                  <td class="c-date">${esc(t.date)}</td>
+                  <td class="c-time">${esc(t.time || "")}</td>
+                  <td class="c-op"><span class="cat-ico cat-ico--inline" style="--c:${cat.color}" data-icon="${cat.icon}"></span><span class="tx-title">${esc(t.title)}</span>${pending ? '<span class="badge badge--pending">Ожидает</span>' : ""}</td>
+                  <td class="c-cat"><span class="cat-pill" style="--c:${cat.color}"><span class="cat-ico" data-icon="${cat.icon}"></span>${esc(t.category)}</span></td>
+                  <td class="c-acc"><span class="acc-dot" style="--c:${(acc && acc.color) || "var(--muted)"}"></span>${esc(t.account || "Карта Т-Банк")}</td>
+                  <td class="c-type ${cls}">${isTrT ? "Перевод" : (t.amount < 0 ? "Расход" : "Доход")}</td>
+                  <td class="c-tags">${tagChips(t)}</td>
+                  <td class="c-sum ${cls}">${isTrT ? "↔ " + money(Math.abs(t.amount)) : (t.amount > 0 ? "+" : "") + money(t.amount)}</td>
+                  <td class="c-act">${pending
+                    ? `<button class="mini-btn" data-action="tx-pay" data-id="${t.id}" aria-label="Отметить оплаченным: ${esc(t.title)}">✓</button>`
+                    : ""}<button class="mini-btn mini-btn--ghost" data-action="tx-edit" data-id="${t.id}" aria-label="Редактировать операцию: ${esc(t.title)}"><span data-icon="pencil"></span></button><button class="mini-btn mini-btn--ghost" data-action="tx-del" data-id="${t.id}" aria-label="Удалить операцию: ${esc(t.title)}"><span data-icon="trash"></span></button></td>
+                </tr>`;
+              }).join("")}
+            </tbody>
+          </table>
+        </div>
+        ${detailHTML}
       </div>
       <div class="ops-foot">
         <span>1–${visible.length} из ${items.length}</span>
-        <span>стр. 1/1</span>
+        <span>стр. 1/${Math.max(1, Math.ceil(items.length / st.limit))}</span>
       </div>`;
     const cardsHTML = groups.map((g) => {
       // итог дня в заголовке группы (референс «Счета и транзакции»);
