@@ -70,32 +70,29 @@ window.Views = window.Views || {};
     if (st.category && st.category !== "all") items = items.filter((t) => t.category === st.category);
     // сортировка: date — по дате, amount — по модулю суммы; dir — направление.
     /* Этап 28: год в дате не хранится, поэтому дата приводится к кольцевой
-       шкале относительно «сегодня»: свежие даты (последние ~полгода) больше,
-       прошлогодние уходят вниз независимо от месяца. */
-    const nowNum = (new Date().getMonth() + 1) * 100 + new Date().getDate();
-    const dnum = (d) => {
+       шкале относительно «сегодня»: берём тот год (текущий/±1), при котором
+       дата ближе всего к сегодняшней (разброс демо-данных < полугода). */
+    const _now = new Date();
+    _now.setHours(0, 0, 0, 0);
+    const toDia = (d) => {
       const m = /^(\d{2})\.(\d{2})/.exec(d || "");
-      if (!m) return nowNum + 1; // «сегодня» и т.п. — всегда самые свежие
-      let v = Number(m[2]) * 100 + Number(m[1]);
-      if (v > nowNum + 650) v -= 1200;        // сильно впереди → это прошлый год (напр. декабрь при феврале)
-      else if (v < nowNum - 650) v += 1200;   // сильно позади → будущий месяц текущего цикла (редко)
-      return v;
+      if (!m) return -Infinity; // «сегодня» и т.п. — всегда самые свежие
+      const dd = Math.min(Number(m[1]), new Date(_now.getFullYear(), Number(m[2]), 0).getDate());
+      let best = null;
+      for (const y of [_now.getFullYear() - 1, _now.getFullYear(), _now.getFullYear() + 1]) {
+        const t = new Date(y, Number(m[2]) - 1, dd);
+        const dist = Math.abs(t - _now);
+        if (!best || dist < best.dist) best = { t, dist };
+      }
+      return best.t.getTime();
     };
-    /* Этап 28: период по референсу (1М/3М/6М/Всё). Год не хранится в дате,
-       поэтому считаем календарный сдвиг от текущего месяца с переходом через
-       январь/декабрь. */
-    const nowM = new Date().getMonth() + 1;
+    const dnum = toDia;
+    /* Этап 28: период по референсу (1М/3М/6М/Всё): последние N календарных
+       месяцев вместе с текущим (для 1М — с первого числа этого месяца). */
     const periodMonths = st.period === "1m" ? 1 : st.period === "3m" ? 3 : st.period === "6m" ? 6 : 0;
     if (periodMonths) {
-      items = items.filter((t) => {
-        const m = /^(\d{2})\.(\d{2})/.exec(t.date || "");
-        if (!m) return true; // «сегодня» и т.п. всегда показываем
-        const mm = Number(m[2]);
-        let delta = nowM - mm;               // 0 — текущий месяц
-        if (delta < -6) delta += 12;         // декабрь при январе/феврале — прошлый год, близко
-        if (delta > 6) delta -= 12;          // наоборот: январские данные при декабре
-        return delta >= 0 && delta < periodMonths;
-      });
+      const from = new Date(_now.getFullYear(), _now.getMonth() - (periodMonths - 1), 1);
+      items = items.filter((t) => toDia(t.date) === -Infinity || toDia(t.date) >= from.getTime());
     }
     const dir = st.dir === "asc" ? 1 : -1;
     if (st.sort === "amount") items.sort((a, b) => (Math.abs(b.amount) - Math.abs(a.amount)) * dir);
