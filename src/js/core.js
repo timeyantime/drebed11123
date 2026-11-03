@@ -245,28 +245,54 @@
   /* Этап 29: пересчёт балансов счетов (по аналогии с референсом
      «Счета и транзакции.html»). balance — производная величина:
        openingBalance + сумма зачтённых операций по счёту.
-     Переводы (type === "transfer") идут через fromAccount/toAccount:
+     Переводы (type === "transfer") идут через account/toAccount:
        минус с источника, плюс на приёмник — итог на всех счетах не меняется.
-     Статус pending не двигает деньги (как в bank-логике). */
+     Статус pending не двигает деньги (как в bank-логике).
+
+     Двойной учёт (важно): часть операций уже была применена к balance в
+     mock/прошлых сессиях (например planned-done создаёт tx И руками снимает
+     money с acc.balance). Чтобы повторный проход не списывал сумму дважды,
+     считаем дельту: appliedBalance = сумма delta'а каждой операции,
+     найденной по id в appliedTxs (журнал уже применённых). Формула идемпотентна:
+       balance = openingBalance + Σdelta(tx) − appliedBalance.
+     Новые tx отсутствуют в appliedTxs → их дельта = полная сумма.
+     Undo восстанавливает appliedTxs из prev-снимка → баланс корректен. */
+  function txDelta(t, byName) {
+    if (!t || t.status === "pending") return null;
+    if (t.type === "transfer") {
+      const amt = Math.abs(Number(t.amount) || 0);
+      const d = {};
+      const fromKey = t.account || t.fromAccount;
+      if (byName[fromKey]) d[fromKey] = -amt;
+      if (byName[t.toAccount]) d[t.toAccount] = (d[t.toAccount] || 0) + amt;
+      return d;
+    }
+    if (typeof t.amount !== "number" || !byName[t.account]) return null;
+    return { [t.account]: t.amount }; // income>0, expense<0
+  }
   function recalcBalances(db) {
     if (!db || !Array.isArray(db.accounts)) return;
     const byName = {};
     db.accounts.forEach((a) => {
-      a.balance = Number(a.openingBalance != null ? a.openingBalance : a.balance) || 0;
+      if (a.openingBalance == null) a.openingBalance = Number(a.balance) || 0;
       byName[a.name] = a;
     });
+    const applied = (db.appliedTxs && typeof db.appliedTxs === "object") ? db.appliedTxs : {};
+    const deltaSum = {};
     (db.transactions || []).forEach((t) => {
-      if (!t || t.status === "pending") return;
-      if (t.type === "transfer") {
-        const from = byName[t.account || t.fromAccount];
-        const to = byName[t.toAccount];
-        const amt = Math.abs(Number(t.amount) || 0);
-        if (from) from.balance -= amt;
-        if (to) to.balance += amt;
-        return;
+      const d = txDelta(t, byName);
+      if (!d) return;
+      for (const name in d) deltaSum[name] = (deltaSum[name] || 0) + d[name];
+    });
+    Object.keys(applied).forEach((txId) => {
+      const entry = applied[txId];
+      if (!entry || typeof entry !== "object") return;
+      for (const name in entry) {
+        if (deltaSum[name] != null) deltaSum[name] -= entry[name];
       }
-      const acc = byName[t.account];
-      if (acc && typeof t.amount === "number") acc.balance += t.amount; // income>0, expense<0
+    });
+    db.accounts.forEach((a) => {
+      a.balance = (Number(a.openingBalance) || 0) + (deltaSum[a.name] || 0);
     });
   }
 

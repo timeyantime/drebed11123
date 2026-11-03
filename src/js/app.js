@@ -259,10 +259,38 @@
 
   /* Этап 29: единая точка записи — перед сохранением пересчитываем
      балансы счетов по операциям (включая переводы). Все мутации идут
-     через mutateWithUndo/mutateForm, поэтому balance всегда производная. */
+     через mutateWithUndo/mutateForm, поэтому balance всегда производная.
+
+     appliedTxs: после recalc все дельты «применены» (balance уже включает
+     их) — фиксируем состояние журнала, чтобы planned-done и другие места,
+     которые руками меняют acc.balance, не создали двойного учёта при
+     следующем пересчёте. */
   const _origSave = window.Store.save.bind(window.Store);
   window.Store.save = function () {
-    try { window.u.recalcBalances(window.DB); } catch (_) {}
+    try {
+      window.u.recalcBalances(window.DB);
+      // нормализуем appliedTxs = сумма дельт всех непending tx текущего среза
+      const db = window.DB;
+      if (db && Array.isArray(db.accounts)) {
+        const byName = {};
+        db.accounts.forEach((a) => { byName[a.name] = a; });
+        const next = {};
+        (db.transactions || []).forEach((t) => {
+          if (!t || t.id == null) return;
+          if (t.type === "transfer") {
+            const amt = Math.abs(Number(t.amount) || 0);
+            const fromKey = t.account || t.fromAccount;
+            const e = {};
+            if (byName[fromKey]) e[fromKey] = -amt;
+            if (byName[t.toAccount]) e[t.toAccount] = (e[t.toAccount] || 0) + amt;
+            if (Object.keys(e).length) next[String(t.id)] = e;
+          } else if (t.status !== "pending" && typeof t.amount === "number" && byName[t.account]) {
+            next[String(t.id)] = { [t.account]: t.amount };
+          }
+        });
+        db.appliedTxs = next;
+      }
+    } catch (_) {}
     _origSave();
   };
 
@@ -1205,8 +1233,8 @@
       if (pl.done) {
         pl.status = "done";
         db.transactions.unshift({ id: Date.now(), date: u.fmtDM(new Date()), title: pl.title, amount: -pl.amount, type: "expense", category: "Личное", status: "paid", account: "Карта Т-Банк" });
-        const acc = db.accounts.find((a) => a.name === "Карта Т-Банк");
-        if (acc) acc.balance -= pl.amount;
+        /* Этап 29: ручное acc.balance -= убрано — созданная tx будет
+           учтена recalcBalances в единой точке Store.save (иначе двойное списание) */
       } else pl.status = pl._prevStatus || "upcoming";
     }, turningDone ? `Оплачено: ${title}` : `Вернули в расписание: ${title}`);
   }
