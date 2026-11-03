@@ -64,14 +64,18 @@ window.Views = window.Views || {};
   Views.operations = function (ctx) {
     const st = ctx.state.operations;
     let items = [...ctx.DB.transactions];
-    if (st.filter === "income") items = items.filter((t) => t.amount > 0);
-    if (st.filter === "expense") items = items.filter((t) => t.amount < 0);
+    /* Этап 29: переводы — отдельный фильтр; «Доходы/Расходы» их не считают
+       (иначе перевод выглядел бы как доход, а деньги лишь переехали). */
+    if (st.filter === "income") items = items.filter((t) => t.type !== "transfer" && t.amount > 0);
+    if (st.filter === "expense") items = items.filter((t) => t.type !== "transfer" && t.amount < 0);
+    if (st.filter === "transfer") items = items.filter((t) => t.type === "transfer");
     if (st.filter === "pending") items = items.filter((t) => t.status === "pending");
     if (st.query) {
       const q = st.query.toLowerCase();
       items = items.filter((t) => t.title.toLowerCase().includes(q) || t.category.toLowerCase().includes(q));
     }
-    if (st.account && st.account !== "all") items = items.filter((t) => t.account === st.account);
+    /* Этап 29: по счёту показываем и переводы, где счёт — приёмник */
+    if (st.account && st.account !== "all") items = items.filter((t) => t.account === st.account || t.toAccount === st.account);
     if (st.category && st.category !== "all") items = items.filter((t) => t.category === st.category);
     // сортировка: date — по дате, amount — по модулю суммы; dir — направление.
     /* Этап 28: год в дате не хранится — восстанавливаем единым хелпером
@@ -103,8 +107,9 @@ window.Views = window.Views || {};
     else items.sort((a, b) => (dnum(b.date) - dnum(a.date)) * dir);
     const visible = items.slice(0, st.limit);
     const accounts = [...new Set(ctx.DB.transactions.map((t) => t.account).filter(Boolean))];
-    const sumIn = items.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0);
-    const sumOut = items.filter((t) => t.amount < 0).reduce((s, t) => s + t.amount, 0);
+    /* Этап 29: агрегаты не включают переводы (нейтральная операция) */
+    const sumIn = items.filter((t) => t.type !== "transfer" && t.amount > 0).reduce((s, t) => s + t.amount, 0);
+    const sumOut = items.filter((t) => t.type !== "transfer" && t.amount < 0).reduce((s, t) => s + t.amount, 0);
 
     // группировка видимых по дню ("31 октября")
     const groups = [];
@@ -143,7 +148,9 @@ window.Views = window.Views || {};
             ${visible.map((t) => {
               const cat = u.catMeta(t.category);
               const acc = ctx.DB.accounts.find((a) => a.name === (t.account || "Карта Т-Банк"));
-              const cls = t.amount < 0 ? "t-expense" : "t-income";
+              /* Этап 29: перевод — нейтральный стиль в таблице тоже */
+              const isTrT = t.type === "transfer";
+              const cls = isTrT ? "t-info" : (t.amount < 0 ? "t-expense" : "t-income");
               const pending = t.status === "pending";
               return `<tr class="row row--tx">
                 <td class="c-date">${esc(t.date)}</td>
@@ -167,8 +174,9 @@ window.Views = window.Views || {};
         <span>стр. 1/1</span>
       </div>`;
     const cardsHTML = groups.map((g) => {
-      // итог дня в заголовке группы (референс «Счета и транзакции»)
-      const daySum = g.rows.reduce((s, t) => s + t.amount, 0);
+      // итог дня в заголовке группы (референс «Счета и транзакции»);
+      /* Этап 29: переводы нейтральны — не двигают итог дня */
+      const daySum = g.rows.reduce((s, t) => s + (t.type === "transfer" ? 0 : t.amount), 0);
       return `
         <section class="ops-group" aria-label="${esc(g.key)}">
           <h3 class="group-head"><span>${esc(g.key)}</span><span class="group-sum ${daySum < 0 ? "t-expense" : "t-income"}">${daySum < 0 ? "−" : "+"}${money(Math.abs(daySum))}</span></h3>
@@ -197,7 +205,7 @@ window.Views = window.Views || {};
         </div>
         <div class="ops-toolbar-filters">
           <div class="seg" role="group" aria-label="Тип операций">
-            ${[["all", "Все"], ["income", "Доходы"], ["expense", "Расходы"], ["pending", "Ожидает"]].map(([k, l]) => `
+            ${[["all", "Все"], ["income", "Доходы"], ["expense", "Расходы"], ["transfer", "Переводы"], ["pending", "Ожидает"]].map(([k, l]) => `
               <button class="chip ${st.filter === k ? "is-active" : ""}" data-filter="${k}" data-scope="operations">${l}</button>`).join("")}
           </div>
           <div class="seg" role="group" aria-label="Период">
@@ -251,9 +259,13 @@ window.Views = window.Views || {};
     if (det) {
       const acc = ctx.DB.accounts.find((a) => a.id === Number(ctx.state.detail.id));
       if (!acc) { page(`<div class="panel"><h2>Счёт не найден</h2><p class="muted">Вернитесь к списку счетов.</p><button class="secondary-btn" data-go-route="accounts" style="margin-top:10px">← Все счета</button></div>`); return; }
-      const txs = ctx.DB.transactions.filter((t) => t.account === acc.name);
-      const income = txs.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0);
-      const expense = txs.filter((t) => t.amount < 0).reduce((s, t) => s + t.amount, 0);
+      /* Этап 29: на счёте видны и его переводы (источник и приёмник);
+         поступления/расходы считают переводы отдельной строкой KPI */
+      const txs = ctx.DB.transactions.filter((t) => t.account === acc.name || t.toAccount === acc.name);
+      const trIn = txs.filter((t) => t.type === "transfer" && t.toAccount === acc.name).reduce((s, t) => s + Math.abs(t.amount), 0);
+      const trOut = txs.filter((t) => t.type === "transfer" && t.account === acc.name).reduce((s, t) => s + Math.abs(t.amount), 0);
+      const income = txs.filter((t) => t.type !== "transfer" && t.amount > 0).reduce((s, t) => s + t.amount, 0);
+      const expense = txs.filter((t) => t.type !== "transfer" && t.amount < 0).reduce((s, t) => s + t.amount, 0);
       const hist = acc.history || [];
       const maxH = Math.max(...hist, 1);
       page(`
@@ -269,6 +281,7 @@ window.Views = window.Views || {};
         <div class="kpi-grid">
           <div class="kpi"><span class="kpi-label">Поступления</span><span class="kpi-value t-income">${money(income)}</span></div>
           <div class="kpi"><span class="kpi-label">Расходы</span><span class="kpi-value t-expense">${money(expense)}</span></div>
+          ${(trIn || trOut) ? `<div class="kpi"><span class="kpi-label">Переводы</span><span class="kpi-value t-info">+${money(trIn).replace("−", "")} / −${money(Math.abs(trOut)).replace("−", "")}</span><span class="kpi-sub">входящие / исходящие</span></div>` : ""}
           <div class="kpi"><span class="kpi-label">Операций</span><span class="kpi-value">${txs.length}</span></div>
         </div>
         <section class="panel">
@@ -296,17 +309,23 @@ window.Views = window.Views || {};
     }
 
     const total = ctx.DB.accounts.reduce((s, a) => s + a.balance, 0);
+    /* Этап 29: KPI по референсу «Счета и транзакции» — плюс/минус/итог.
+       Прирост за месяц = сумма небалансовых операций (переводы вне счёта). */
+    const monthIn = ctx.DB.transactions.filter((t) => t.type !== "transfer" && t.amount > 0).reduce((s, t) => s + t.amount, 0);
+    const monthOut = ctx.DB.transactions.filter((t) => t.type !== "transfer" && t.amount < 0).reduce((s, t) => s + t.amount, 0);
     page(`
       <div class="kpi-grid">
         <div class="kpi"><span class="kpi-label">Всего на счетах</span><span class="kpi-value">${money(total)}</span></div>
-        <div class="kpi"><span class="kpi-label">Счетов</span><span class="kpi-value">${ctx.DB.accounts.length}</span></div>
+        <div class="kpi"><span class="kpi-label">Плюс (мес.)</span><span class="kpi-value t-income">+${money(monthIn).replace("−", "")}</span></div>
+        <div class="kpi"><span class="kpi-label">Минус (мес.)</span><span class="kpi-value t-expense">${money(monthOut)}</span></div>
+        <div class="kpi"><span class="kpi-label">Итог</span><span class="kpi-value ${monthIn + monthOut >= 0 ? "t-income" : "t-expense"}">${money(monthIn + monthOut)}</span><span class="kpi-sub">${ctx.DB.accounts.length} счёта(ов)</span></div>
       </div>
       <div class="list">
         ${ctx.DB.accounts.map((a, i) => `
           <div class="row row-link" tabindex="0" role="button" data-go-route="accounts" data-go-params="account:${a.id}" aria-label="${esc(a.name)}, открыть детали">
             <span class="avatar" style="--c:${a.color || u.chartColor(i)}"><span data-icon="${a.kind === "cash" ? "wallet" : "accounts"}"></span></span>
             <div class="row-main">
-              <div class="row-title">${esc(a.name)}</div>
+              <div class="row-title">${esc(a.name)}${a.mask ? ` <span class="acct-mask">${esc(a.mask)}</span>` : ""}</div>
               <div class="row-meta">${a.kind === "card" ? "Дебетовая карта" : a.kind === "savings" ? "Накопительный счёт" : "Наличные"}</div>
             </div>
             ${sparkline(a.history, a.color)}

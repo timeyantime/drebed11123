@@ -37,15 +37,20 @@ window.Views = window.Views || {};
   }
 
   function transactionRow(t) {
-    const cls = t.amount < 0 ? "expense" : "income";
+    /* Этап 29: перевод — нейтральная строка «↔ Счёт А → Счёт Б» */
+    const isTr = t.type === "transfer";
+    const cls = isTr ? "" : (t.amount < 0 ? "expense" : "income");
     const pending = t.status === "pending" ? " • ожидает" : "";
+    const accPart = isTr && t.toAccount
+      ? `Перевод: ${esc(t.account || "Карта Т-Банк")} → ${esc(t.toAccount)}`
+      : esc(t.account || "Карта Т-Банк");
     return `
       <div class="row">
         <div class="row-main">
           <div class="row-title">${esc(t.title)}</div>
-          <div class="row-meta">${esc(t.date)} • ${esc(t.category)} • ${esc(t.account || "Карта Т-Банк")}${pending}</div>
+          <div class="row-meta">${esc(t.date)} • ${esc(t.category)} • ${accPart}${pending}</div>
         </div>
-        <div class="amount ${cls}">${money(t.amount)}</div>
+        <div class="amount ${cls}">${isTr ? "↔ " + money(Math.abs(t.amount)) : money(t.amount)}</div>
       </div>`;
   }
 
@@ -133,8 +138,9 @@ window.Views = window.Views || {};
     const debtors = DB.students.filter((s) => s.status === "unpaid");
     const recent = DB.transactions.slice(0, 4);
 
-    const income = DB.transactions.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0);
-    const expense = DB.transactions.filter((t) => t.amount < 0).reduce((s, t) => s + t.amount, 0);
+    /* Этап 29: переводы — не доход и не расход (деньги между своими счетами) */
+    const income = DB.transactions.filter((t) => t.type !== "transfer" && t.amount > 0).reduce((s, t) => s + t.amount, 0);
+    const expense = DB.transactions.filter((t) => t.type !== "transfer" && t.amount < 0).reduce((s, t) => s + t.amount, 0);
     const balance = income + expense;
     const accountsTotal = DB.accounts.reduce((s, a) => s + a.balance, 0);
 
