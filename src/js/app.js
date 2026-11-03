@@ -1333,6 +1333,20 @@
 
     const dashPeriodBtn = event.target.closest("[data-dash-period]");
     if (dashPeriodBtn) { state.dashboards.period = dashPeriodBtn.dataset.dashPeriod; softRender("dashboards"); return; }
+
+    /* Этап 28: «+N ещё» в легенде donut — разворачивает скрытые строки на месте */
+    const legendMoreBtn = event.target.closest('[data-action="legend-more"]');
+    if (legendMoreBtn) {
+      event.preventDefault();
+      const legend = legendMoreBtn.closest(".legend");
+      if (legend) {
+        legend.classList.add("is-expanded");
+        legend.querySelectorAll(".legend-hidden").forEach((r) => r.classList.remove("legend-hidden"));
+        legendMoreBtn.remove();
+      }
+      return;
+    }
+
     const actionBtn = event.target.closest("[data-action]");
     if (actionBtn) {
       event.preventDefault();
