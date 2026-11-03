@@ -33,6 +33,18 @@
         }
       });
     }
+    /* Этап 29: старым снимкам не хватает mask/openingBalance — добираем из
+       mock-дефолтов по id/name. Без openingBalance recalcBalances отсчитывал
+       бы баланс от текущего (уже изменённого) значения и удваивал дельты. */
+    if (Array.isArray(data.accounts)) {
+      const defAcc = ((window.__DB_DEFAULT__ && window.__DB_DEFAULT__.accounts) || (window.DB && window.DB.accounts) || []);
+      data.accounts.forEach((a) => {
+        if (!a) return;
+        const src = defAcc.find((x) => x.id === a.id || x.name === a.name);
+        if (a.mask === undefined) a.mask = src ? (src.mask || "") : "";
+        if (a.openingBalance == null) a.openingBalance = Number(a.balance) || (src ? src.balance : 0) || 0;
+      });
+    }
     return data;
   }
 
@@ -55,8 +67,12 @@
   function reset() {
     try {
       localStorage.removeItem(KEY);
-      // мгновенный возврат к mock-дефолтам без перезагрузки (см. mock.js: window.__DB_DEFAULT__)
-      if (window.__DB_DEFAULT__) window.DB = window.__DB_DEFAULT__;
+      /* Этап 29: обязательно deep-копия! Раньше window.DB = __DB_DEFAULT__
+       делал DB алиасом эталона — mutateForm/редактирования портили сам
+       эталон, и второй сброс показывал «изменённые дефолты». */
+      if (window.__DB_DEFAULT__) {
+        window.DB = structuredClone(window.__DB_DEFAULT__);
+      }
     } catch (_) {}
   }
 
