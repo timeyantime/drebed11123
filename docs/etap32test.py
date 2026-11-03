@@ -33,7 +33,7 @@ with sync_playwright() as p:
     pg.wait_for_timeout(200)
     row = pg.locator(".ops-table tbody tr").first
     title = row.locator(".op-name").inner_text()
-    row.click()
+    row.locator(".c-op").click()  # Этап 34: клик именно по ячейке (не чекбоксу)
     pg.wait_for_timeout(250)
     det = pg.locator(".tx-detail").is_visible()
     det_title = pg.locator(".tx-detail-title").inner_text()

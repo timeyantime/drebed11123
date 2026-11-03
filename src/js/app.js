@@ -31,7 +31,7 @@
     route: "home",
     teacher: { tab: "students", filter: "all", sort: "name" },
     budget: { filter: "month", sort: "date", limit: 5 },
-    operations: { filter: "all", sort: "date", dir: "desc", limit: 8, query: "", account: "all", category: "all", period: "all", selected: null },
+    operations: { filter: "all", sort: "date", dir: "desc", limit: 8, query: "", account: "all", category: "all", period: "all", selected: null, checked: [] },
     dashboards: { period: "6" },
     detail: null // { kind: "student", id } — детальная страница (Этап 5B)
   };
@@ -347,12 +347,25 @@
     route = normalizeRoute(route);
     const clean = (params || []).map(normDetailParam);
     const target = "#" + [route, ...clean].join("/");
+    /* Этап 34-fix: hash "#operations" и "#/operations" — один и тот же
+       маршрут для parseHash(), но как строки не равны. Без нормализации
+       мягкий перерендер в пределах раздела (goTo("operations", [])) менял
+       hash с "/"+маршрута на bare-вид → ложный hashchange → скелетон и
+       гонка таймеров (таблица «исчезала» после select-all). Теперь hash
+       перезаписывается только при СМЕНЕ маршрута. */
+    if (parseHash().route === route && (params || []).length === 0 && state.route === route) {
+      renderWithSkeleton();
+      return;
+    }
     if (location.hash !== target) location.hash = target;
     else renderWithSkeleton();
   }
 
   function setActiveRoute(route) {
     state.route = route;
+    /* Этап 34: роут на <html data-route> — CSS-правило полноширинной
+       таблицы операций (:root[data-route="operations"][data-frame="off"]) */
+    root.dataset.route = route;
     document.querySelectorAll("[data-route]").forEach((btn) => {
       const isActive = btn.dataset.route === route;
       btn.classList.toggle("is-active", isActive);
@@ -420,7 +433,17 @@
   }
 
   /* быстрый мягкий перерендер текущего раздела (фильтры/табы/сортировки) */
-  function softRender(route) { renderRoute(route || state.route, undefined, { soft: true }); }
+  function softRender(route) {
+    renderRoute(route || state.route, undefined, { soft: true });
+    markIndeterminate(); // Этап 34: select-all «полувыбрано» — нативное свойство, ставим после рендера
+  }
+
+  /* Этап 34: после мягкого ререндера таблицы — состояние «полувыбрано»
+     у чекбокса select-all (нативное свойство, в HTML-атрибуте не выражается). */
+  function markIndeterminate() {
+    const all = document.querySelector("[data-action='ops-check-all']");
+    if (all) all.indeterminate = all.dataset.indeterminate === "1" && !all.checked;
+  }
 
   /* ---------- сортировки / циклы ---------- */
   function cycleSort(scope) {
@@ -1222,6 +1245,29 @@
       () => deleteTx(id)
     );
   }
+  /* Этап 34: массовое удаление выбранных чекбоксами операций
+     (референс «операции.html» — bulk-bar с кнопкой «Удалить выбранное»). */
+  function pluralOpsRu(n) {
+    return n % 10 === 1 && n % 100 !== 11 ? "операция" : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? "операции" : "операций";
+  }
+  function confirmDeleteSelectedTx() {
+    const ids = state.operations.checked || [];
+    if (!ids.length) return;
+    openConfirm(
+      "Удалить выбранные операции?",
+      `${ids.length} ${pluralOpsRu(ids.length)} будут удалены. Действие можно отменить одним нажатием «Отменить» в уведомлении.`,
+      "Удалить",
+      () => mutateWithUndo((db) => {
+        /* Этап 34: удаляем и саму операцию, и её запись в журнале appliedTxs —
+           иначе recalcBalances посчитает дельту удалённой tx как «новую»
+           (полную сумму) и баланс счёта изменится при удалении. */
+        db.transactions = db.transactions.filter((t) => !ids.includes(t.id));
+        if (db.appliedTxs) ids.forEach((id) => { delete db.appliedTxs[id]; });
+      },
+        `Удалено ${ids.length} ${pluralOpsRu(ids.length)}`)
+    );
+    state.operations.checked = [];
+  }
   if (confirmOkBtn) confirmOkBtn.addEventListener("click", () => {
     const fn = confirmAction;
     closeConfirm();
@@ -1290,7 +1336,7 @@
     if (name === "load-more") { state.budget.limit += 5; return softRender("budget"); }
     if (name === "load-more-ops") { state.operations.limit += 8; return softRender("operations"); }
     if (name === "reset-ops-filters") {
-      state.operations = { filter: "all", sort: "date", dir: "desc", limit: 8, query: "", account: "all", category: "all", period: "all", selected: null };
+      state.operations = { filter: "all", sort: "date", dir: "desc", limit: 8, query: "", account: "all", category: "all", period: "all", selected: null, checked: [] };
       return softRender("operations");
     }
     if (name === "close-modal") return closeForm();
@@ -1564,10 +1610,15 @@
       return;
     }
 
-    /* Этап 32: клик по заголовку колонки таблицы — сортировка */
+    /* Этап 32: клик по заголовку колонки таблицы — сортировка.
+       Этап 34-fix: чекбоксы «выбрать все»/чекбокс строки тоже дают
+       click-всплытие к <tr data-action="tx-select"> и к .th-sort — если
+       не погасить здесь, второй change-обработчик на input отрабатывает
+       повторно (input уже удалён из DOM) и select-all «залипает». */
     const thBtn = event.target.closest(".th-sort");
     if (thBtn) {
       event.preventDefault();
+      if (event.target.closest(".c-check") || event.target.matches("input[type='checkbox']")) return;
       const col = thBtn.dataset.col;
       const stOps = state.operations;
       if (stOps.sort === col) stOps.dir = stOps.dir === "desc" ? "asc" : "desc";
@@ -1575,6 +1626,8 @@
       softRender("operations");
       return;
     }
+
+    if (window.__opsChkTx && event.target.closest("[data-action='ops-check-all'], [data-action='ops-check-row']")) return;
 
     const actionBtn = event.target.closest("[data-action]");
     if (actionBtn) {
@@ -1584,12 +1637,19 @@
          Клики по кнопкам внутри строки не должны её выделять. */
       if (a === "tx-select") {
         if (event.target.closest(".mini-btn, .row-btn, .primary-btn, .secondary-btn")) return;
+        /* Этап 34: клик по чекбоксу строки — только выделение, без деталей.
+           Флаг ставится в change-обработчике раньше click-всплытия; на
+           всякий случай проверяем и сам target (label/checkbox). */
+        if (window.__opsChkTx || event.target.matches("input[type='checkbox']")) return;
         const id = Number(actionBtn.dataset.id);
         state.operations.selected = state.operations.selected === id ? null : id;
         softRender("operations");
         return;
       }
       if (a === "ops-deselect") { state.operations.selected = null; softRender("operations"); return; }
+      /* Этап 34: множественное удаление выбранных чекбоксами */
+      if (a === "ops-check-all-off") { state.operations.checked = []; softRender("operations"); return; }
+      if (a === "ops-del-selected") return confirmDeleteSelectedTx();
       if (a === "tx-pay") return markTxPaid(Number(actionBtn.dataset.id));
       if (a === "tx-del") return confirmDeleteTx(Number(actionBtn.dataset.id));
       if (a === "tx-edit") return openEditTx(Number(actionBtn.dataset.id));
@@ -1620,6 +1680,10 @@
       event.preventDefault();
       state.operations.account = decodeURIComponent(opsJump.dataset.goParams.slice("account:".length));
       state.operations.limit = 8;
+      /* Этап 34-fix: если мы УЖЕ на #/operations (например, jump из
+         панели деталей), менять hash нельзя — ложный hashchange зацикливал
+         ререндер со скелетоном. Обновляем фильтр и мягко перерисовываем. */
+      if (state.route === "operations") { softRender("operations"); return; }
       goTo("operations", []);
       return;
     }
@@ -1684,7 +1748,65 @@
     const accSel = event.target.closest("[data-account-select]");
     if (accSel) { state.operations.account = accSel.value; state.operations.limit = 8; softRender("operations"); return; }
     const catSel = event.target.closest("[data-category-select]");
-    if (catSel) { state.operations.category = catSel.value; state.operations.limit = 8; softRender("operations"); }
+    if (catSel) { state.operations.category = catSel.value; state.operations.limit = 8; softRender("operations"); return; }
+    /* Этап 34: чекбоксы таблицы операций — множественное выделение.
+       Флаг __opsChkTx гасит click-всплытие к строке (не открывать детали). */
+    const chkRow = event.target.closest("[data-action='ops-check-row']");
+    if (chkRow) {
+      window.__opsChkTx = true;
+      setTimeout(() => { window.__opsChkTx = false; }, 0);
+      const id = Number(chkRow.dataset.id);
+      const arr = state.operations.checked || [];
+      state.operations.checked = chkRow.checked ? [...new Set([...arr, id])] : arr.filter((x) => x !== id);
+      softRender("operations");
+      return;
+    }
+    const chkAll = event.target.closest("[data-action='ops-check-all']");
+    if (chkAll) {
+      window.__opsChkTx = true;
+      setTimeout(() => { window.__opsChkTx = false; }, 0);
+      /* Этап 34: «выбрать все» — ровно текущая видимая страница таблицы.
+         Дублируем пайплайн фильтрации из Views.operations (finance.js),
+         иначе чекбокс в шапке не совпадёт с содержимым tbody. */
+      const st = state.operations;
+      const now = new Date(); now.setHours(0, 0, 0, 0);
+      let list = (window.DB.transactions || []).slice();
+      if (st.filter === "income") list = list.filter((t) => t.type !== "transfer" && t.amount > 0);
+      if (st.filter === "expense") list = list.filter((t) => t.type !== "transfer" && t.amount < 0);
+      if (st.filter === "transfer") list = list.filter((t) => t.type === "transfer");
+      if (st.filter === "pending") list = list.filter((t) => t.status === "pending");
+      if (st.query) {
+        const q = String(st.query).toLowerCase();
+        list = list.filter((t) => t.title.toLowerCase().includes(q) || t.category.toLowerCase().includes(q));
+      }
+      if (st.account && st.account !== "all") list = list.filter((t) => t.account === st.account || t.toAccount === st.account);
+      if (st.category && st.category !== "all") list = list.filter((t) => t.category === st.category);
+      const pm = st.period === "1m" ? 1 : st.period === "3m" ? 3 : st.period === "6m" ? 6 : 0;
+      if (pm) {
+        const from = new Date(now.getFullYear(), now.getMonth() - (pm - 1), 1);
+        list = list.filter((t) => {
+          const p = /^(\d{2})\.(\d{2})/.test(t.date || "") ? u.parseDM(t.date, now) : null;
+          if (!p) return true; // «сегодня» и т.п. — всегда свежие
+          return new Date(p.y, p.m - 1, p.d).getTime() >= from.getTime();
+        });
+      }
+      const sdir = st.dir === "asc" ? 1 : -1;
+      if (st.sort === "amount") list.sort((a, b) => (Math.abs(b.amount) - Math.abs(a.amount)) * sdir);
+      else if (st.sort === "category") list.sort((a, b) => a.category.localeCompare(b.category, "ru") * sdir);
+      else if (st.sort === "account") list.sort((a, b) => String(a.account || "").localeCompare(String(b.account || ""), "ru") * sdir);
+      else if (st.sort === "tags") list.sort((a, b) => String((a.tags || [])[0] || "").localeCompare(String((b.tags || [])[0] || ""), "ru") * sdir);
+      else if (st.sort === "merchant") list.sort((a, b) => a.title.localeCompare(b.title, "ru") * sdir);
+      else list.sort((a, b) => {
+        const da = /^(\d{2})\.(\d{2})/.test(a.date || "") ? u.parseDM(a.date, now) : null;
+        const dbb = /^(\d{2})\.(\d{2})/.test(b.date || "") ? u.parseDM(b.date, now) : null;
+        const ta = da ? new Date(da.y, da.m - 1, da.d).getTime() : Infinity;
+        const tb = dbb ? new Date(dbb.y, dbb.m - 1, dbb.d).getTime() : Infinity;
+        return (tb - ta) * (st.dir === "asc" ? -1 : 1);
+      });
+      const ids = list.slice(0, st.limit).map((t) => Number(t.id));
+      state.operations.checked = chkAll.checked ? [...new Set(ids)] : [];
+      softRender("operations");
+    }
   });
 
   /* ---------- собственная история навигации (Этап 14c) ---------- */
