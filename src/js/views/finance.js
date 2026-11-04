@@ -111,7 +111,7 @@ window.Views = window.Views || {};
     else if (st.sort === "tags") items.sort((a, b) => String((a.tags || [])[0] || "").localeCompare(String((b.tags || [])[0] || ""), "ru") * dir);
     else if (st.sort === "merchant") items.sort((a, b) => a.title.localeCompare(b.title, "ru") * dir);
     else items.sort((a, b) => (dnum(b.date) - dnum(a.date)) * dir);
-    const visible = items.slice(0, st.limit);
+    let visible = items.slice(0, st.limit);
     const accounts = [...new Set(ctx.DB.transactions.map((t) => t.account).filter(Boolean))];
     /* Этап 29: агрегаты не включают переводы (нейтральная операция) */
     const sumIn = items.filter((t) => t.type !== "transfer" && t.amount > 0).reduce((s, t) => s + t.amount, 0);
@@ -126,8 +126,15 @@ window.Views = window.Views || {};
       groups[groups.length - 1].rows.push(t);
     }
 
-    /* Этап 27: десктоп — настоящая таблица по референсу /operations;
-       мобиле — прежние карточки с группами по дням. */
+    /* Этап 27: десктоп — настоящая таблица по референса /operations;
+       мобиле — прежние карточки с группами по дням.
+       Этап 35-fix: единый источник истины для пайплайна фильтрации+
+       сортировки — window.OpsQuery.visibleIds (app.js). Раньше здесь и в
+       обработчике «выбрать все» были две независимые копии одного
+       пайплайна; они разъезжались, из-за чего select-all выделял не те
+       строки, а удаление выбранных молчало. Теперь обе стороны считают
+       один раз и одинаково. */
+    if (window.OpsQuery && window.OpsQuery.pageItems) visible = window.OpsQuery.pageItems(ctx.DB, st, items);
     const isDesktop = (() => {
       const pv = document.documentElement.dataset.preview;
       if (pv) return pv === "desktop";
