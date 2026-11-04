@@ -1,0 +1,3465 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Домкнига — Налоги</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #f5f6fa;
+      --card: #fff;
+      --text: #172033;
+      --muted: #7b8496;
+      --line: #e7eaf2;
+
+      --accent: #5f6c85;
+      --accent-soft: rgba(95, 108, 133, .10);
+
+      --green: #00b894;
+      --amber: #e6a700;
+      --amber-text: #8a5a00;
+      --red: #ff6b6b;
+
+      --green-bg: rgba(0, 184, 148, .10);
+      --amber-bg: rgba(230, 167, 0, .12);
+      --red-bg: rgba(255, 107, 107, .10);
+
+      --shadow: 0 10px 28px rgba(0, 0, 0, .04);
+      --radius: 16px;
+
+      color-scheme: light;
+    }
+
+    [data-theme="dark"] {
+      --bg: #0f1220;
+      --card: #191e30;
+      --text: #eef0ff;
+      --muted: #8b93ad;
+      --line: #262d45;
+
+      --accent: #8b9bb4;
+      --accent-soft: rgba(139, 155, 180, .12);
+
+      --green: #2ee6c0;
+      --amber: #ffd93d;
+      --amber-text: #ffd93d;
+      --red: #ff8080;
+
+      --green-bg: rgba(46, 230, 192, .12);
+      --amber-bg: rgba(255, 217, 61, .12);
+      --red-bg: rgba(255, 128, 128, .12);
+
+      --shadow: 0 10px 28px rgba(0, 0, 0, .20);
+
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: grid;
+      place-items: start center;
+      min-height: 100dvh;
+      padding:
+        max(24px, env(safe-area-inset-top))
+        max(16px, env(safe-area-inset-right))
+        max(24px, env(safe-area-inset-bottom))
+        max(16px, env(safe-area-inset-left));
+      transition: background .2s, color .2s;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    button:focus:not(:focus-visible) {
+      outline: none;
+    }
+
+    .stage {
+      width: 100%;
+      max-width: 560px;
+    }
+
+    .topline {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      margin-bottom: 12px;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--text);
+      font-size: 14px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: background .15s, transform .1s;
+    }
+
+    .icon-btn:active {
+      transform: scale(.96);
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+      container-type: inline-size;
+      container-name: card;
+
+      --fs-2xs: 10px;
+      --fs-xs: 12px;
+      --fs-sm: 13px;
+      --fs-md: 15px;
+      --fs-lg: 17px;
+    }
+
+    .section-head {
+      --period-btn-w: 140px;
+
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto var(--period-btn-w);
+      grid-template-areas: "title seg picker";
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .section-title {
+      grid-area: title;
+      margin: 0;
+      font-size: var(--fs-lg);
+      font-weight: 800;
+      letter-spacing: -.3px;
+      white-space: nowrap;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .segmented {
+      grid-area: seg;
+      display: flex;
+      width: max-content;
+      height: 30px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      padding: 2px;
+      gap: 2px;
+      flex: 0 0 auto;
+      justify-self: start;
+
+      --seg-month-w: 58px;
+      --seg-quarter-w: 64px;
+      --seg-year-w: 44px;
+      --seg-all-w: 80px;
+    }
+
+    .segmented button {
+      flex: 0 0 var(--w);
+      width: var(--w);
+      height: 100%;
+      justify-content: center;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      padding: 0 4px;
+      border-radius: 7px;
+      font: inherit;
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1;
+      cursor: pointer;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: background .18s, color .18s, box-shadow .18s;
+    }
+
+    .segmented button[data-period="month"] {
+      --w: var(--seg-month-w);
+    }
+
+    .segmented button[data-period="quarter"] {
+      --w: var(--seg-quarter-w);
+    }
+
+    .segmented button[data-period="year"] {
+      --w: var(--seg-year-w);
+    }
+
+    .segmented button[data-period="all"] {
+      --w: var(--seg-all-w);
+    }
+
+    .segmented button.on {
+      background: var(--card);
+      color: var(--text);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .04);
+    }
+
+    .seg-short {
+      display: none;
+    }
+
+    @media (max-width: 640px) {
+      .section-head {
+        --period-btn-w: 136px;
+        grid-template-columns: minmax(0, 1fr) var(--period-btn-w);
+        grid-template-areas:
+          "title picker"
+          "seg seg";
+        row-gap: 8px;
+      }
+
+      .segmented {
+        --seg-month-w: 56px;
+        --seg-quarter-w: 62px;
+        --seg-year-w: 42px;
+        --seg-all-w: 76px;
+      }
+    }
+
+    @media (max-width: 430px) {
+      .seg-full {
+        display: none;
+      }
+
+      .seg-short {
+        display: inline;
+      }
+
+      .section-head {
+        --period-btn-w: 132px;
+      }
+
+      .segmented {
+        --seg-month-w: 52px;
+        --seg-quarter-w: 60px;
+        --seg-year-w: 40px;
+        --seg-all-w: 56px;
+      }
+    }
+
+    .hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .ring-wrap {
+      position: relative;
+      width: 140px;
+      height: 140px;
+      flex: 0 0 auto;
+    }
+
+    .ring {
+      width: 100%;
+      height: 100%;
+      display: block;
+      transform: rotate(-90deg);
+    }
+
+    .ring-track {
+      fill: none;
+      stroke: var(--line);
+      stroke-width: 12;
+    }
+
+    .ring-fill {
+      fill: none;
+      stroke: var(--tone, var(--accent));
+      stroke-width: 12;
+      stroke-linecap: round;
+      transition: stroke-dashoffset .6s cubic-bezier(.22, .61, .36, 1), stroke .3s;
+    }
+
+    .ring-center {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      line-height: 1.1;
+      padding: 18%;
+    }
+
+    .rc-pct {
+      font-size: 26px;
+      font-size: clamp(22px, 7cqi, 30px);
+      font-weight: 800;
+      letter-spacing: -.8px;
+      color: var(--tone, var(--accent));
+    }
+
+    .rc-k {
+      font-size: var(--fs-2xs);
+      font-weight: 700;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .rc-done {
+      font-size: 30px;
+      line-height: 1;
+      color: var(--green);
+    }
+
+    .info {
+      flex: 1;
+      min-width: 0;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .due-row {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .due-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .due-k {
+      font-size: var(--fs-2xs);
+      font-weight: 700;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .due-sub {
+      font-size: var(--fs-2xs);
+      font-weight: 700;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+      text-align: right;
+    }
+
+    .due-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .due-v {
+      flex: 1 1 auto;
+      min-width: 0;
+      font-size: 26px;
+      font-size: clamp(22px, 7cqi, 30px);
+      font-weight: 800;
+      letter-spacing: -.7px;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .due-v.t-red { color: var(--red); }
+    .due-v.t-green { color: var(--green); }
+    .due-v.t-amber { color: var(--amber-text); }
+
+    .badge {
+      flex: 0 0 auto;
+      font-size: var(--fs-2xs);
+      font-weight: 800;
+      padding: 5px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge.paid {
+      background: var(--green-bg);
+      color: var(--green);
+    }
+
+    .badge.overdue {
+      background: var(--red-bg);
+      color: var(--red);
+    }
+
+    .badge.soon {
+      background: var(--amber-bg);
+      color: var(--amber-text);
+    }
+
+    .badge.normal,
+    .badge.none {
+      background: var(--bg);
+      color: var(--muted);
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .metric {
+      background: var(--bg);
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .metric-head {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .metric .ic {
+      width: 13px;
+      height: 13px;
+      font-size: 13px;
+      color: var(--muted);
+      flex: 0 0 auto;
+    }
+
+    .metric .mk {
+      font-size: var(--fs-2xs);
+      color: var(--muted);
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .metric .mv {
+      font-size: var(--fs-sm);
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .checks {
+      margin-top: 16px;
+      border-top: 1px solid var(--line);
+      padding-top: 14px;
+    }
+
+    .chk-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .chk-title {
+      font-size: var(--fs-sm);
+      font-weight: 800;
+    }
+
+    .chk-count {
+      font-size: var(--fs-2xs);
+      font-weight: 800;
+      color: var(--muted);
+      background: var(--bg);
+      padding: 4px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .upload {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+      border: 1.5px dashed var(--line);
+      background: var(--bg);
+      border-radius: 14px;
+      padding: 12px;
+      cursor: pointer;
+      font: inherit;
+      color: var(--text);
+      transition: border-color .15s, background .15s, transform .1s;
+    }
+
+    .upload:hover {
+      border-color: var(--muted);
+      background: var(--card);
+    }
+
+    .upload:active {
+      transform: scale(.99);
+    }
+
+    .upload.loading {
+      pointer-events: none;
+      border-style: solid;
+      border-color: var(--line);
+    }
+
+    .upload .u-ic {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: var(--card);
+      color: var(--muted);
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      border: 1px solid var(--line);
+      position: relative;
+    }
+
+    .upload .u-col {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .upload .u-t {
+      font-weight: 800;
+      font-size: var(--fs-sm);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .upload .u-s {
+      color: var(--muted);
+      font-size: var(--fs-2xs);
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .manual-btn {
+      width: 100%;
+      margin-top: 8px;
+      height: 40px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-size: var(--fs-xs);
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 12px;
+      transition: background .15s, color .15s, border-color .15s, transform .1s;
+    }
+
+    .manual-btn:hover {
+      background: var(--bg);
+      color: var(--text);
+      border-color: var(--muted);
+    }
+
+    .manual-btn:active {
+      transform: scale(.99);
+    }
+
+    .manual-btn .ic {
+      width: 15px;
+      height: 15px;
+      font-size: 15px;
+      color: var(--muted);
+      flex: 0 0 auto;
+    }
+
+    .manual-btn span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid var(--line);
+      border-top-color: var(--accent);
+      animation: spin .8s linear infinite;
+      display: block;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .chk-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-top: 10px;
+    }
+
+    .chk {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background .15s;
+    }
+
+    .chk:hover {
+      background: var(--bg);
+    }
+
+    .chk .c-ic {
+      position: relative;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: var(--bg);
+      color: var(--muted);
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      border: 1px solid var(--line);
+    }
+
+    .chk .c-dot {
+      position: absolute;
+      right: -2px;
+      bottom: -2px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 2px solid var(--card);
+    }
+
+    .chk .c-dot.ok { background: var(--green); }
+    .chk .c-dot.review { background: var(--amber); }
+
+    .chk .c-col {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+    }
+
+    .chk .c-nm {
+      font-weight: 700;
+      font-size: var(--fs-sm);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .chk .c-sub {
+      color: var(--muted);
+      font-size: var(--fs-2xs);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 600;
+    }
+
+    .chk .c-amt {
+      font-weight: 800;
+      font-size: var(--fs-sm);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
+    .chk-empty {
+      padding: 14px 2px;
+      color: var(--muted);
+      font-size: var(--fs-xs);
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .tail {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows .34s cubic-bezier(.22, .61, .36, 1);
+    }
+
+    .tail[data-open="1"] {
+      grid-template-rows: 1fr;
+    }
+
+    .tail-inner {
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .chk-more {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-size: var(--fs-2xs);
+      font-weight: 800;
+      padding: 9px;
+      cursor: pointer;
+      border-radius: 10px;
+      margin-top: 2px;
+      transition: background .15s;
+    }
+
+    .chk-more:hover {
+      background: var(--bg);
+    }
+
+    .foot {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .mini-btn {
+      flex: 1 1 auto;
+      justify-content: center;
+      min-width: 0;
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--bg);
+      color: var(--text);
+      font: inherit;
+      font-size: var(--fs-xs);
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: background .15s, transform .1s, border-color .15s, color .15s;
+    }
+
+    .mini-btn:active {
+      transform: scale(.98);
+    }
+
+    .mini-btn .ic {
+      color: var(--muted);
+    }
+
+    .mini-btn.danger {
+      color: var(--red);
+    }
+
+    .mini-btn.danger .ic {
+      color: var(--red);
+    }
+
+    .mini-btn.primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .mini-btn.primary .ic {
+      color: rgba(255, 255, 255, .86);
+    }
+
+    .mini-btn.primary:hover {
+      filter: brightness(1.06);
+    }
+
+    .foot .mini-btn {
+      height: 36px;
+      border-radius: 10px;
+      font-size: 11px;
+      gap: 6px;
+      padding: 0 10px;
+    }
+
+    .btn-t {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ====== ПЕРИОД-ПИКЕР ====== */
+
+    .picker {
+      grid-area: picker;
+      position: relative;
+      width: var(--period-btn-w);
+      justify-self: end;
+      flex: 0 0 auto;
+    }
+
+    .period-btn {
+      width: 100%;
+      height: 30px;
+      min-width: 0;
+      padding: 0 8px;
+      border-radius: 9px;
+      border: 1px solid var(--line);
+      background: var(--bg);
+      color: var(--text);
+      font: inherit;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: background .15s, border-color .15s, transform .1s;
+      white-space: nowrap;
+    }
+
+    .period-btn > span {
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-align: left;
+    }
+
+    .period-btn:hover {
+      background: var(--card);
+      border-color: var(--muted);
+    }
+
+    .period-btn:active {
+      transform: scale(.98);
+    }
+
+    .period-btn[aria-expanded="true"] {
+      border-color: var(--accent);
+      background: var(--card);
+    }
+
+    .period-btn .ic {
+      width: 13px;
+      height: 13px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .period-btn .chev {
+      width: 12px;
+      height: 12px;
+      font-size: 12px;
+      transition: transform .2s;
+    }
+
+    .period-btn[aria-expanded="true"] .chev {
+      transform: rotate(180deg);
+    }
+
+    .pop {
+      position: absolute;
+      right: 0;
+      left: auto;
+      top: calc(100% + 8px);
+      width: min(280px, calc(100vw - 32px));
+      z-index: 60;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, .12);
+      padding: 12px;
+      animation: pop .18s cubic-bezier(.16, 1, .3, 1);
+    }
+
+    @keyframes pop {
+      from {
+        opacity: 0;
+        transform: translateY(-8px) scale(.98);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    .pop-head {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .nav-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--bg);
+      color: var(--text);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 800;
+      transition: background .15s;
+      flex: 0 0 auto;
+    }
+
+    .nav-btn:hover:not(:disabled) {
+      background: var(--line);
+    }
+
+    .nav-btn:disabled {
+      opacity: .3;
+      cursor: not-allowed;
+    }
+
+    .year-btn {
+      flex: 1;
+      height: 30px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      font: inherit;
+      font-size: var(--fs-sm);
+      font-weight: 800;
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background .15s;
+      min-width: 0;
+    }
+
+    .year-btn:hover {
+      background: var(--bg);
+    }
+
+    .year-btn .chev-sm {
+      width: 12px;
+      height: 12px;
+      font-size: 12px;
+      color: var(--muted);
+      transition: transform .2s;
+    }
+
+    .year-btn[data-view="months"] .chev-sm {
+      transform: rotate(180deg);
+    }
+
+    .grid3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    .cell {
+      padding: 9px 4px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: var(--bg);
+      color: var(--text);
+      font: inherit;
+      font-size: var(--fs-xs);
+      font-weight: 800;
+      cursor: pointer;
+      transition: background .15s, color .15s, border-color .15s;
+      min-height: 34px;
+    }
+
+    .cell:hover:not(:disabled) {
+      background: var(--line);
+      border-color: var(--line);
+    }
+
+    .cell:disabled {
+      opacity: .3;
+      cursor: not-allowed;
+    }
+
+    .cell.sel {
+      background: var(--accent);
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .cell.today {
+      box-shadow: inset 0 0 0 1px var(--accent);
+    }
+
+    .pop-foot {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+    }
+
+    .ghost-btn {
+      width: 100%;
+      padding: 9px;
+      border-radius: 8px;
+      border: 1px dashed var(--line);
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-size: var(--fs-2xs);
+      font-weight: 800;
+      cursor: pointer;
+      transition: background .15s, color .15s, border-color .15s;
+    }
+
+    .ghost-btn:hover:not(:disabled) {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .ghost-btn:disabled {
+      opacity: .35;
+      cursor: not-allowed;
+    }
+
+    .pop-hint {
+      font-size: var(--fs-2xs);
+      color: var(--muted);
+      text-align: center;
+      margin: 10px 0 0;
+      font-weight: 700;
+    }
+
+    /* ====== МОДАЛКА ЧЕКА ====== */
+
+    .backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(15, 18, 32, .40);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding:
+        calc(20px + env(safe-area-inset-top))
+        calc(16px + env(safe-area-inset-right))
+        calc(20px + env(safe-area-inset-bottom))
+        calc(16px + env(safe-area-inset-left));
+      animation: fade .2s;
+    }
+
+    @keyframes fade {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 520px;
+      max-height: calc(100dvh - 40px);
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, .15);
+      animation: rise .25s cubic-bezier(.16, 1, .3, 1);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(16px) scale(.98);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    .m-head {
+      padding: 18px 18px 14px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, var(--bg) 0%, var(--card) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex: 0 0 auto;
+    }
+
+    .m-head h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -.2px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .m-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--muted);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      font-size: 18px;
+      transition: background .15s;
+      flex: 0 0 auto;
+    }
+
+    .m-close:hover {
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .m-body {
+      padding: 18px;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .meta-item {
+      background: var(--bg);
+      border-radius: 12px;
+      padding: 12px;
+      min-width: 0;
+    }
+
+    .meta-label {
+      font-size: 10px;
+      color: var(--muted);
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .35px;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .meta-value {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sec-title {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .45px;
+      color: var(--muted);
+      margin: 0 0 10px;
+      font-weight: 800;
+    }
+
+    .receipt-box {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 18px;
+      background: var(--card);
+    }
+
+    .receipt-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 42px 46px 46px 84px;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 12px;
+      font-size: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .receipt-row:last-child {
+      border-bottom: none;
+    }
+
+    .receipt-row.hd {
+      background: var(--bg);
+      font-weight: 800;
+      color: var(--muted);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .25px;
+    }
+
+    .receipt-row .name-wrap {
+      min-width: 0;
+    }
+
+    .receipt-row .name {
+      font-weight: 800;
+      color: var(--text);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .receipt-row .cat {
+      font-size: 10px;
+      color: var(--muted);
+      font-weight: 700;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .receipt-row .qty,
+    .receipt-row .status,
+    .receipt-row .rate,
+    .receipt-row .sum {
+      white-space: nowrap;
+      font-weight: 800;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .receipt-row .qty {
+      text-align: right;
+    }
+
+    .receipt-row .status {
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .receipt-row .rate {
+      text-align: right;
+    }
+
+    .receipt-row .sum {
+      text-align: right;
+    }
+
+    .receipt-row.hd .qty,
+    .receipt-row.hd .status,
+    .receipt-row.hd .rate,
+    .receipt-row.hd .sum {
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .receipt-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px;
+      background: var(--bg);
+      border-top: 2px dashed var(--line);
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text);
+      gap: 10px;
+    }
+
+    .receipt-total .val {
+      font-size: 17px;
+      letter-spacing: -.3px;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .m-foot,
+    .form-foot {
+      display: flex;
+      gap: 8px;
+      padding: 14px 18px;
+      border-top: 1px solid var(--line);
+      background: var(--bg);
+      flex: 0 0 auto;
+    }
+
+    .m-foot .mini-btn,
+    .form-foot .mini-btn {
+      flex: 1;
+      justify-content: center;
+      height: 40px;
+      border-radius: 10px;
+    }
+
+    /* ====== ФОРМА РУЧНОГО ЧЕКА ====== */
+
+    .form-grid {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .field label {
+      font-size: 10px;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .35px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      height: 40px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--bg);
+      color: var(--text);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 0 10px;
+      outline: none;
+      transition: border-color .15s, background .15s;
+      min-width: 0;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: var(--accent);
+      background: var(--card);
+    }
+
+    .field input.invalid,
+    .field select.invalid {
+      border-color: var(--red);
+      background: var(--red-bg);
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .readonly-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .readonly-item {
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 10px;
+      min-width: 0;
+    }
+
+    .readonly-label {
+      font-size: 9px;
+      font-weight: 800;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .3px;
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .readonly-value {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    @media (max-width: 560px) {
+      .modal {
+        max-width: 100%;
+        border-radius: 18px;
+      }
+
+      .m-head {
+        padding: 14px 14px 12px;
+      }
+
+      .m-head h3 {
+        font-size: 15px;
+        gap: 8px;
+      }
+
+      .m-body {
+        padding: 14px;
+      }
+
+      .meta-grid {
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+
+      .meta-item {
+        padding: 10px;
+        border-radius: 10px;
+      }
+
+      .meta-label {
+        font-size: 9px;
+        letter-spacing: .2px;
+      }
+
+      .meta-value {
+        font-size: 12px;
+      }
+
+      .sec-title {
+        font-size: 9px;
+        margin-bottom: 8px;
+      }
+
+      .receipt-row {
+        grid-template-columns: minmax(0, 1fr) 28px 34px 36px 66px;
+        gap: 6px;
+        padding: 9px 10px;
+        font-size: 10px;
+      }
+
+      .receipt-row.hd {
+        font-size: 8px;
+        letter-spacing: .12px;
+      }
+
+      .receipt-row .cat {
+        font-size: 9px;
+      }
+
+      .receipt-total {
+        padding: 12px 10px;
+        font-size: 13px;
+      }
+
+      .receipt-total .val {
+        font-size: 15px;
+      }
+
+      .m-foot,
+      .form-foot {
+        padding: 12px 14px;
+      }
+
+      .m-foot .mini-btn,
+      .form-foot .mini-btn {
+        height: 38px;
+        font-size: 10px;
+        gap: 6px;
+      }
+
+      .field input,
+      .field select {
+        height: 38px;
+        font-size: 12px;
+      }
+
+      .readonly-value {
+        font-size: 12px;
+      }
+    }
+
+    @media (max-width: 430px) {
+      .field-row {
+        grid-template-columns: 1fr;
+      }
+
+      .readonly-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .readonly-item:last-child {
+        grid-column: 1 / -1;
+      }
+    }
+
+    /* ====== ИКОНКИ ====== */
+
+    .ic {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      font-size: 16px;
+      line-height: 1;
+      color: currentColor;
+      vertical-align: middle;
+      flex: 0 0 auto;
+      overflow: visible;
+    }
+
+    .ic.loaded {
+      background-color: currentColor;
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+      mask-position: center;
+      -webkit-mask-size: contain;
+      mask-size: contain;
+    }
+
+    .badge .ic {
+      width: 13px;
+      height: 13px;
+      font-size: 13px;
+    }
+
+    .upload .u-ic .ic {
+      width: 20px;
+      height: 20px;
+      font-size: 20px;
+    }
+
+    .chk .c-ic .ic {
+      width: 16px;
+      height: 16px;
+      font-size: 16px;
+    }
+
+    #toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(28px + env(safe-area-inset-bottom));
+      transform: translateX(-50%) translateY(14px);
+      background: var(--text);
+      color: var(--card);
+      padding: 11px 16px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 800;
+      opacity: 0;
+      pointer-events: none;
+      transition: .22s;
+      z-index: 150;
+      white-space: nowrap;
+      max-width: min(90vw, 420px);
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (min-width: 560px) {
+      .hero {
+        flex-direction: row;
+        align-items: center;
+        gap: 18px;
+      }
+
+      .ring-wrap {
+        width: 128px;
+        height: 128px;
+      }
+
+      .info {
+        width: auto;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+      }
+
+      .spinner {
+        animation: none !important;
+        border-top-color: var(--line);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="stage">
+    <div class="topline">
+      <button class="icon-btn" id="hideBtn" type="button" aria-label="Скрыть суммы" aria-pressed="false" title="Скрыть суммы">🙈</button>
+      <button class="icon-btn" id="themeBtn" type="button" aria-label="Переключить тему" title="Тема">◐</button>
+    </div>
+
+    <section class="card" id="card">
+      <div class="section-head">
+        <h2 class="section-title">Налоги</h2>
+
+        <div class="segmented" id="seg" role="group" aria-label="Тип периода">
+          <button type="button" data-period="month" class="on" aria-pressed="true">Месяц</button>
+          <button type="button" data-period="quarter" aria-pressed="false">Квартал</button>
+          <button type="button" data-period="year" aria-pressed="false">Год</button>
+          <button type="button" data-period="all" aria-pressed="false" aria-label="Все время">
+            <span class="seg-full">Все время</span>
+            <span class="seg-short">Всё</span>
+          </button>
+        </div>
+
+        <div class="picker" id="picker">
+          <button class="period-btn" id="periodBtn" type="button" aria-haspopup="dialog" aria-expanded="false">
+            <i class="ic" data-ic="lucide:calendar" data-glyph="▦"></i>
+            <span id="periodLabel">—</span>
+            <i class="ic chev" data-ic="lucide:chevron-down" data-glyph="▾"></i>
+          </button>
+
+          <div class="pop" id="periodPop" role="dialog" aria-label="Выбор периода" hidden></div>
+        </div>
+      </div>
+
+      <div class="hero">
+        <div class="ring-wrap">
+          <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="ring-track" cx="60" cy="60" r="52"></circle>
+            <circle class="ring-fill" id="ringFill" cx="60" cy="60" r="52"></circle>
+          </svg>
+          <div class="ring-center" id="ringCenter"></div>
+        </div>
+
+        <div class="info" id="info"></div>
+      </div>
+
+      <div class="checks">
+        <div class="chk-head">
+          <span class="chk-title">Чеки самозанятого</span>
+          <span class="chk-count" id="chkCount"></span>
+        </div>
+
+        <button class="upload" id="uploadBtn" type="button" aria-label="Подгрузить и распознать чек самозанятого">
+          <span class="u-ic">
+            <i class="ic" id="uIc" data-ic="lucide:camera" data-glyph="📷"></i>
+            <span class="spinner" id="uSpinner" hidden></span>
+          </span>
+          <span class="u-col">
+            <span class="u-t" id="uTitle">Подгрузить и распознать чек</span>
+            <span class="u-s" id="uSub">Фото или PDF чека из «Мой налог»</span>
+          </span>
+        </button>
+
+        <button class="manual-btn" id="manualBtn" type="button" aria-label="Добавить чек вручную">
+          <i class="ic" data-ic="lucide:pen-line" data-glyph="✎"></i>
+          <span>Добавить чек вручную</span>
+        </button>
+
+        <input type="file" id="fileInput" accept="image/*,application/pdf" hidden />
+
+        <div class="chk-list" id="chkList"></div>
+
+        <div class="tail" id="chkTail" data-open="0">
+          <div class="tail-inner">
+            <div class="chk-list" id="chkRest"></div>
+          </div>
+        </div>
+
+        <button class="chk-more" id="chkMore" type="button" hidden aria-expanded="false"></button>
+      </div>
+
+      <div class="foot">
+        <button class="mini-btn" id="payBtn" type="button">
+          <i class="ic" data-ic="lucide:banknote" data-glyph="₽"></i>
+          <span class="btn-t">Заплатить</span>
+        </button>
+
+        <button class="mini-btn" id="histBtn" type="button">
+          <i class="ic" data-ic="lucide:history" data-glyph="≡"></i>
+          <span class="btn-t">Реквизиты</span>
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <div class="backdrop" id="backdrop" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle" id="modal"></div>
+  </div>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+  <div id="srStatus" class="sr-only" aria-live="polite"></div>
+
+  <script>
+    const $ = (s, root = document) => root.querySelector(s);
+    const $$ = (s, root = document) => Array.from(root.querySelectorAll(s));
+
+    const numberFormatter = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 });
+    const fmt = n => numberFormatter.format(Math.round(Number(n) || 0));
+
+    const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function esc(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function plural(n, forms) {
+      const abs = Math.abs(n);
+      const n10 = abs % 10;
+      const n100 = abs % 100;
+
+      if (n10 === 1 && n100 !== 11) return forms[0];
+      if (n10 >= 2 && n10 <= 4 && (n100 < 10 || n100 >= 20)) return forms[1];
+      return forms[2];
+    }
+
+    function storeGet(key) {
+      try {
+        return localStorage.getItem(key);
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function storeSet(key, value) {
+      try {
+        localStorage.setItem(key, value);
+      } catch (_) {}
+    }
+
+    /* ====== ICONIFY WITH REDUNDANCY ====== */
+
+    const ICON_HOSTS = [
+      'https://api.iconify.design',
+      'https://api.simplesvg.com',
+      'https://api.unisvg.com'
+    ];
+
+    const iconCache = new Map();
+    const iconPromises = new Map();
+
+    function iconPath(name) {
+      const [prefix, ...rest] = name.split(':');
+      return `${prefix}/${rest.join(':')}.svg`;
+    }
+
+    function probeImage(url, timeout = 750) {
+      return new Promise(resolve => {
+        const img = new Image();
+        let settled = false;
+
+        const finish = ok => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          if (!ok) img.src = '';
+          resolve(ok);
+        };
+
+        const timer = setTimeout(() => finish(false), timeout);
+
+        img.onload = () => finish(true);
+        img.onerror = () => finish(false);
+        img.src = url;
+      });
+    }
+
+    function resolveIconUrl(name) {
+      const cached = iconCache.get(name);
+      if (cached) return Promise.resolve(cached.url);
+
+      let promise = iconPromises.get(name);
+      if (promise) return promise;
+
+      promise = (async () => {
+        const path = iconPath(name);
+
+        for (const host of ICON_HOSTS) {
+          const url = `${host}/${path}`;
+          const ok = await probeImage(url);
+          if (ok) {
+            iconCache.set(name, { status: 'ok', url });
+            return url;
+          }
+        }
+
+        iconCache.set(name, { status: 'fail', url: null });
+        return null;
+      })();
+
+      iconPromises.set(name, promise);
+      promise.finally(() => iconPromises.delete(name));
+
+      return promise;
+    }
+
+    function applyIcon(el, url, color) {
+      if (!url) return;
+      el.classList.add('loaded');
+      el.style.webkitMaskImage = `url("${url}")`;
+      el.style.maskImage = `url("${url}")`;
+      el.style.backgroundColor = color || '';
+      el.textContent = '';
+      el.dataset.state = 'ok';
+    }
+
+    function applyFallback(el, glyph) {
+      el.classList.remove('loaded');
+      el.style.webkitMaskImage = '';
+      el.style.maskImage = '';
+      el.style.backgroundColor = '';
+      el.textContent = glyph || '';
+      el.dataset.state = 'fail';
+    }
+
+    function setIcon(el, iconName, glyph, color) {
+      if (!el) return;
+
+      el.dataset.ic = iconName;
+      el.dataset.glyph = glyph || '';
+
+      if (color) el.dataset.color = color;
+      else delete el.dataset.color;
+
+      if (el.dataset.state === 'ok') {
+        const cached = iconCache.get(iconName);
+        if (cached?.url) {
+          applyIcon(el, cached.url, el.dataset.color);
+          return;
+        }
+      }
+
+      if (el.dataset.state === 'fail') {
+        applyFallback(el, el.dataset.glyph);
+        return;
+      }
+
+      if (el.dataset.state === 'pending') return;
+
+      el.dataset.state = 'pending';
+      el.textContent = el.dataset.glyph || '';
+
+      resolveIconUrl(iconName)
+        .then(url => {
+          if (url) applyIcon(el, url, el.dataset.color);
+          else applyFallback(el, el.dataset.glyph);
+        })
+        .catch(() => applyFallback(el, el.dataset.glyph));
+    }
+
+    function hydrateIcons(root = document) {
+      $$('.ic[data-ic]', root).forEach(el => {
+        setIcon(el, el.dataset.ic, el.dataset.glyph, el.dataset.color || undefined);
+      });
+    }
+
+    /* ====== DATE HELPERS ====== */
+
+    const pad = n => String(n).padStart(2, '0');
+    const ym = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+
+    const now = new Date();
+    const currentKey = ym(now);
+    const prevKey = ym(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+    const todayISO = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+
+    const MONTHS = [];
+    {
+      const d = new Date(now.getFullYear() - 3, 0, 1);
+      const end = new Date(now.getFullYear(), now.getMonth() + 2, 1);
+
+      while (d <= end) {
+        MONTHS.push(ym(d));
+        d.setMonth(d.getMonth() + 1);
+      }
+    }
+
+    const lastAvailableIdx = Math.max(0, MONTHS.indexOf(currentKey));
+    const availableKeys = MONTHS.slice(0, lastAvailableIdx + 1);
+    const availableYears = [...new Set(availableKeys.map(k => Number(k.split('-')[0])))].sort((a, b) => a - b);
+    const MIN_YEAR = availableYears[0] ?? now.getFullYear();
+    const MAX_YEAR = availableYears[availableYears.length - 1] ?? now.getFullYear();
+
+    let selIdxRef = lastAvailableIdx;
+
+    const MONTHS_RU = [
+      'Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+      'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'
+    ];
+
+    const MONTHS_RU_S = [
+      'Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн',
+      'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'
+    ];
+
+    function monthLabel(key) {
+      const [y, m] = key.split('-').map(Number);
+      const mn = new Date(y, m - 1, 1).toLocaleDateString('ru-RU', { month: 'long' });
+      return `${mn.charAt(0).toUpperCase() + mn.slice(1)} ${y}`;
+    }
+
+    function ddmm(iso) {
+      const [, m, d] = iso.split('-');
+      return `${d}.${m}`;
+    }
+
+    function dueDate(key) {
+      const [y, m] = key.split('-').map(Number);
+      return new Date(y, m, 28);
+    }
+
+    function dueLabel(key) {
+      const d = dueDate(key);
+      return `${d.getDate()} ${d.toLocaleDateString('ru-RU', { month: 'short' })}`;
+    }
+
+    function hash(str) {
+      let h = 2166136261;
+      for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return h >>> 0;
+    }
+
+    const rnd = (k, s) => (hash(`${k}:${s}`) % 10000) / 10000;
+
+    function pickFrom(arr, seed) {
+      return arr[hash(seed) % arr.length];
+    }
+
+    /* ====== MOCK TAX DATA ====== */
+
+    const LEGAL_CUSTOMERS = [
+      'ООО «Ромашка»',
+      'ИП Соколов А.',
+      'Школа №14',
+      'Wildberries',
+      'Авито Услуги',
+      'Профи.ру',
+      'Банк «Открытие»',
+      'ООО «Вектор»',
+      'Яндекс.Услуги'
+    ];
+
+    const PHYSICAL_CUSTOMERS = [
+      'Кузнецова Дарья',
+      'Петров Пётр',
+      'Физлицо: Анна К.',
+      'Смирнова Ольга',
+      'Иванов Сергей'
+    ];
+
+    const TAX = {};
+    const CHECKS = [];
+    let cid = 0;
+
+    MONTHS.forEach(k => {
+      if (k > currentKey) {
+        TAX[k] = { income: 0, accrued: 0, paid: 0, future: true };
+        return;
+      }
+
+      const n = 2 + (hash(k) % 2);
+      const [yy, mm] = k.split('-').map(Number);
+      const dim = new Date(yy, mm, 0).getDate();
+
+      let income = 0;
+      let accrued = 0;
+
+      for (let j = 0; j < n; j++) {
+        const legal = rnd(k, 'leg' + j) < 0.62;
+        const rate = legal ? 6 : 4;
+
+        const amount = Math.max(
+          1000,
+          Math.round((4000 + rnd(k, 'am' + j) * 26000) / 100) * 100
+        );
+
+        const tax = Math.max(
+          100,
+          Math.round(amount * rate / 100 / 100) * 100
+        );
+
+        const day = Math.max(1, Math.min(dim, 3 + Math.floor(rnd(k, 'd' + j) * (dim - 3))));
+
+        const customer = legal
+          ? pickFrom(LEGAL_CUSTOMERS, `${k}:legal:${j}`)
+          : pickFrom(PHYSICAL_CUSTOMERS, `${k}:phys:${j}`);
+
+        const id = 'ck' + cid++;
+        const status = (k === currentKey && j === 0) ? 'review' : 'ok';
+
+        CHECKS.push({
+          id,
+          key: k,
+          customer,
+          legal,
+          rate,
+          amount,
+          tax,
+          date: `${yy}-${pad(mm)}-${pad(day)}`,
+          status
+        });
+
+        income += amount;
+        accrued += tax;
+      }
+
+      let paid;
+      if (k === currentKey) {
+        paid = 0;
+      } else if (k === prevKey) {
+        paid = Math.round(accrued * 0.62 / 100) * 100;
+      } else {
+        paid = accrued;
+      }
+
+      TAX[k] = { income, accrued, paid, future: false };
+    });
+
+    /* ====== STATE ====== */
+
+    const state = {
+      hidden: storeGet('domkniga-tax-hidden') === '1',
+      period: 'month',
+      expanded: false,
+      justAdded: null,
+      loading: false
+    };
+
+    function money(n) {
+      if (state.hidden) return '•••';
+      return `${fmt(n)} ₽`;
+    }
+
+    /* ====== PERIOD LOGIC ====== */
+
+    function periodKeys(period) {
+      if (period === 'all') {
+        return [0, lastAvailableIdx];
+      }
+
+      if (period === 'month') {
+        return [selIdxRef, selIdxRef];
+      }
+
+      if (period === 'quarter') {
+        const k = MONTHS[selIdxRef];
+        const [y, m] = k.split('-').map(Number);
+        const q = Math.floor((m - 1) / 3);
+        const startKey = `${y}-${pad(q * 3 + 1)}`;
+        const si = MONTHS.indexOf(startKey);
+        return [Math.max(0, si < 0 ? 0 : si), selIdxRef];
+      }
+
+      // year = календарный год с января по выбранный месяц
+      const k = MONTHS[selIdxRef];
+      const [y] = k.split('-').map(Number);
+      const startKey = `${y}-01`;
+      const si = MONTHS.indexOf(startKey);
+      return [Math.max(0, si < 0 ? 0 : si), selIdxRef];
+    }
+
+    function keyInCurrentPeriod(key) {
+      if (state.period === 'all') return true;
+
+      const idx = MONTHS.indexOf(key);
+      if (idx < 0) return false;
+
+      const [a, b] = periodKeys(state.period);
+      return idx >= a && idx <= b;
+    }
+
+    function aggPeriod(period) {
+      const [a, b] = periodKeys(period);
+
+      let accrued = 0;
+      let paid = 0;
+      let overdueAmt = 0;
+      let nearestDue = null;
+
+      for (let i = a; i <= b; i++) {
+        const k = MONTHS[i];
+        const t = TAX[k];
+        if (!t || t.future) continue;
+
+        accrued += t.accrued;
+        paid += t.paid;
+
+        const rem = t.accrued - t.paid;
+        const due = dueDate(k);
+
+        if (rem > 0) {
+          if (due < now) {
+            overdueAmt += rem;
+          } else if (!nearestDue || due < nearestDue) {
+            nearestDue = due;
+          }
+        }
+      }
+
+      return {
+        accrued,
+        paid,
+        rest: Math.max(0, accrued - paid),
+        overdueAmt,
+        nearestDue
+      };
+    }
+
+    function statusOf(A) {
+      if (A.accrued <= 0) return { tone: 'normal', key: 'none', txt: 'нет начислений' };
+      if (A.rest <= 0) return { tone: 'paid', key: 'paid', txt: 'уплачено' };
+      if (A.overdueAmt > 0) return { tone: 'overdue', key: 'overdue', txt: 'просрочено' };
+
+      if (A.nearestDue && Math.ceil((A.nearestDue - now) / 86400000) <= 7) {
+        return { tone: 'soon', key: 'soon', txt: 'скоро' };
+      }
+
+      return { tone: 'normal', key: 'normal', txt: 'в графике' };
+    }
+
+    /* ====== RENDER HERO ====== */
+
+    const SHOW = 6;
+    const C = 2 * Math.PI * 52;
+
+    const ringTone = t =>
+      t === 'paid' ? 'var(--green)' :
+      t === 'overdue' ? 'var(--red)' :
+      t === 'soon' ? 'var(--amber)' :
+      'var(--accent)';
+
+    function renderHero(A, S) {
+      const pct = A.accrued > 0
+        ? Math.min(100, Math.round(A.paid / A.accrued * 100))
+        : (A.rest <= 0 ? 100 : 0);
+
+      const tv = ringTone(S.tone);
+      const fill = $('#ringFill');
+
+      fill.style.setProperty('--tone', tv);
+      fill.style.strokeDasharray = C;
+      fill.style.strokeDashoffset = C * (1 - pct / 100);
+
+      $('#ringCenter').innerHTML = S.key === 'paid'
+        ? `<span class="rc-done" aria-hidden="true">✓</span><span class="rc-k">уплачено</span>`
+        : `<span class="rc-pct" style="--tone:${tv}">${pct}%</span><span class="rc-k">заплачено</span>`;
+
+      const bIcon =
+        S.key === 'paid' ? 'lucide:check' :
+        S.key === 'overdue' ? 'lucide:triangle-alert' :
+        S.key === 'soon' ? 'lucide:clock' :
+        'lucide:calendar';
+
+      const bGlyph =
+        S.key === 'paid' ? '✓' :
+        S.key === 'overdue' ? '!' :
+        S.key === 'soon' ? '⏱' :
+        '▦';
+
+      let sub = '';
+
+      if (S.key === 'overdue') {
+        sub = `просрочено на ${money(A.overdueAmt)}`;
+      } else if (S.key === 'paid') {
+        sub = 'по периоду всё внесено';
+      } else if (A.nearestDue) {
+        for (let i = lastAvailableIdx; i >= 0; i--) {
+          const k = MONTHS[i];
+          const t = TAX[k];
+          if (t && !t.future && dueDate(k).getTime() === A.nearestDue.getTime()) {
+            sub = `срок до ${dueLabel(k)}`;
+            break;
+          }
+        }
+      }
+
+      const dueVal = S.key === 'paid' ? '0 ₽' : money(A.rest);
+      const dueTone =
+        S.key === 'paid' ? 't-green' :
+        S.key === 'overdue' ? 't-red' :
+        S.key === 'soon' ? 't-amber' :
+        '';
+
+      $('#info').innerHTML = `
+        <div class="due-row">
+          <div class="due-top">
+            <span class="due-k">Осталось уплатить</span>
+            <span class="due-sub">${esc(sub)}</span>
+          </div>
+          <div class="due-bottom">
+            <span class="due-v ${dueTone}">${esc(dueVal)}</span>
+            <span class="badge ${esc(S.key)}">
+              <i class="ic" data-ic="${esc(bIcon)}" data-glyph="${esc(bGlyph)}"></i>${esc(S.txt)}
+            </span>
+          </div>
+        </div>
+        <div class="metrics">
+          <div class="metric">
+            <div class="metric-head">
+              <i class="ic" data-ic="lucide:file-text" data-glyph="▤"></i>
+              <span class="mk">Начислено</span>
+            </div>
+            <span class="mv">${esc(money(A.accrued))}</span>
+          </div>
+          <div class="metric">
+            <div class="metric-head">
+              <i class="ic" data-ic="lucide:wallet" data-glyph="💳"></i>
+              <span class="mk">Уплачено</span>
+            </div>
+            <span class="mv">${esc(money(A.paid))}</span>
+          </div>
+        </div>
+      `;
+
+      hydrateIcons($('#info'));
+    }
+
+    /* ====== RENDER CHECKS ====== */
+
+    function chkRow(c) {
+      const subExtra = c.status === 'review' ? ' · проверка' : '';
+      const legalShort = c.legal ? 'юр.' : 'физ.';
+
+      return `
+        <div class="chk" data-id="${esc(c.id)}" role="button" tabindex="0" aria-label="Открыть чек ${esc(c.customer)}">
+          <span class="c-ic">
+            <i class="ic" data-ic="lucide:receipt-text" data-glyph="≡"></i>
+            <i class="c-dot ${esc(c.status)}"></i>
+          </span>
+          <span class="c-col">
+            <span class="c-nm">${esc(c.customer)}</span>
+            <span class="c-sub">${esc(ddmm(c.date))} · ${esc(legalShort)} · ${esc(c.rate)}% · налог ${esc(money(c.tax))}${esc(subExtra)}</span>
+          </span>
+          <span class="c-amt">${esc(money(c.amount))}</span>
+        </div>
+      `;
+    }
+
+    function renderChecks() {
+      const [a, b] = periodKeys(state.period);
+      const set = new Set(MONTHS.slice(a, b + 1));
+
+      const list = CHECKS
+        .filter(c => set.has(c.key))
+        .sort((x, y) => y.date.localeCompare(x.date));
+
+      $('#chkCount').textContent = list.length
+        ? `${list.length} ${plural(list.length, ['чек', 'чека', 'чеков'])}`
+        : 'нет чеков';
+
+      const head = $('#chkList');
+      const rest = $('#chkRest');
+      const tail = $('#chkTail');
+      const more = $('#chkMore');
+
+      if (!list.length) {
+        head.innerHTML = `<div class="chk-empty">Чеков за период нет — загрузите первый</div>`;
+        rest.innerHTML = '';
+        tail.dataset.open = '0';
+        more.hidden = true;
+        return;
+      }
+
+      const visible = list.slice(0, SHOW);
+      const extra = list.slice(SHOW);
+
+      head.innerHTML = visible.map(chkRow).join('');
+
+      if (extra.length) {
+        rest.innerHTML = extra.map(chkRow).join('');
+        more.hidden = false;
+
+        const open = state.expanded;
+        tail.dataset.open = open ? '1' : '0';
+        more.textContent = open ? 'свернуть ↑' : `+${extra.length} ещё ↓`;
+        more.setAttribute('aria-expanded', open ? 'true' : 'false');
+      } else {
+        rest.innerHTML = '';
+        tail.dataset.open = '0';
+        more.hidden = true;
+      }
+
+      hydrateIcons(head);
+      hydrateIcons(rest);
+
+      if (state.justAdded) {
+        const el = head.querySelector(`[data-id="${CSS.escape(state.justAdded)}"]`) ||
+                   rest.querySelector(`[data-id="${CSS.escape(state.justAdded)}"]`);
+
+        if (el && !reduced() && el.animate) {
+          el.getAnimations().forEach(x => x.cancel());
+          el.animate(
+            [{ opacity: 0, transform: 'translateY(-10px)' }, { opacity: 1, transform: 'none' }],
+            { duration: 320, easing: 'cubic-bezier(.16,1,.3,1)' }
+          );
+        }
+
+        state.justAdded = null;
+      }
+    }
+
+    function updatePeriodLabel() {
+      if (state.period === 'all') {
+        $('#periodLabel').textContent = 'Все время';
+        return;
+      }
+
+      const key = MONTHS[selIdxRef];
+      const [y, m] = key.split('-').map(Number);
+
+      let label;
+
+      if (state.period === 'month') {
+        label = `${MONTHS_RU[m - 1]} ${y}`;
+      } else if (state.period === 'quarter') {
+        const q = Math.floor((m - 1) / 3) + 1;
+        label = `${q} кв ${y}`;
+      } else {
+        label = `${y}`;
+      }
+
+      $('#periodLabel').textContent = label;
+    }
+
+    function render() {
+      const A = aggPeriod(state.period);
+      const S = statusOf(A);
+
+      renderHero(A, S);
+      renderChecks();
+
+      $$('#seg button').forEach(btn => {
+        const on = btn.dataset.period === state.period;
+        btn.classList.toggle('on', on);
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      });
+
+      updatePeriodLabel();
+      hydrateIcons(document);
+      syncTelegramBackButton();
+    }
+
+    /* ====== UPLOAD / MOCK OCR ====== */
+
+    const uploadBtn = $('#uploadBtn');
+    const fileInput = $('#fileInput');
+    const uIc = $('#uIc');
+    const uSpinner = $('#uSpinner');
+    const uTitle = $('#uTitle');
+    const uSub = $('#uSub');
+
+    function setUploadLoading(loading) {
+      state.loading = loading;
+      uploadBtn.classList.toggle('loading', loading);
+      uploadBtn.setAttribute('aria-busy', loading ? 'true' : 'false');
+
+      uIc.hidden = loading;
+      uSpinner.hidden = !loading;
+
+      uTitle.textContent = loading ? 'Распознаём чек…' : 'Подгрузить и распознать чек';
+      uSub.textContent = loading
+        ? 'Определяем покупателя и сумму'
+        : 'Фото или PDF чека из «Мой налог»';
+    }
+
+    function addMockCheck() {
+      const t = TAX[currentKey];
+      if (!t || t.future) return;
+
+      const legal = Math.random() < 0.62;
+      const rate = legal ? 6 : 4;
+
+      const amount = Math.max(
+        1000,
+        Math.round((3000 + Math.random() * 27000) / 100) * 100
+      );
+
+      const tax = Math.max(
+        100,
+        Math.round(amount * rate / 100 / 100) * 100
+      );
+
+      const arr = legal ? LEGAL_CUSTOMERS : PHYSICAL_CUSTOMERS;
+      const customer = arr[Math.floor(Math.random() * arr.length)];
+
+      const id = 'ck' + (cid++);
+
+      CHECKS.push({
+        id,
+        key: currentKey,
+        customer,
+        legal,
+        rate,
+        amount,
+        tax,
+        date: todayISO,
+        status: 'ok'
+      });
+
+      t.accrued += tax;
+      t.income += amount;
+
+      if (state.period !== 'all') {
+        state.period = 'month';
+        selIdxRef = lastAvailableIdx;
+      }
+
+      state.expanded = false;
+      state.justAdded = id;
+
+      render();
+      haptic('success');
+      toast(`Чек распознан · налог +${fmt(tax)} ₽`);
+    }
+
+    uploadBtn.addEventListener('click', () => {
+      if (state.loading) return;
+      fileInput.click();
+    });
+
+    fileInput.addEventListener('change', e => {
+      const file = e.target.files && e.target.files[0];
+      fileInput.value = '';
+
+      if (!file || state.loading) return;
+
+      const maxSize = 10 * 1024 * 1024;
+      const okType = file.type.startsWith('image/') || file.type === 'application/pdf';
+
+      if (!okType) {
+        haptic('error');
+        toast('Поддерживаются фото или PDF');
+        return;
+      }
+
+      if (file.size > maxSize) {
+        haptic('error');
+        toast('Файл больше 10 МБ');
+        return;
+      }
+
+      setUploadLoading(true);
+
+      const delay = reduced() ? 200 : 1100;
+
+      setTimeout(() => {
+        try {
+          addMockCheck();
+        } finally {
+          setUploadLoading(false);
+        }
+      }, delay);
+    });
+
+    $('#chkMore').addEventListener('click', () => {
+      state.expanded = !state.expanded;
+      renderChecks();
+      haptic('light');
+    });
+
+    $('#seg').addEventListener('click', e => {
+      const btn = e.target.closest('[data-period]');
+      if (!btn) return;
+
+      state.period = btn.dataset.period;
+      state.expanded = false;
+      haptic('light');
+      render();
+    });
+
+    $('#payBtn').addEventListener('click', () => {
+      haptic('success');
+      toast('Переход к оплате налога');
+    });
+
+    $('#histBtn').addEventListener('click', () => {
+      haptic('light');
+      toast('Реквизиты и история уплат');
+    });
+
+    /* ====== TOAST / HAPTIC ====== */
+
+    function toast(text) {
+      const el = $('#toast');
+      el.textContent = text;
+      el.classList.add('show');
+
+      clearTimeout(window.__tt);
+      window.__tt = setTimeout(() => el.classList.remove('show'), 1900);
+    }
+
+    function haptic(type = 'light') {
+      try {
+        const tg = window.Telegram?.WebApp;
+
+        if (tg?.HapticFeedback) {
+          if (type === 'success') {
+            tg.HapticFeedback.notificationOccurred('success');
+          } else if (type === 'error') {
+            tg.HapticFeedback.notificationOccurred('error');
+          } else {
+            tg.HapticFeedback.impactOccurred(type === 'light' ? 'light' : type);
+          }
+          return;
+        }
+      } catch (_) {}
+
+      if (navigator.vibrate) {
+        navigator.vibrate(type === 'success' ? 20 : type === 'error' ? 30 : 10);
+      }
+    }
+
+    /* ====== HIDE SUMS ====== */
+
+    const hideBtn = $('#hideBtn');
+
+    function syncHideButton() {
+      hideBtn.textContent = state.hidden ? '👁' : '🙈';
+      hideBtn.setAttribute('aria-pressed', state.hidden ? 'true' : 'false');
+      hideBtn.setAttribute('aria-label', state.hidden ? 'Показать суммы' : 'Скрыть суммы');
+      hideBtn.title = state.hidden ? 'Показать суммы' : 'Скрыть суммы';
+    }
+
+    hideBtn.addEventListener('click', () => {
+      state.hidden = !state.hidden;
+      storeSet('domkniga-tax-hidden', state.hidden ? '1' : '0');
+      syncHideButton();
+      render();
+      haptic('light');
+      toast(state.hidden ? 'Суммы скрыты' : 'Суммы показаны');
+    });
+
+    /* ====== THEME ====== */
+
+    const themeBtn = $('#themeBtn');
+    const tg = window.Telegram?.WebApp;
+
+    function currentTheme() {
+      return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+    }
+
+    function syncTelegramChrome() {
+      if (!tg) return;
+
+      const dark = currentTheme() === 'dark';
+      const bg = dark ? '#0f1220' : '#f5f6fa';
+
+      try {
+        tg.setHeaderColor?.(bg);
+        tg.setBackgroundColor?.(bg);
+      } catch (_) {}
+    }
+
+    function setTheme(theme, save = true) {
+      document.documentElement.dataset.theme = theme;
+      if (save) storeSet('domkniga-tax-theme', theme);
+
+      themeBtn.textContent = theme === 'dark' ? '☀️' : '◐';
+      themeBtn.setAttribute('aria-label', theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему');
+
+      syncTelegramChrome();
+    }
+
+    themeBtn.addEventListener('click', () => {
+      const next = currentTheme() === 'dark' ? 'light' : 'dark';
+      setTheme(next, true);
+      haptic('light');
+    });
+
+    const storedTheme = storeGet('domkniga-tax-theme');
+    const hadStoredTheme = storedTheme === 'dark' || storedTheme === 'light';
+
+    if (hadStoredTheme) {
+      setTheme(storedTheme, false);
+    } else if (tg?.colorScheme) {
+      setTheme(tg.colorScheme === 'dark' ? 'dark' : 'light', false);
+    } else if (window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
+      setTheme('dark', false);
+    }
+
+    (function initTelegram() {
+      if (!tg) return;
+
+      try {
+        tg.ready();
+        tg.expand();
+      } catch (_) {}
+    })();
+
+    /* ====== PERIOD PICKER ====== */
+
+    const pickerState = {
+      open: false,
+      view: 'months',
+      viewYear: now.getFullYear()
+    };
+
+    const periodBtn = $('#periodBtn');
+    const periodPop = $('#periodPop');
+    const picker = $('#picker');
+
+    function monthDisabled(key) {
+      const idx = MONTHS.indexOf(key);
+      if (idx < 0) return true;
+      return key > currentKey;
+    }
+
+    function yearHasAvailable(y) {
+      return MONTHS.some(k => k.startsWith(`${y}-`) && k <= currentKey);
+    }
+
+    function openPop() {
+      pickerState.open = true;
+      pickerState.view = state.period === 'year' ? 'years' : 'months';
+      pickerState.viewYear = Number(MONTHS[selIdxRef].split('-')[0]);
+
+      renderPop();
+
+      periodBtn.setAttribute('aria-expanded', 'true');
+      periodPop.hidden = false;
+
+      syncTelegramBackButton();
+
+      requestAnimationFrame(() => {
+        const target =
+          periodPop.querySelector('.cell.sel:not(:disabled)') ||
+          periodPop.querySelector('.cell:not(:disabled)');
+
+        target?.focus();
+      });
+    }
+
+    function closePop(focus = false) {
+      pickerState.open = false;
+      periodBtn.setAttribute('aria-expanded', 'false');
+      periodPop.hidden = true;
+
+      if (focus) periodBtn.focus();
+
+      syncTelegramBackButton();
+    }
+
+    function renderPop() {
+      const pop = periodPop;
+      const cy = now.getFullYear();
+
+      if (pickerState.view === 'months') {
+        const y = pickerState.viewYear;
+
+        const cells = MONTHS_RU_S.map((nm, m) => {
+          const key = `${y}-${pad(m + 1)}`;
+          const sel = state.period !== 'all' && MONTHS[selIdxRef] === key;
+          const today = currentKey === key;
+          const dis = monthDisabled(key);
+
+          return `
+            <button
+              type="button"
+              class="cell${sel ? ' sel' : ''}${today && !sel ? ' today' : ''}"
+              data-key="${esc(key)}"
+              ${dis ? 'disabled' : ''}
+              aria-label="${esc(monthLabel(key))}"
+            >${esc(nm)}</button>
+          `;
+        }).join('');
+
+        const prevDisabled = !yearHasAvailable(y - 1);
+        const nextDisabled = !yearHasAvailable(y + 1);
+
+        pop.innerHTML = `
+          <div class="pop-head">
+            <button type="button" class="nav-btn" data-nav="-1" ${prevDisabled ? 'disabled' : ''} aria-label="Предыдущий год">‹</button>
+            <button type="button" class="year-btn" data-view="years" title="Выбрать год">
+              ${esc(y)}
+              <i class="ic chev-sm" data-ic="lucide:chevron-down" data-glyph="▾"></i>
+            </button>
+            <button type="button" class="nav-btn" data-nav="1" ${nextDisabled ? 'disabled' : ''} aria-label="Следующий год">›</button>
+          </div>
+
+          <div class="grid3">${cells}</div>
+
+          <div class="pop-foot">
+            <button type="button" class="ghost-btn" data-whole="${esc(y)}" ${yearHasAvailable(y) ? '' : 'disabled'}>
+              Весь ${esc(y)} год →
+            </button>
+          </div>
+
+          <p class="pop-hint">Год считается с января по выбранный месяц</p>
+        `;
+      } else {
+        const from = Math.floor(pickerState.viewYear / 12) * 12;
+        const years = Array.from({ length: 12 }, (_, i) => from + i);
+
+        const cells = years.map(y => {
+          const sel = state.period === 'year' && MONTHS[selIdxRef].startsWith(`${y}-`);
+          const today = y === cy;
+          const dis = !yearHasAvailable(y);
+
+          return `
+            <button
+              type="button"
+              class="cell${sel ? ' sel' : ''}${today && !sel ? ' today' : ''}"
+              data-year="${esc(y)}"
+              ${dis ? 'disabled' : ''}
+              aria-label="${esc(y)}"
+            >${esc(y)}</button>
+          `;
+        }).join('');
+
+        const prevYears = Array.from({ length: 12 }, (_, i) => from - 12 + i);
+        const nextYears = Array.from({ length: 12 }, (_, i) => from + 12 + i);
+
+        const prevDisabled = !prevYears.some(yearHasAvailable);
+        const nextDisabled = !nextYears.some(yearHasAvailable);
+
+        pop.innerHTML = `
+          <div class="pop-head">
+            <button type="button" class="nav-btn" data-nav="-12" ${prevDisabled ? 'disabled' : ''} aria-label="Предыдущие годы">‹</button>
+            <button type="button" class="year-btn" data-view="months" title="К месяцам">
+              ${esc(from)} — ${esc(from + 11)}
+              <i class="ic chev-sm" data-ic="lucide:chevron-down" data-glyph="▾"></i>
+            </button>
+            <button type="button" class="nav-btn" data-nav="12" ${nextDisabled ? 'disabled' : ''} aria-label="Следующие годы">›</button>
+          </div>
+
+          <div class="grid3">${cells}</div>
+
+          <div class="pop-foot">
+            <button type="button" class="ghost-btn" data-view="months">← К месяцам</button>
+          </div>
+
+          <p class="pop-hint">Выбор года = отчёт с января по последний доступный месяц</p>
+        `;
+      }
+
+      hydrateIcons(pop);
+    }
+
+    function selectYear(y) {
+      const target = MONTHS.filter(k => k.startsWith(`${y}-`) && k <= currentKey).pop();
+      if (!target) return false;
+
+      const idx = MONTHS.indexOf(target);
+      if (idx < 0) return false;
+
+      selIdxRef = idx;
+      state.period = 'year';
+      state.expanded = false;
+      return true;
+    }
+
+    periodBtn.addEventListener('click', () => {
+      pickerState.open ? closePop(true) : openPop();
+    });
+
+    periodPop.addEventListener('click', e => {
+      const b = e.target.closest('button');
+      if (!b || b.disabled) return;
+
+      if (b.dataset.nav) {
+        pickerState.viewYear += Number(b.dataset.nav);
+        renderPop();
+        return;
+      }
+
+      if (b.dataset.view) {
+        pickerState.view = b.dataset.view;
+        renderPop();
+        return;
+      }
+
+      if (b.dataset.whole) {
+        const y = Number(b.dataset.whole);
+        if (selectYear(y)) {
+          closePop(true);
+          render();
+          haptic('light');
+        }
+        return;
+      }
+
+      if (b.dataset.key) {
+        const idx = MONTHS.indexOf(b.dataset.key);
+        if (idx >= 0) {
+          state.period = 'month';
+          selIdxRef = idx;
+          state.expanded = false;
+          closePop(true);
+          render();
+          haptic('light');
+        }
+        return;
+      }
+
+      if (b.dataset.year !== undefined) {
+        const y = Number(b.dataset.year);
+        if (selectYear(y)) {
+          closePop(true);
+          render();
+          haptic('light');
+        }
+      }
+    });
+
+    periodPop.addEventListener('keydown', e => {
+      if (!pickerState.open) return;
+
+      const cells = $$('.cell:not(:disabled)', periodPop);
+      if (!cells.length) return;
+
+      const idx = cells.indexOf(document.activeElement);
+      if (idx < 0) return;
+
+      let next = -1;
+
+      switch (e.key) {
+        case 'ArrowRight':
+          next = idx + 1;
+          break;
+        case 'ArrowLeft':
+          next = idx - 1;
+          break;
+        case 'ArrowDown':
+          next = idx + 3;
+          break;
+        case 'ArrowUp':
+          next = idx - 3;
+          break;
+        case 'Home':
+          next = 0;
+          break;
+        case 'End':
+          next = cells.length - 1;
+          break;
+        default:
+          return;
+      }
+
+      if (next >= 0 && next < cells.length) {
+        e.preventDefault();
+        cells[next].focus();
+      }
+    });
+
+    document.addEventListener('pointerdown', e => {
+      if (pickerState.open && !picker.contains(e.target)) {
+        closePop(false);
+      }
+    });
+
+    /* ====== TELEGRAM BACK BUTTON ====== */
+
+    function syncTelegramBackButton() {
+      if (!tg?.BackButton) return;
+
+      const modalOpen = !$('#backdrop').hidden;
+      const pickerOpen = pickerState.open;
+
+      if (modalOpen || pickerOpen) {
+        tg.BackButton.show();
+      } else {
+        tg.BackButton.hide();
+      }
+    }
+
+    if (tg?.BackButton?.onClick) {
+      tg.BackButton.onClick(() => {
+        if (!$('#backdrop').hidden) {
+          closeReceipt();
+        } else if (pickerState.open) {
+          closePop(true);
+        } else {
+          tg.close?.();
+        }
+      });
+    }
+
+    /* ====== MODAL HELPERS ====== */
+
+    const backdrop = $('#backdrop');
+    const modal = $('#modal');
+    let lastFocused = null;
+
+    function enableModalFocusTrap() {
+      modal.onkeydown = e => {
+        if (e.key !== 'Tab') return;
+
+        const items = $$(
+          'button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+          modal
+        );
+
+        if (!items.length) return;
+
+        const first = items[0];
+        const last = items[items.length - 1];
+
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      };
+    }
+
+    function clearModalInvalid() {
+      $$('.invalid', modal).forEach(el => {
+        el.classList.remove('invalid');
+        el.removeAttribute('aria-invalid');
+      });
+    }
+
+    function markInvalid(el) {
+      el.classList.add('invalid');
+      el.setAttribute('aria-invalid', 'true');
+      el.focus();
+    }
+
+    /* ====== RECEIPT DETAIL MODAL ====== */
+
+    function deleteCheck(id) {
+      const i = CHECKS.findIndex(x => x.id === id);
+      if (i < 0) return;
+
+      const c = CHECKS[i];
+      const t = TAX[c.key];
+
+      if (t) {
+        const taxDeduct = Math.min(c.tax, t.accrued);
+        const incomeDeduct = Math.min(c.amount, t.income);
+
+        t.accrued = Math.max(0, t.accrued - taxDeduct);
+        t.income = Math.max(0, t.income - incomeDeduct);
+        t.paid = Math.max(0, Math.min(t.paid - taxDeduct, t.accrued));
+      }
+
+      CHECKS.splice(i, 1);
+    }
+
+    function openReceipt(id) {
+      const c = CHECKS.find(x => x.id === id);
+      if (!c) return;
+
+      lastFocused = document.activeElement;
+
+      const [y, m, d] = c.date.split('-').map(Number);
+      const dateStr = `${d} ${MONTHS_RU[m - 1].toLowerCase()} ${y}`;
+      const net = Math.max(0, c.amount - c.tax);
+
+      const legalText = c.legal ? 'Юр. лицо' : 'Физ. лицо';
+      const legalShort = c.legal ? 'Юр.' : 'Физ.';
+      const rateText = `${c.rate}%`;
+
+      const stBadge = c.status === 'review'
+        ? '<span class="badge soon">на проверке</span>'
+        : '<span class="badge paid">распознан</span>';
+
+      modal.innerHTML = `
+        <div class="m-head">
+          <h3 id="mTitle">Чек ${stBadge}</h3>
+          <button type="button" class="m-close" id="mClose" title="Закрыть (Esc)" aria-label="Закрыть">✕</button>
+        </div>
+
+        <div class="m-body">
+          <div class="meta-grid">
+            <div class="meta-item">
+              <div class="meta-label">Покупатель</div>
+              <div class="meta-value">${esc(c.customer)}</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">Дата</div>
+              <div class="meta-value">${esc(dateStr)}</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">Сумма чека</div>
+              <div class="meta-value">${esc(money(c.amount))}</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">Налог НПД</div>
+              <div class="meta-value" style="color:var(--accent)">${esc(money(c.tax))}</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">Юр. статус</div>
+              <div class="meta-value">${esc(legalText)}</div>
+            </div>
+            <div class="meta-item">
+              <div class="meta-label">Ставка налога</div>
+              <div class="meta-value">${esc(rateText)}</div>
+            </div>
+          </div>
+
+          <p class="sec-title">Состав услуги</p>
+
+          <div class="receipt-box">
+            <div class="receipt-row hd">
+              <span class="name">Наименование</span>
+              <span class="qty">Кол-во</span>
+              <span class="status">Статус</span>
+              <span class="rate">Ставка</span>
+              <span class="sum">Сумма</span>
+            </div>
+
+            <div class="receipt-row">
+              <div class="name-wrap">
+                <div class="name">Услуга для «${esc(c.customer)}»</div>
+                <div class="cat">Самозанятый · доход</div>
+              </div>
+              <span class="qty">1</span>
+              <span class="status">${esc(legalShort)}</span>
+              <span class="rate">${esc(rateText)}</span>
+              <span class="sum">${esc(money(c.amount))}</span>
+            </div>
+
+            <div class="receipt-total">
+              <span>К получению</span>
+              <span class="val">${esc(money(net))}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="m-foot">
+          <button type="button" class="mini-btn" id="mShare">
+            <i class="ic" data-ic="lucide:share-2" data-glyph="⇪"></i>
+            <span class="btn-t">Поделиться</span>
+          </button>
+
+          <button type="button" class="mini-btn danger" id="mDelete">
+            <i class="ic" data-ic="lucide:trash-2" data-glyph="🗑"></i>
+            <span class="btn-t">Удалить</span>
+          </button>
+        </div>
+      `;
+
+      backdrop.hidden = false;
+      document.body.style.overflow = 'hidden';
+
+      hydrateIcons(modal);
+      syncTelegramBackButton();
+      enableModalFocusTrap();
+
+      $('#mClose').onclick = closeReceipt;
+
+      $('#mShare').onclick = async () => {
+        haptic('light');
+
+        const amountText = state.hidden ? '•••' : `${fmt(c.amount)} ₽`;
+        const taxText = state.hidden ? '•••' : `${fmt(c.tax)} ₽`;
+        const netText = state.hidden ? '•••' : `${fmt(net)} ₽`;
+
+        const text =
+          `Чек: ${c.customer}\n` +
+          `Дата: ${dateStr}\n` +
+          `Юр. статус: ${legalText}\n` +
+          `Ставка: ${rateText}\n` +
+          `Сумма: ${amountText}\n` +
+          `Налог: ${taxText}\n` +
+          `К получению: ${netText}`;
+
+        if (navigator.share) {
+          try {
+            await navigator.share({ title: 'Чек', text });
+            return;
+          } catch (err) {
+            if (err && err.name === 'AbortError') return;
+          }
+        }
+
+        try {
+          await navigator.clipboard.writeText(text);
+          toast('Данные чека скопированы');
+        } catch (_) {
+          toast('Не удалось поделиться');
+        }
+      };
+
+      $('#mDelete').onclick = () => {
+        deleteCheck(c.id);
+        closeReceipt();
+        render();
+        haptic('success');
+        toast('Чек удалён');
+      };
+
+      $('#mClose').focus();
+    }
+
+    function closeReceipt() {
+      backdrop.hidden = true;
+      modal.innerHTML = '';
+      modal.onkeydown = null;
+      document.body.style.overflow = '';
+
+      syncTelegramBackButton();
+
+      if (lastFocused && document.contains(lastFocused)) {
+        lastFocused.focus();
+      } else {
+        periodBtn?.focus();
+      }
+
+      lastFocused = null;
+    }
+
+    backdrop.addEventListener('pointerdown', e => {
+      if (e.target === backdrop) closeReceipt();
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Escape') return;
+
+      if (!backdrop.hidden) {
+        e.preventDefault();
+        closeReceipt();
+        return;
+      }
+
+      if (pickerState.open) {
+        e.preventDefault();
+        closePop(true);
+      }
+    });
+
+    document.addEventListener('click', e => {
+      const row = e.target.closest('.chk[data-id]');
+      if (!row) return;
+
+      openReceipt(row.dataset.id);
+      haptic('light');
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+
+      const row = e.target.closest('.chk[data-id]');
+      if (!row) return;
+
+      e.preventDefault();
+      openReceipt(row.dataset.id);
+      haptic('light');
+    });
+
+    /* ====== MANUAL RECEIPT MODAL ====== */
+
+    function openManualReceipt() {
+      lastFocused = document.activeElement;
+
+      modal.innerHTML = `
+        <div class="m-head">
+          <h3 id="mTitle">Новый чек <span class="badge normal">вручную</span></h3>
+          <button type="button" class="m-close" id="mClose" title="Закрыть (Esc)" aria-label="Закрыть">✕</button>
+        </div>
+
+        <div class="m-body">
+          <div class="form-grid">
+            <div class="field">
+              <label for="mCustomer">Покупатель</label>
+              <input
+                id="mCustomer"
+                type="text"
+                maxlength="120"
+                placeholder="ИП, ООО или ФИО"
+                autocomplete="off"
+              />
+            </div>
+
+            <div class="field-row">
+              <div class="field">
+                <label for="mLegal">Юр. статус</label>
+                <select id="mLegal">
+                  <option value="legal">Юр. лицо</option>
+                  <option value="phys">Физ. лицо</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label for="mDate">Дата</label>
+                <input
+                  id="mDate"
+                  type="date"
+                  value="${todayISO}"
+                  min="${MONTHS[0]}-01"
+                  max="${todayISO}"
+                />
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="mAmount">Сумма чека, ₽</label>
+              <input
+                id="mAmount"
+                type="number"
+                min="1"
+                step="1"
+                inputmode="numeric"
+                placeholder="Например, 15000"
+              />
+            </div>
+          </div>
+
+          <div class="readonly-grid">
+            <div class="readonly-item">
+              <div class="readonly-label">Ставка</div>
+              <div class="readonly-value" id="mRateOut">6%</div>
+            </div>
+            <div class="readonly-item">
+              <div class="readonly-label">Налог</div>
+              <div class="readonly-value" id="mTaxOut">0 ₽</div>
+            </div>
+            <div class="readonly-item">
+              <div class="readonly-label">К получению</div>
+              <div class="readonly-value" id="mNetOut">0 ₽</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-foot">
+          <button type="button" class="mini-btn" id="mCancel">
+            <span class="btn-t">Отмена</span>
+          </button>
+
+          <button type="button" class="mini-btn primary" id="mSave">
+            <i class="ic" data-ic="lucide:plus" data-glyph="+"></i>
+            <span class="btn-t">Добавить</span>
+          </button>
+        </div>
+      `;
+
+      backdrop.hidden = false;
+      document.body.style.overflow = 'hidden';
+
+      hydrateIcons(modal);
+      syncTelegramBackButton();
+      enableModalFocusTrap();
+      clearModalInvalid();
+
+      const customerEl = $('#mCustomer');
+      const legalEl = $('#mLegal');
+      const dateEl = $('#mDate');
+      const amountEl = $('#mAmount');
+      const rateOut = $('#mRateOut');
+      const taxOut = $('#mTaxOut');
+      const netOut = $('#mNetOut');
+
+      function recalc() {
+        const isLegal = legalEl.value === 'legal';
+        const rate = isLegal ? 6 : 4;
+        const amount = Math.max(0, Math.round(Number(amountEl.value) || 0));
+        const tax = amount > 0 ? Math.round(amount * rate / 100) : 0;
+        const net = Math.max(0, amount - tax);
+
+        rateOut.textContent = `${rate}%`;
+        taxOut.textContent = `${fmt(tax)} ₽`;
+        netOut.textContent = `${fmt(net)} ₽`;
+      }
+
+      legalEl.addEventListener('change', recalc);
+      amountEl.addEventListener('input', recalc);
+      recalc();
+
+      $('#mClose').onclick = closeReceipt;
+      $('#mCancel').onclick = closeReceipt;
+      $('#mSave').onclick = saveManualReceipt;
+
+      customerEl.focus();
+    }
+
+    function saveManualReceipt() {
+      clearModalInvalid();
+
+      const customerEl = $('#mCustomer');
+      const legalEl = $('#mLegal');
+      const dateEl = $('#mDate');
+      const amountEl = $('#mAmount');
+
+      if (!customerEl || !legalEl || !dateEl || !amountEl) return;
+
+      const customer = customerEl.value.trim();
+      if (!customer) {
+        markInvalid(customerEl);
+        toast('Укажите покупателя');
+        haptic('error');
+        return;
+      }
+
+      const dateVal = dateEl.value;
+      if (!dateVal) {
+        markInvalid(dateEl);
+        toast('Укажите дату чека');
+        haptic('error');
+        return;
+      }
+
+      const key = dateVal.slice(0, 7);
+      if (key > currentKey) {
+        markInvalid(dateEl);
+        toast('Нельзя добавить чек в будущий период');
+        haptic('error');
+        return;
+      }
+
+      const idx = MONTHS.indexOf(key);
+      if (idx < 0) {
+        markInvalid(dateEl);
+        toast('Дата вне доступного периода');
+        haptic('error');
+        return;
+      }
+
+      const rawAmount = Number(amountEl.value);
+      if (!Number.isFinite(rawAmount) || rawAmount <= 0) {
+        markInvalid(amountEl);
+        toast('Укажите сумму чека');
+        haptic('error');
+        return;
+      }
+
+      const legal = legalEl.value === 'legal';
+      const rate = legal ? 6 : 4;
+      const amount = Math.max(1, Math.round(rawAmount));
+      const tax = Math.max(0, Math.round(amount * rate / 100));
+
+      if (!TAX[key]) {
+        TAX[key] = { income: 0, accrued: 0, paid: 0, future: false };
+      }
+
+      const t = TAX[key];
+      const id = 'ck' + (cid++);
+
+      CHECKS.push({
+        id,
+        key,
+        customer,
+        legal,
+        rate,
+        amount,
+        tax,
+        date: dateVal,
+        status: 'ok'
+      });
+
+      t.income += amount;
+      t.accrued += tax;
+
+      if (state.period !== 'all' && !keyInCurrentPeriod(key)) {
+        state.period = 'month';
+        selIdxRef = idx;
+      }
+
+      const [a, b] = periodKeys(state.period);
+      const set = new Set(MONTHS.slice(a, b + 1));
+      const list = CHECKS
+        .filter(c => set.has(c.key))
+        .sort((x, y) => y.date.localeCompare(x.date));
+
+      const pos = list.findIndex(c => c.id === id);
+      state.expanded = pos >= SHOW;
+      state.justAdded = id;
+
+      closeReceipt();
+      render();
+      haptic('success');
+      toast('Чек добавлен вручную');
+    }
+
+    $('#manualBtn').addEventListener('click', () => {
+      openManualReceipt();
+      haptic('light');
+    });
+
+    /* ====== INIT ====== */
+
+    syncHideButton();
+    render();
+    syncTelegramChrome();
+    syncTelegramBackButton();
+  </script>
+</body>
+</html>

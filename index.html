@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#090909" />
+  <title>Mono — репетитор</title>
+  <link rel="icon" type="image/png" href="Иконка.png" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Mono" />
+
+  <script>
+    (() => {
+      try {
+        const saved = localStorage.getItem("mono-theme");
+        const systemLight = window.matchMedia("(prefers-color-scheme: light)").matches;
+        document.documentElement.dataset.theme = saved || (systemLight ? "light" : "dark");
+      } catch (_) {
+        document.documentElement.dataset.theme = "dark";
+      }
+    })();
+  </script>
+
+  <link rel="stylesheet" href="src/css/tokens.css" />
+  <link rel="stylesheet" href="src/css/layout-base.css" />
+  <link rel="stylesheet" href="src/css/components.css" />
+</head>
+
+  <!-- Dev-preview: рамка устройства (Этап 8). app переносится внутрь при включённой рамке -->
+  <div class="device-frame" id="deviceFrame" aria-hidden="true">
+    <div class="frame-notch"></div>
+    <div class="frame-caption" id="frameCaption">Телефон · 390 × 844</div>
+  </div>
+
+  <div class="app" id="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="brand">Mono</div>
+
+      <button class="icon-btn nav-history" data-action="back" aria-label="Назад">
+        <span data-icon="back"></span>
+      </button>
+
+      <button class="icon-btn nav-history" data-action="forward" aria-label="Вперёд">
+        <span data-icon="forward"></span>
+      </button>
+
+      <!-- Этап 18: заголовок раздела живёт в шапке (экономия ~70px высоты) -->
+      <div class="header-titles">
+        <h1 id="page-title">Домой</h1>
+        <p id="page-subtitle">Главный экран</p>
+      </div>
+
+      <div class="header-spacer"></div>
+
+      <!-- Dev-preview: временный переключатель макетов (Этап 7) -->
+      <div class="preview-switch" role="group" aria-label="Предпросмотр макета">
+        <button class="preview-btn" data-preview="mobile" title="Телефон (≤767px)" aria-label="Режим: телефон"><span data-icon="phone"></span></button>
+        <button class="preview-btn" data-preview="tablet" title="Планшет (768–1179px)" aria-label="Режим: планшет"><span data-icon="tablet"></span></button>
+        <button class="preview-btn" data-preview="desktop" title="Веб (≥1180px)" aria-label="Режим: веб"><span data-icon="monitor"></span></button>
+      </div>
+
+      <!-- Dev-frame: рамка устройства для превью (Этап 8, видна только в mobile/tablet) -->
+      <label class="frame-toggle" title="Рамка устройства">
+        <input type="checkbox" id="frameToggle" />
+        <span>Рамка</span>
+      </label>
+
+      <div class="header-actions">
+        <button class="icon-btn" data-action="help" aria-label="Помощь">
+          <span data-icon="help"></span>
+        </button>
+
+        <button class="icon-btn theme-toggle" data-action="theme" aria-label="Переключить тему">
+          <span class="sun" data-icon="sun"></span>
+          <span class="moon" data-icon="moon"></span>
+        </button>
+
+        <button class="avatar-btn" data-action="profile" aria-label="Профиль">
+          А
+        </button>
+      </div>
+    </header>
+
+    <!-- Desktop / tablet toolbar -->
+    <aside class="toolbar" id="toolbar" aria-label="Боковая навигация">
+      <div class="rail-logo">M</div>
+
+      <nav class="toolbar-nav">
+        <button class="tool-item is-active" data-route="home" aria-current="page">
+          <span data-icon="home"></span>
+          <span class="tool-label">Домой</span>
+        </button>
+
+        <button class="tool-item" data-route="teacher">
+          <span data-icon="teacher"></span>
+          <span class="tool-label">Учитель</span>
+        </button>
+
+        <button class="tool-item" data-route="budget">
+          <span data-icon="budget"></span>
+          <span class="tool-label">Бюджет</span>
+        </button>
+
+        <div class="rail-sep"></div>
+
+        <button class="tool-item" data-route="operations">
+          <span data-icon="operations"></span>
+          <span class="tool-label">Операции</span>
+        </button>
+
+        <button class="tool-item" data-route="accounts">
+          <span data-icon="accounts"></span>
+          <span class="tool-label">Счета</span>
+        </button>
+
+        <button class="tool-item" data-route="planned">
+          <span data-icon="payments"></span>
+          <span class="tool-label">Платежи</span>
+        </button>
+
+        <button class="tool-item" data-route="taxes">
+          <span data-icon="taxes"></span>
+          <span class="tool-label">Налоги</span>
+        </button>
+
+        <button class="tool-item" data-route="investments">
+          <span data-icon="investments"></span>
+          <span class="tool-label">Инвестиции</span>
+        </button>
+
+        <button class="tool-item" data-route="goals">
+          <span data-icon="goals"></span>
+          <span class="tool-label">Цели</span>
+        </button>
+
+        <button class="tool-item" data-route="dashboards">
+          <span data-icon="dashboards"></span>
+          <span class="tool-label">Дашборды</span>
+        </button>
+      </nav>
+
+      <div class="toolbar-bottom">
+        <button class="tool-item" data-action="profile">
+          <span data-icon="user"></span>
+          <span class="tool-label">Профиль</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Content -->
+    <main class="content">
+      <div class="content-inner">
+        <section id="page-body" aria-live="polite"></section>
+      </div>
+    </main>
+
+    <!-- Mobile bottom navigation -->
+    <nav class="bottom-nav" id="bottomNav" aria-label="Нижняя навигация">
+      <div class="tabs">
+        <button class="tab is-active" data-route="home" aria-current="page">
+          <span class="tab-icon" data-icon="home"></span>
+          <span class="tab-label">Домой</span>
+        </button>
+
+        <button class="tab" data-route="teacher">
+          <span class="tab-icon" data-icon="teacher"></span>
+          <span class="tab-label">Учитель</span>
+        </button>
+
+        <button class="tab" data-route="budget">
+          <span class="tab-icon" data-icon="budget"></span>
+          <span class="tab-label">Бюджет</span>
+        </button>
+
+        <button class="tab" data-action="more" aria-haspopup="dialog" aria-expanded="false">
+          <span class="tab-icon" data-icon="dashboards"></span>
+          <span class="tab-label">Ещё</span>
+        </button>
+      </div>
+
+      <div class="fab-wrap" data-fab-wrap>
+        <div class="fan" data-fan aria-hidden="true">
+          <button
+            class="fan-item"
+            data-quick="lesson"
+            aria-label="Запланировать занятие"
+            style="--tx: 0px; --ty: -54px; --d: 0ms"
+          >
+            <span data-icon="calendar"></span>
+            <span>Занятие</span>
+          </button>
+
+          <button
+            class="fan-item"
+            data-quick="student"
+            aria-label="Добавить ученика"
+            style="--tx: -16px; --ty: -104px; --d: 35ms"
+          >
+            <span data-icon="userPlus"></span>
+            <span>Ученик</span>
+          </button>
+
+          <button
+            class="fan-item"
+            data-quick="transaction"
+            aria-label="Новая операция"
+            style="--tx: -32px; --ty: -154px; --d: 70ms"
+          >
+            <span data-icon="card"></span>
+            <span>Операция</span>
+          </button>
+
+          <button
+            class="fan-item"
+            data-quick="statement"
+            aria-label="Загрузить выписку"
+            style="--tx: -48px; --ty: -204px; --d: 105ms"
+          >
+            <span data-icon="upload"></span>
+            <span>Выписка</span>
+          </button>
+        </div>
+
+        <button class="fab" data-fab aria-expanded="false" aria-label="Быстрые действия">
+          <span data-icon="plus"></span>
+        </button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Desktop / tablet floating FAB -->
+  <div class="desktop-fab fab-wrap" data-fab-wrap>
+    <div class="fan" data-fan aria-hidden="true">
+      <button
+        class="fan-item"
+        data-quick="lesson"
+        aria-label="Запланировать занятие"
+        style="--tx: 0px; --ty: -54px; --d: 0ms"
+      >
+        <span data-icon="calendar"></span>
+        <span>Занятие</span>
+      </button>
+
+      <button
+        class="fan-item"
+        data-quick="student"
+        aria-label="Добавить ученика"
+        style="--tx: -16px; --ty: -104px; --d: 35ms"
+      >
+        <span data-icon="userPlus"></span>
+        <span>Ученик</span>
+      </button>
+
+      <button
+        class="fan-item"
+        data-quick="transaction"
+        aria-label="Новая операция"
+        style="--tx: -32px; --ty: -154px; --d: 70ms"
+      >
+        <span data-icon="card"></span>
+        <span>Операция</span>
+      </button>
+
+      <button
+        class="fan-item"
+        data-quick="statement"
+        aria-label="Загрузить выписку"
+        style="--tx: -48px; --ty: -204px; --d: 105ms"
+      >
+        <span data-icon="upload"></span>
+        <span>Выписка</span>
+      </button>
+    </div>
+
+    <button class="fab" data-fab aria-expanded="false" aria-label="Быстрые действия">
+      <span data-icon="plus"></span>
+    </button>
+  </div>
+
+  <div class="fan-backdrop" id="fanBackdrop"></div>
+
+  <!-- Help modal -->
+  <div class="modal-backdrop" id="helpBackdrop"></div>
+  <!-- Bottom sheet «Ещё» — мобильная IA (Этап 7) -->
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <section class="sheet" id="moreSheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-handle"></div>
+    <h3 class="sheet-title" id="sheetTitle">Все разделы</h3>
+    <div class="sheet-grid" id="sheetGrid"><!-- заполняет app.js из u.HUB --></div>
+  </section>
+
+  <section class="modal" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="modal-head">
+      <h2 id="helpTitle">Помощь</h2>
+      <button class="icon-btn" id="helpClose" aria-label="Закрыть">
+        <span data-icon="close"></span>
+      </button>
+    </div>
+
+    <ul class="help-list">
+      <li class="help-item">
+        <h3>Быстрые действия</h3>
+        <p>Нажмите <b>+</b>, чтобы открыть меню: занятие, ученик, операция, выписка.</p>
+      </li>
+      <li class="help-item">
+        <h3>Повтор последнего действия</h3>
+        <p>Зажмите <b>+</b> на полсекунды, чтобы повторно выполнить последнее быстрое действие.</p>
+      </li>
+      <li class="help-item">
+        <h3>Тема</h3>
+        <p>Светлая и тёмная тема переключаются кнопкой в шапке. Выбор сохраняется.</p>
+      </li>
+      <li class="help-item">
+        <h3>Навигация</h3>
+        <p>На телефоне — нижняя панель. На планшете и ПК — левый тулбар, раскрывается при наведении.</p>
+      </li>
+    </ul>
+  </section>
+
+<!-- Generic quick-action modal (формы: занятие/ученик/операция) -->
+  <div class="modal-backdrop" id="genericBackdrop"></div>
+  <section class="modal" id="genericModal" role="dialog" aria-modal="true" aria-labelledby="genericTitle">
+    <div class="modal-head">
+      <h2 id="genericTitle">Форма</h2>
+      <button class="icon-btn" data-action="close-modal" aria-label="Закрыть">
+        <span data-icon="close"></span>
+      </button>
+    </div>
+    <form id="genericForm" novalidate></form>
+  </section>
+
+  <!-- Импорт выписки (демо-разбор) — Этап 21 -->
+  <div class="modal-backdrop" id="importBackdrop"></div>
+  <section class="modal import-modal" id="importModal" role="dialog" aria-modal="true" aria-labelledby="importTitle">
+    <div class="modal-head">
+      <h2 id="importTitle">Импорт выписки</h2>
+      <button class="icon-btn" data-action="close-import" aria-label="Закрыть">
+        <span data-icon="close"></span>
+      </button>
+    </div>
+
+    <div class="import-drop" id="importDrop">
+      <span class="import-drop-icon" data-icon="upload"></span>
+      <h3>Перетащите файл сюда</h3>
+      <p>CSV или PDF из банка. В демо файл не читается — покажем пример разбора операций.</p>
+      <button type="button" class="secondary-btn" id="importPick">Выбрать файл</button>
+      <input type="file" id="importFile" accept=".csv,.pdf,text/csv,application/pdf" hidden />
+    </div>
+
+    <div class="import-preview" id="importPreview" hidden>
+      <div class="import-preview-head">
+        <span class="import-file"><b id="importFileName">file.csv</b> · операций: <b id="importCount">0</b></span>
+        <span class="badge badge--info">демо</span>
+      </div>
+      <div class="import-list" id="importList"></div>
+      <button type="button" class="link-btn" id="importAgain">Выбрать другой файл</button>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="secondary-btn" data-action="close-import">Отмена</button>
+      <button type="button" class="primary-btn" id="importSubmit" disabled>Импортировать</button>
+    </div>
+  </section>
+
+  <!-- Детали бюджета категории (Этап 24, референс B2) -->
+  <div class="modal-backdrop" id="budgetBackdrop"></div>
+  <section class="modal" id="budgetModal" role="dialog" aria-modal="true" aria-labelledby="budgetTitle">
+    <div class="modal-head">
+      <h2 id="budgetTitle">Категория</h2>
+      <button class="icon-btn" data-action="close-budget" aria-label="Закрыть">
+        <span data-icon="close"></span>
+      </button>
+    </div>
+    <div id="budgetDetail"></div>
+  </section>
+
+  <!-- Этап 28: подтверждение удаления операции -->
+  <div class="modal-backdrop" id="confirmBackdrop"></div>
+  <section class="modal modal--confirm" id="confirmModal" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmText">
+    <div class="modal-head">
+      <h2 id="confirmTitle">Удалить операцию?</h2>
+      <button class="icon-btn" data-action="close-confirm" aria-label="Закрыть">
+        <span data-icon="close"></span>
+      </button>
+    </div>
+    <p class="confirm-text" id="confirmText"></p>
+    <div class="form-actions">
+      <button type="button" class="secondary-btn" data-action="close-confirm">Отмена</button>
+      <button type="button" class="primary-btn primary-btn--danger" id="confirmOk">Удалить</button>
+    </div>
+  </section>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- Этап 22: файл для импорта резервной копии -->
+  <input type="file" id="dataImportFile" accept="application/json,.json" hidden />
+
+
+  <script src="src/js/core.js"></script>
+  <script src="src/data/mock.js"></script>
+  <script src="src/js/store.js"></script>
+  <script src="src/js/views/home.js"></script>
+  <script src="src/js/views/teacher.js"></script>
+  <script src="src/js/views/budget.js"></script>
+  <script src="src/js/views/finance.js"></script>
+  <script src="src/js/views/profile.js"></script>
+  <script src="src/js/app.js"></script>
+</body>
+</html>

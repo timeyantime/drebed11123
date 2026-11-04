@@ -1,0 +1,99 @@
+name: Deploy preview to GitHub Pages
+
+# Публикует статический прототип Mono на GitHub Pages.
+# После push в main: Actions → Deploy preview → ссылка в описании job "Deploy"
+# и во вкладке Environments → github.io. Дизайн доступен по
+# https://<владелец>.github.io/<репозиторий>/ (hash-роутинг работает без сервера).
+#
+# ── ОДИНОЧНАЯ НАСТРОЙКА (иначе build падает с «Get Pages site failed / Not Found») ──
+# GITHUB_TOKEN не умеет включать Pages через REST API — это делается вручную один раз:
+#   Вариант 1 (веб): Settings → Pages → Build and deployment → Source: «Deploy from a branch»
+#            затем выбрать workflow «Deploy preview to GitHub Pages» (GitHub сам переключит на Actions-источник)
+#            ИЛИ сразу: gh api repos/{owner}/{repo}/pages -X POST -f build_type=workflow
+#   Вариант 2 (CLI): gh api repos/{owner}/{repo}/pages -X POST -f build_type=workflow
+# Проверка: gh api repos/{owner}/{repo}/pages  → должен вернуть HTTP 200.
+# После этого пуш — и все три job (smoke → build → deploy) проходят зелёными.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  # ВАЖНО: отдельный job «включить Pages через API» удалён намеренно.
+  # GITHUB_TOKEN в GitHub Actions НЕ имеет права Pages:write для REST API
+  # управления Pages — POST /repos/.../pages всегда отвечает 404 Not Found.
+  # Включение Pages выполняется ОДИН РАЗ вручную:
+  #   Settings → Pages → Source: Deploy from a branch → выбрать workflow «Deploy preview…»
+  #   (или gh api repos/{owner}/{repo}/pages -X POST -f build_type=workflow -f sources[github-actions][path]=/)
+  # После этого configure-pages работает без ошибок.
+  smoke:
+    name: Smoke test (Playwright)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install deps
+        run: |
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+      - name: Serve site on :8090
+        run: |
+          python3 -m http.server 8090 > server.log 2>&1 &
+          echo $! > server.pid
+          sleep 1
+          curl -sf http://localhost:8090/index.html > /dev/null
+      - name: Run smoke
+        run: python docs/smoke.py
+      - name: Run undo test
+        run: python docs/undotest.py
+      - name: Run global button audit
+        run: python docs/global-audit.py
+      - name: Stop server
+        if: always()
+        run: kill $(cat server.pid) || true
+
+  build:
+    name: Build static site
+    needs: smoke
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Prepare _site (только приложение, без референсов/docs)
+        run: |
+          mkdir -p _site
+          cp index.html _site/
+          cp Иконка.png _site/icon.png
+          cp -r src _site/src
+          # PWA: манифест, service worker и иконки 192/512 (Этап 22)
+          cp manifest.json sw.js icon-192.png icon-512.png _site/
+          # favicon с кириллическим именем меняем на латиницу (надёжнее для URL на Pages)
+          sed -i 's/Иконка.png/icon.png/' _site/index.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: Deploy to Pages
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

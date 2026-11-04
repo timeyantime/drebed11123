@@ -1,0 +1,1511 @@
+    
+
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-ui);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    button {
+      font: inherit;
+      color: inherit;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    svg {
+      display: block;
+      width: 20px;
+      height: 20px;
+      flex: 0 0 auto;
+    }
+
+    [data-icon] {
+      display: inline-grid;
+      place-items: center;
+      width: 20px;
+      height: 20px;
+    }
+
+    .app {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ============================================================
+       Header
+       ============================================================ */
+
+    /* Этап 10: header — fixed (всегда виден, не прячется при скролле),
+       тулбар и контент начинаются НИЖЕ хедера. */
+    .header {
+      position: fixed;
+      top: calc(var(--edge) + var(--safe-top));
+      left: var(--edge);
+      right: var(--edge);
+      z-index: 50;
+
+      height: var(--header-h);
+      padding: 0 8px 0 12px;
+
+      display: flex;
+      align-items: center;
+      gap: 4px;
+
+      background: var(--surface);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+
+      transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    body.header-hidden .header {
+      transform: translateY(calc(-100% - var(--edge) - var(--safe-top) - 8px));
+    }
+
+    /* «дыра» вместо хедера в потоке */
+    .app::before {
+      content: "";
+      flex: 0 0 auto;
+      height: calc(var(--edge) * 2 + var(--header-h) + var(--safe-top));
+    }
+
+    .brand {
+      font-size: 13px;
+      font-weight: 850;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .header-spacer {
+      flex: 1;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      transition: 0.18s ease;
+    }
+
+    .icon-btn:hover {
+      color: var(--text);
+      background: var(--hover);
+    }
+
+    .icon-btn:focus-visible,
+    .avatar-btn:focus-visible,
+    .tab:focus-visible,
+    .tool-item:focus-visible,
+    .fan-item:focus-visible,
+    .chip:focus-visible,
+    .seg-btn:focus-visible,
+    .primary-btn:focus-visible,
+    .quick-card:focus-visible {
+      outline: 2px solid var(--text);
+      outline-offset: 2px;
+    }
+
+    .nav-history {
+      display: none;
+    }
+
+    .theme-toggle .sun,
+    .theme-toggle .moon {
+      width: 20px;
+      height: 20px;
+    }
+
+    :root[data-theme="dark"] .theme-toggle .moon {
+      display: none;
+    }
+
+    :root[data-theme="light"] .theme-toggle .sun {
+      display: none;
+    }
+
+    .avatar-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--selected);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 850;
+      display: grid;
+      place-items: center;
+      margin-left: 4px;
+      transition: 0.18s ease;
+    }
+
+    .avatar-btn:hover {
+      background: var(--hover);
+    }
+
+    /* ============================================================
+       Content
+       ============================================================ */
+
+    .content {
+      flex: 1;
+      min-width: 0;
+      padding: calc(4px + var(--edge)) var(--edge) calc(86px + var(--safe-bottom));
+      transition: margin-left 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    /* Этап 17: «дыра» под fixed-хедер нужна на всех размерах.
+       Раньше на мобильных она отключалась (content: none), и заголовок
+       страницы (#page-title) уезжал под шапку на каждом маршруте. */
+
+    /* Этап 17: комфортные touch-таргеты (≥44px) на сенсорных экранах */
+    @media (pointer: coarse) {
+      .icon-btn { width: 44px; height: 44px; }
+      .avatar-btn { width: 40px; height: 40px; }
+      .tab { min-height: 44px; }
+    }
+
+    .content-inner {
+      width: 100%;
+      max-width: 1320px;
+      margin: 0 auto;
+    }
+
+    /* Этап 34: таблица операций — на всю ширину (референс
+       «операции.html» занимает всё доступное пространство).
+       Снимаем 1320px-ограничение только для вкладки operations,
+       когда рамка телефона выключена (data-frame="off"). */
+    :root[data-route="operations"][data-frame="off"] .content-inner {
+      max-width: none;
+    }
+
+    /* Этап 18: заголовок раздела и подзаголовок переехали в шапку.
+       Контент начинается сразу с карточек — минус ~70px пустоты сверху. */
+    .header-titles {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 1px;
+      min-width: 0;
+      margin-left: 6px;
+    }
+
+    .header-titles h1 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-titles p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    @media (max-width: 767.98px) {
+      /* на телефоне кнопке «Mono» места нет — отдаём его заголовку */
+      .header .brand { display: none; }
+      .header-titles { margin-left: 2px; }
+    }
+
+    @media (max-width: 419.98px) {
+      /* на узких экранах подзаголовок не помещается и рвётся многоточием —
+         оставляем только название раздела, чуть уменьшив кегль */
+      .header-titles p { display: none; }
+      .header-titles h1 { font-size: 16px; }
+    }
+
+    @media (max-width: 379.98px) {
+      /* 360px-телефоны: «Планируемые платежи» иначе не влезает на 1px */
+      .header-titles h1 { font-size: 15px; letter-spacing: -0.03em; }
+    }
+
+    .panel {
+      background: var(--surface);
+      border-radius: 18px;
+      padding: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .panel + .panel {
+      margin-top: 12px;
+    }
+
+    .panel-title {
+      margin: 0 0 10px;
+      font-size: 13px;
+      font-weight: 850;
+      letter-spacing: 0.02em;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .sticky-title {
+      position: sticky;
+      top: calc(var(--header-h) + var(--edge) * 2 + var(--safe-top));
+      z-index: 4;
+      margin: 14px 0 8px;
+      padding: 8px 0;
+      background: var(--bg);
+      font-size: 13px;
+      font-weight: 850;
+      letter-spacing: 0.02em;
+    }
+
+    .list {
+      display: grid;
+      /* Этап 17: minmax(0,1fr) — иначе auto-колонка растягивалась по
+         max-content строки, и длинная строка операции вылезала за экран. */
+      grid-template-columns: minmax(0, 1fr);
+      gap: 8px;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 56px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: var(--surface-2);
+      box-shadow: var(--soft-shadow);
+    }
+
+    .row-main {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .row-title {
+      font-size: 14px;
+      font-weight: 780;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .row-meta {
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .badge {
+      flex: 0 0 auto;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: var(--selected);
+      color: var(--text);
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .amount {
+      flex: 0 0 auto;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .amount.income {
+      font-weight: 900;
+    }
+
+    .amount.expense {
+      font-weight: 760;
+      opacity: 0.82;
+    }
+
+    /* Этап 29: переводы между счетами — нейтральный тон, не доход/расход */
+    .amount.transfer {
+      font-weight: 760;
+      color: var(--muted, #64748b);
+    }
+
+    /* Этап 29: маска номера счёта в списке счетов (•• 4276) */
+    .acct-mask {
+      font-family: var(--font-num, inherit);
+      font-size: 12px;
+      color: var(--muted, #64748b);
+      letter-spacing: 0.02em;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .stat {
+      min-height: 72px;
+      padding: 10px;
+      border-radius: 14px;
+      background: var(--surface-2);
+      box-shadow: var(--soft-shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 750;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .stat-value {
+      font-size: 15px;
+      font-weight: 900;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .quick-card {
+      min-height: 94px;
+      padding: 12px;
+      border-radius: 18px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      text-align: left;
+      transition: transform 0.16s ease, background 0.16s ease;
+    }
+
+    .quick-card:hover {
+      background: var(--surface-2);
+      transform: translateY(-1px);
+    }
+
+    .quick-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      background: var(--selected);
+      display: grid;
+      place-items: center;
+    }
+
+    /* Этап 17: заголовок и подпись — в столбик (раньше оба span были
+       inline и склеивались в одну строку: «Ученик Новый контакт»). */
+    .quick-card > span:last-child {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      min-width: 0;
+    }
+
+    .quick-title {
+      display: block;
+      font-size: 13px;
+      font-weight: 850;
+    }
+
+    .quick-sub {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .dash-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .page-tools {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    /* Этап 19: на телефоне фильтры занимают строку целиком, а чип
+       сортировки переносится и прижимается вправо — раньше он падал
+       влево и выглядел потерянным. */
+    @media (max-width: 767.98px) {
+      .page-tools > .chip { margin-left: auto; }
+    }
+
+    .segmented {
+      display: inline-flex;
+      padding: 3px;
+      gap: 2px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      box-shadow: var(--soft-shadow);
+    }
+
+    .seg-btn {
+      height: 32px;
+      padding: 0 12px;
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      transition: 0.16s ease;
+    }
+
+    .seg-btn.is-active {
+      background: var(--active-bg);
+      color: var(--active-text);
+    }
+
+    .chips {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      scrollbar-width: none;
+      /* Этап 19: чипы занимают свободное место и скроллятся внутри себя,
+         а чип сортировки остаётся в той же строке (раньше он падал
+         на новую строку и выглядел потерянным). */
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    .chips::-webkit-scrollbar {
+      display: none;
+    }
+
+    .chip {
+      height: 32px;
+      padding: 0 12px;
+      border-radius: 999px;
+      background: var(--surface-2);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+      box-shadow: var(--soft-shadow);
+      transition: 0.16s ease;
+    }
+
+    .chip.is-active {
+      background: var(--active-bg);
+      color: var(--active-text);
+    }
+
+    .primary-btn {
+      height: 38px;
+      padding: 0 14px;
+      border-radius: 999px;
+      background: var(--active-bg);
+      color: var(--active-text);
+      font-size: 13px;
+      font-weight: 850;
+      box-shadow: var(--soft-shadow);
+      white-space: nowrap;
+      transition: 0.16s ease;
+    }
+
+    .primary-btn:hover {
+      opacity: 0.92;
+    }
+
+    /* Этап 21: недоступное действие (напр. «Импортировать», пока ничего не выбрано) */
+    .primary-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .primary-btn:disabled:hover {
+      opacity: 0.4;
+    }
+
+    .import-panel .import-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* Этап 22: на главной «Последние операции» занимает всю строку —
+       отдельную панель импорта убрали (дублировала карточку и бюджет). */
+    @media (min-width: 768px) {
+      .dash-grid .panel-wide { grid-column: 1 / -1; }
+    }
+
+    .import-copy {
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .import-copy h3 {
+      margin: 0 0 4px;
+      font-size: 15px;
+    }
+
+    .import-copy p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 26px 16px;
+    }
+
+    .empty-icon {
+      width: 46px;
+      height: 46px;
+      margin: 0 auto 10px;
+      border-radius: 16px;
+      background: var(--selected);
+      display: grid;
+      place-items: center;
+    }
+
+    .empty h3 {
+      margin: 0 0 6px;
+      font-size: 16px;
+    }
+
+    .empty p {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .end-note {
+      margin-top: 10px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* ============================================================
+       Skeleton
+       ============================================================ */
+
+    .skeleton {
+      background: linear-gradient(
+        90deg,
+        var(--surface) 25%,
+        var(--surface-2) 37%,
+        var(--surface) 63%
+      );
+      background-size: 200% 100%;
+      animation: shimmer 1.2s linear infinite;
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .sk-hero {
+      height: 92px;
+      margin-bottom: 12px;
+    }
+
+    .sk-card {
+      height: 132px;
+      margin-bottom: 12px;
+    }
+
+    .sk-row {
+      height: 56px;
+      margin-bottom: 8px;
+      border-radius: 14px;
+    }
+
+    @keyframes shimmer {
+      to {
+        background-position: -200% 0;
+      }
+    }
+
+    /* ============================================================
+       Desktop / tablet toolbar
+       ============================================================ */
+
+    .toolbar {
+      display: none;
+    }
+
+    .desktop-fab {
+      display: none;
+    }
+
+    @media (min-width: 768px) {
+      .nav-history {
+        display: grid;
+      }
+
+      .toolbar {
+        display: flex;
+        position: fixed; /* Этап 10b: fixed — панель прижата к краю и НЕ «налезает» на хедер: top ниже хедера */
+        left: var(--edge);
+        top: calc(var(--edge) * 2 + var(--header-h) + var(--safe-top));
+        bottom: calc(var(--edge) + var(--safe-bottom));
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: none;
+        z-index: 40;
+
+        width: var(--rail-w);
+        margin-left: 0;
+        padding: 10px 8px;
+        flex-direction: column;
+        gap: 4px;
+
+        background: var(--surface);
+        border-radius: 20px;
+        box-shadow: var(--shadow);
+        overflow-x: hidden;
+
+        transition: width 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+
+      .toolbar::-webkit-scrollbar { display: none; }
+
+      .content {
+        margin-left: calc(var(--rail-w) + var(--edge) * 2);
+        padding: calc(4px + var(--edge)) var(--edge) 28px 0;
+      }
+
+      .app.rail-expanded .toolbar {
+        width: var(--rail-expanded-w);
+      }
+
+      /* Этап 10b: toolbar — fixed (left/top/bottom заданы в @media выше);
+         здесь синхронизация с превью-режимами */
+      .app.rail-expanded .content {
+        margin-left: calc(var(--rail-expanded-w) + var(--edge) * 2);
+      }
+
+      .bottom-nav {
+        display: none;
+      }
+
+      .desktop-fab {
+        display: block;
+        position: fixed;
+        right: 20px;
+        bottom: calc(20px + var(--safe-bottom));
+        z-index: 100;
+      }
+
+      .quick-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .dash-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
+      }
+
+      .toast {
+        bottom: 24px;
+      }
+    }
+
+    @media (min-width: 1180px) {
+      .dash-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    .rail-logo {
+      width: 40px;
+      height: 40px;
+      margin: 0 auto 8px;
+      border-radius: 12px;
+      background: var(--selected);
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      transition: margin 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .app.rail-expanded .rail-logo {
+      margin-left: 0;
+      margin-right: auto;
+    }
+
+    .toolbar-nav {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .tool-item {
+      position: relative;
+      width: 100%;
+      height: 42px;
+      border-radius: 12px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      white-space: nowrap;
+      overflow: hidden;
+      transition:
+        background 0.18s ease,
+        color 0.18s ease,
+        padding 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .app.rail-expanded .tool-item {
+      padding: 0 12px;
+    }
+
+    .tool-item:hover {
+      background: var(--hover);
+      color: var(--text);
+    }
+
+    .tool-item.is-active {
+      background: var(--selected);
+      color: var(--text);
+    }
+
+    .tool-item.is-active::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 10px;
+      bottom: 10px;
+      width: 3px;
+      border-radius: 0 3px 3px 0;
+      background: var(--text);
+    }
+
+    .tool-label {
+      max-width: 0;
+      opacity: 0;
+      margin-left: 0;
+      overflow: hidden;
+      font-size: 14px;
+      font-weight: 720;
+      transition:
+        max-width 0.26s cubic-bezier(0.2, 0.8, 0.2, 1),
+        opacity 0.18s ease,
+        margin-left 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .app.rail-expanded .tool-label {
+      max-width: 120px;
+      opacity: 1;
+      margin-left: 10px;
+    }
+
+    .toolbar-bottom {
+      padding-top: 4px;
+    }
+
+    /* ============================================================
+       Mobile bottom navigation
+       ============================================================ */
+
+    .bottom-nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 100;
+
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 8px calc(7px + var(--safe-bottom));
+
+      background: var(--surface);
+      border-radius: 24px 24px 0 0;
+      box-shadow: 0 -18px 42px rgba(0, 0, 0, 0.45);
+
+      transition: transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .bottom-nav.nav-hidden {
+      transform: translateY(calc(100% + var(--safe-bottom)));
+    }
+
+    .tabs {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .tab {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: var(--tab-w);
+      height: var(--tab-h);
+      border-radius: 999px;
+      color: var(--muted);
+      overflow: hidden;
+      flex: 0 0 auto;
+      transition:
+        width 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+        background 0.18s ease,
+        color 0.18s ease,
+        box-shadow 0.18s ease;
+    }
+
+    .tab:hover {
+      color: var(--text);
+      background: var(--hover);
+    }
+
+    .tab.is-active {
+      width: var(--tab-active-w);
+      background: var(--active-bg);
+      color: var(--active-text);
+      box-shadow: var(--soft-shadow);
+    }
+
+    .tab-label {
+      max-width: 0;
+      opacity: 0;
+      margin-left: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      font-size: 12px;
+      font-weight: 850;
+      transition:
+        max-width 0.28s cubic-bezier(0.2, 0.8, 0.2, 1),
+        opacity 0.18s ease,
+        margin-left 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .tab.is-active .tab-label {
+      max-width: var(--tab-label-w);
+      opacity: 1;
+      margin-left: 5px;
+    }
+
+    /* ============================================================
+       FAB + quick actions
+       ============================================================ */
+
+    .fab-wrap {
+      position: relative;
+      width: var(--fab-size);
+      height: var(--fab-size);
+      flex: 0 0 auto;
+      z-index: 100;
+    }
+
+    /* ============================================================
+       Help modal
+       ============================================================ */
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 190;
+
+      background: var(--backdrop);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      position: fixed;
+      z-index: 200;
+      left: 50%;
+      top: 50%;
+      width: min(560px, calc(100vw - 24px));
+      max-height: min(78vh, 680px);
+      overflow: auto;
+      padding: 18px;
+      border-radius: 22px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, -48%) scale(0.98);
+      transition: 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .modal.open {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .modal-head h2 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: -0.02em;
+    }
+
+    .help-list {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .help-item {
+      padding: 12px;
+      border-radius: 14px;
+      background: var(--surface-2);
+      box-shadow: var(--soft-shadow);
+    }
+
+    .help-item h3 {
+      margin: 0 0 4px;
+      font-size: 14px;
+    }
+
+    .help-item p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    /* ============================================================
+       Toast
+       ============================================================ */
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: calc(82px + var(--safe-bottom));
+      transform: translate(-50%, 12px);
+      z-index: 210;
+
+      max-width: calc(100vw - 24px);
+      padding: 10px 13px;
+      border-radius: 14px;
+      background: var(--surface-2);
+      color: var(--text);
+      box-shadow: var(--shadow);
+
+      font-size: 13px;
+      font-weight: 760;
+      line-height: 1.35;
+
+      opacity: 0;
+      pointer-events: none;
+      transition: 0.2s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+  
+/* ==== layout base end ==== */
+
+/* ============================================================
+   ЭТАП 7 — DEV PREVIEW: принудительные режимы телефон/планшет/веб
+   Переключаются кнопкой в шапке (data-preview на <html>).
+   media-запросы не поддерживают CSS-переменные, поэтому здесь
+   точечно переопределяются правила из @media выше.
+   ============================================================ */
+
+/* ---- MOBILE: как ≤767px независимо от ширины окна ---- */
+:root[data-preview="mobile"] .nav-history { display: none; }
+:root[data-preview="mobile"] .toolbar { display: none !important; }
+:root[data-preview="mobile"] .content { margin-left: 0 !important; padding: 14px var(--edge) calc(86px + var(--safe-bottom)) !important; }
+:root[data-preview="mobile"] .app.rail-expanded .content { margin-left: 0 !important; }
+:root[data-preview="mobile"] .bottom-nav { display: flex !important; }
+:root[data-preview="mobile"] .desktop-fab { display: none !important; }
+:root[data-preview="mobile"] .quick-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+:root[data-preview="mobile"] .dash-grid { grid-template-columns: 1fr; }
+:root[data-preview="mobile"] .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+
+/* ---- TABLET: как 768–1179px ---- */
+:root[data-preview="tablet"] .nav-history { display: grid; }
+:root[data-preview="tablet"] .toolbar {
+  display: flex;
+  position: fixed;
+  left: var(--edge);
+  top: calc(var(--edge) * 2 + var(--header-h) + var(--safe-top));
+  bottom: calc(var(--edge) + var(--safe-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  z-index: 40;
+  width: var(--rail-w);
+  margin-left: 0;
+  padding: 10px 8px;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--surface);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  overflow-x: hidden;
+  transition: width 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+:root[data-preview="tablet"] .content { margin-left: calc(var(--rail-w) + var(--edge) * 2); padding: calc(4px + var(--edge)) var(--edge) 28px 0; }
+:root[data-preview="tablet"] .app.rail-expanded .toolbar { width: var(--rail-expanded-w); }
+:root[data-preview="tablet"] .app.rail-expanded .content { margin-left: calc(var(--rail-expanded-w) + var(--edge) * 2); }
+:root[data-preview="tablet"] .bottom-nav { display: none !important; }
+:root[data-preview="tablet"] .desktop-fab { display: block; position: fixed; right: 20px; bottom: calc(20px + var(--safe-bottom)); z-index: 100; }
+:root[data-preview="tablet"] .quick-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+:root[data-preview="tablet"] .dash-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+:root[data-preview="tablet"] .toast { bottom: 24px; }
+
+/* ---- DESKTOP: как ≥1180px (раскладка планшета + 3 колонки дашбордов) ---- */
+:root[data-preview="desktop"] .nav-history { display: grid; }
+:root[data-preview="desktop"] .toolbar {
+  display: flex;
+  position: fixed;
+  left: var(--edge);
+  top: calc(var(--edge) * 2 + var(--header-h) + var(--safe-top));
+  bottom: calc(var(--edge) + var(--safe-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  z-index: 40;
+  width: var(--rail-w);
+  margin-left: 0;
+  padding: 10px 8px;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--surface);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  overflow-x: hidden;
+  transition: width 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+:root[data-preview="desktop"] .content { margin-left: calc(var(--rail-w) + var(--edge) * 2); padding: calc(4px + var(--edge)) var(--edge) 28px 0; }
+:root[data-preview="desktop"] .app.rail-expanded .toolbar { width: var(--rail-expanded-w); }
+:root[data-preview="desktop"] .app.rail-expanded .content { margin-left: calc(var(--rail-expanded-w) + var(--edge) * 2); }
+:root[data-preview="desktop"] .bottom-nav { display: none !important; }
+:root[data-preview="desktop"] .desktop-fab { display: block; position: fixed; right: 20px; bottom: calc(20px + var(--safe-bottom)); z-index: 100; }
+:root[data-preview="desktop"] .quick-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+:root[data-preview="desktop"] .dash-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
+:root[data-preview="desktop"] .toast { bottom: 24px; }
+
+/* Кнопка превью активна — подсветка */
+.preview-btn.is-on { color: var(--accent-text); background: var(--accent); }
+.preview-btn.is-on:hover { background: var(--accent); color: var(--accent-text); }
+
+/* ============================================================
+   ЭТАП 11 — синхронизация принудительных режимов с реальными
+   media-запросами (mobile/tablet правила уже есть выше; здесь
+   desktop ≥1180px) + единое отключение анимаций по prefers-reduced-motion
+   ============================================================ */
+:root[data-preview="desktop"] .nav-history { display: grid; }
+:root[data-preview="desktop"] .toolbar { display: flex; }
+:root[data-preview="desktop"] .bottom-nav { display: none !important; }
+:root[data-preview="desktop"] .desktop-fab { display: block; }
+
+/* Единое уважение prefers-reduced-motion для всех компонентов и режимов.
+   Глобальный блок внутри @media в начале файла не покрывал правила,
+   добавленные позже (components/anim), поэтому дублируем здесь. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================================
+   ЭТАП 30 — карусель банковских карт на странице «Счета»
+   (порт визуала из референса «Счета и транзакции.html»:
+   лицевые карты с градиентом, чипом, бесконтактной оплатой,
+   стрелки/точки навигации, scroll-snap; адаптив по ширине
+   контейнера страниц — не viewport, т.к. работает и в рамке)
+   ============================================================ */
+.carousel-wrap { position: relative; }
+
+.accounts-carousel {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 6px 2px 12px;
+  scrollbar-width: none;
+  touch-action: pan-x;
+}
+.accounts-carousel::-webkit-scrollbar { display: none; }
+
+.carousel-arrow {
+  position: absolute;
+  top: calc(50% - 22px);
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  display: none;
+  place-items: center;
+  cursor: pointer;
+  z-index: 3;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .08);
+  font-size: 18px;
+  font-weight: 800;
+  transition: background .15s, transform .1s, opacity .15s;
+}
+.carousel-arrow:hover { background: var(--surface-2); }
+.carousel-arrow:active { transform: scale(.96); }
+.carousel-arrow:disabled { opacity: .28; cursor: not-allowed; }
+.carousel-arrow.left { left: 0; }
+.carousel-arrow.right { right: 0; }
+
+.carousel-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  min-height: 14px;
+}
+.carousel-dots button {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--line);
+  cursor: pointer;
+  padding: 0;
+  transition: width .18s ease, background .18s ease;
+}
+.carousel-dots button.on { width: 20px; background: var(--accent); }
+
+.bank-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, .10);
+  border-radius: 20px;
+  background: var(--card-bg);
+  color: var(--card-fg);
+  /* Этап 31: матовая поверхность — мягкая тень без глянцевого блика */
+  box-shadow:
+    0 14px 28px -20px rgba(0, 0, 0, .45),
+    inset 0 1px 0 rgba(255, 255, 255, .10);
+  padding: 13px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  /* Этап 31: на десктопе карточка компактная (не во всю ширину ленты) */
+  max-width: 340px;
+  aspect-ratio: 1.75 / 1;
+  min-height: 0;
+  scroll-snap-align: center;
+  cursor: pointer;
+  user-select: none;
+  text-align: left;
+  container-type: inline-size;
+  container-name: bankcard;
+  transition:
+    transform .22s cubic-bezier(.2, .8, .2, 1),
+    box-shadow .22s ease,
+    border-color .18s ease,
+    filter .18s ease;
+}
+.accounts-carousel:not(.animated) .bank-card { animation: none !important; }
+.accounts-carousel.animated .bank-card {
+  animation: cardIn .52s cubic-bezier(.16, 1, .3, 1) backwards;
+  animation-delay: calc(var(--i) * 55ms);
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(14px) scale(.97); }
+  to { opacity: 1; transform: none; }
+}
+/* Этап 31: матовые декоративные пятна (были ярче/глянцевее) */
+.bank-card::before {
+  content: "";
+  position: absolute;
+  inset: -45% -20% auto auto;
+  width: 72%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, .12), transparent 66%);
+  pointer-events: none;
+  z-index: 0;
+}
+.bank-card::after {
+  content: "";
+  position: absolute;
+  inset: auto -10% -35% auto;
+  width: 58%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 0, 0, .07), transparent 68%);
+  pointer-events: none;
+  z-index: 0;
+}
+.bank-card > * { position: relative; z-index: 1; }
+.bank-card:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 20px 36px -26px rgba(0, 0, 0, .55),
+    inset 0 1px 0 rgba(255, 255, 255, .14);
+}
+.bank-card:active { transform: translateY(-1px) scale(.995); }
+.bank-card:focus-visible { outline: 2px solid var(--ring, currentColor); outline-offset: 2px; }
+
+/* Этап 31: shine-блик приглушён — карточки стали матовыми */
+.bc-shine {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, .08) 44%, transparent 58%);
+  transform: translateX(-130%);
+  transition: transform .85s ease;
+}
+.bank-card:hover .bc-shine { transform: translateX(130%); }
+
+.bc-top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+  min-width: 0;
+}
+.bc-logo {
+  width: clamp(34px, 16cqi, 46px);
+  aspect-ratio: 1;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+}
+.bc-logo svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 4px 10px rgba(0, 0, 0, .12)); }
+.bc-titles { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.bc-bank {
+  font-size: clamp(10px, 4.4cqi, 13px);
+  font-weight: 800;
+  opacity: .78;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bc-name {
+  font-size: clamp(13px, 5.8cqi, 18px);
+  font-weight: 800;
+  letter-spacing: -.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bc-type {
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  opacity: .72;
+  font-size: clamp(8px, 3.2cqi, 10px);
+  font-weight: 800;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+.bc-middle { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 0; }
+.bc-chip {
+  width: clamp(38px, 18cqi, 50px);
+  aspect-ratio: 1.38 / 1;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #f7dc6f 0%, #d4ac0d 42%, #f9e79f 58%, #b7950b 100%);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .12), 0 6px 14px rgba(0, 0, 0, .12);
+  position: relative;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+.bc-chip::before, .bc-chip::after { content: ""; position: absolute; background: rgba(0, 0, 0, .16); }
+.bc-chip::before { left: 0; right: 0; top: 42%; height: 1px; }
+.bc-chip::after { top: 0; bottom: 0; left: 42%; width: 1px; }
+.bc-contactless { width: clamp(22px, 10cqi, 30px); aspect-ratio: 1; opacity: .78; flex: 0 0 auto; }
+.bc-contactless svg { width: 100%; height: 100%; display: block; }
+.bc-bottom { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; min-width: 0; }
+.bc-number {
+  font-size: clamp(11px, 4.8cqi, 15px);
+  font-weight: 800;
+  letter-spacing: .12em;
+  white-space: nowrap;
+  opacity: .92;
+  font-variant-numeric: tabular-nums;
+}
+.bc-balance { text-align: right; min-width: 0; }
+.bc-balance span {
+  display: block;
+  font-size: clamp(8px, 3.2cqi, 10px);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .2px;
+  opacity: .68;
+  white-space: nowrap;
+}
+.bc-balance strong {
+  display: block;
+  margin-top: 2px;
+  font-size: clamp(20px, 9.2cqi, 34px);
+  font-weight: 800;
+  letter-spacing: -.7px;
+  line-height: 1;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Адаптив карусели — по ШИРИНЕ КОНТЕЙНЕРА страниц (работает и в рамке,
+   и в превью-режимах, в отличие от media-запросов по viewport) */
+.carousel-wrap { container-type: inline-size; container-name: carwrap; }
+@container carwrap (min-width: 640px) {
+  .accounts-carousel { padding-left: 42px; padding-right: 42px; scroll-snap-type: x proximity; }
+  /* Этап 31: компактные карточки на десктопе — фикс. ширина вместо 50% ленты */
+  .bank-card { flex: 0 0 320px; max-width: 320px; scroll-snap-align: start; }
+  .carousel-arrow { display: grid; }
+}
+@container carwrap (max-width: 900px) and (min-width: 640px) {
+  .bank-card { flex: 0 0 280px; max-width: 280px; }
+}
+@container carwrap (max-width: 639.98px) {
+  .bank-card { flex: 0 0 100%; max-width: none; }
+}
+
+/* Этап 31: панель действий под каруселью (Добавить счёт / Перевод) */
+.accounts-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.accounts-actions .secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.accounts-actions .secondary-btn [data-icon] { width: 15px; height: 15px; display: inline-flex; }
+.accounts-actions .secondary-btn [data-icon] svg { width: 100%; height: 100%; }
+
+/* Этап 31: последние операции активной карты */
+.acct-recent {
+  margin-top: 14px;
+}
+.acct-recent-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 2px 6px;
+}
+.acct-recent-head h3 { font-size: 14px; font-weight: 800; margin: 0; }
+.acct-recent .list { display: flex; flex-direction: column; gap: 2px; }
+.recent-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  padding: 9px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background .15s ease;
+}
+.recent-row:hover { background: var(--surface-2); }
+.recent-row:focus-visible { outline: 2px solid var(--ring, var(--accent)); outline-offset: -2px; }
+.recent-main { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 1px; }
+.recent-title {
+  font-size: 13.5px;
+  font-weight: 650;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.recent-meta { font-size: 11.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.recent-sum { font-size: 13.5px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.recent-sum.income { color: var(--green, #16a34a); }
+.recent-sum.expense { color: var(--red, #dc2626); }
+.recent-sum.transfer { color: var(--blue, #2563eb); }

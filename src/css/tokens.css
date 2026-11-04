@@ -1,0 +1,179 @@
+/* ============================================================
+   MONO — ДИЗАЙН-ТОКЕНЫ (Этап 1)
+   Единая палитра для layout («Mono», монохром) и карточек «Домкнига»
+   (акцент + семантические цвета). Все компоненты берут цвета ТОЛЬКО
+   отсюда. Порядок подключения: tokens.css → layout-base.css → components.css
+   ============================================================ */
+
+:root {
+  /* ---- Фирменный акцент и семантика (из карточек Домкнига) ---- */
+  --accent: #6c5ce7;
+  --accent-soft: rgba(108, 92, 231, 0.12);
+  --accent-text: #ffffff;
+
+  --green: #00b894;
+  --amber: #e6a700;
+  --red: #ff6b6b;
+  --blue: #0984e3;
+  --slate: #636e81;
+
+  --green-bg: rgba(0, 184, 148, 0.12);
+  --amber-bg: rgba(230, 167, 0, 0.14);
+  --red-bg: rgba(255, 107, 107, 0.12);
+  --blue-bg: rgba(9, 132, 227, 0.12);
+
+  /* Палитра сегментов диаграмм (donut/pie/bars) */
+  --chart-1: #6c5ce7;
+  --chart-2: #00b894;
+  --chart-3: #e6a700;
+  --chart-4: #ff6b6b;
+  --chart-5: #0984e3;
+  --chart-6: #636e81;
+  --chart-7: #a29bfe;
+  --chart-8: #55efc4;
+
+  /* ---- Типографика ---- */
+  --font-ui: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-num: "Manrope", Inter, ui-sans-serif, system-ui, sans-serif;
+
+  /* ---- Радиусы / отступы / тени ---- */
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 18px;
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+
+  /* фолбэк #111 на случай, если --ring вычислится раньше, чем определён --text */
+  --ring: color-mix(in srgb, var(--text, #111) 28%, transparent);
+
+  /* ---- Мобильные размеры / layout-константы (из исходного layout.html) ---- */
+  --bottom-nav-h: 62px;
+  --edge: 10px;
+  --header-h: 56px;
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+  --rail-w: 64px;
+  --rail-expanded-w: 176px;
+  --tab-h: 40px;
+  --tab-w: 40px;
+  --tab-active-w: 104px;
+  --tab-label-w: 62px;
+  --fab-size: 42px;
+  --pill-h: 40px;
+}
+
+/* ============================================================
+   РЕЖИМЫ ПРЕДПРОСМОТРА (Этап 7 — dev-preview)
+   data-preview="mobile" → все @media ведут себя как ≤767px
+   data-preview="tablet" → как 768–1179px
+   data-preview="desktop" → как ≥1180px (по умолчанию)
+   ============================================================ */
+:root[data-preview="mobile"] { --mq-mobile: 1px; }
+:root:not([data-preview]) { --mq-mobile: 0; }
+
+/* ================= ТЁМНАЯ ТЕМА (дефолт Mono) ================= */
+:root[data-theme="dark"] {
+  --bg: #090909;
+  --surface: #141414;
+  --surface-2: #1c1c1c;
+  --line: #262d45;
+  --text: #ffffff;
+  --muted: #a0a0a8;
+  /* Этап 22: вторичный текст (--text-2/--text-3 использовались, но не были
+     объявлены — элементы молча наследовали цвет основного текста) */
+  --text-2: #cfcfd6;
+  --text-3: #9a9aa3;
+
+  --hover: rgba(255, 255, 255, 0.08);
+  --selected: rgba(255, 255, 255, 0.14);
+  --active-bg: #ffffff;
+  --active-text: #000000;
+
+  --shadow:
+    0 18px 42px rgba(0, 0, 0, 0.58),
+    0 0 0 1px rgba(255, 255, 255, 0.045);
+  --soft-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+  --backdrop: rgba(0, 0, 0, 0.58);
+
+  /* в тёмной теме — осветлённые варианты из Домкниги */
+  --accent: #8b7cff;
+  --accent-soft: rgba(139, 124, 255, 0.16);
+  --green: #2ee6c0;
+  --amber: #ffd93d;
+  --red: #ff8080;
+  --blue: #74b9ff;
+
+  --green-bg: rgba(46, 230, 192, 0.14);
+  --amber-bg: rgba(255, 217, 61, 0.16);
+  --red-bg: rgba(255, 128, 128, 0.14);
+  --blue-bg: rgba(116, 185, 255, 0.14);
+
+  --chart-1: #8b7cff;
+  --chart-2: #2ee6c0;
+  --chart-3: #ffd93d;
+  --chart-4: #ff8080;
+  --chart-5: #74b9ff;
+  --chart-6: #8b93ad;
+  --chart-7: #a29bfe;
+  --chart-8: #55efc4;
+}
+
+/* ================= СВЕТЛАЯ ТЕМА ================= */
+:root[data-theme="light"] {
+  --bg: #f1f2f4;
+  --surface: #ffffff;
+  --surface-2: #f7f7f8;
+  --line: #e7eaf2;
+  --text: #111111;
+  --muted: #5f6368;
+  --text-2: #33373a;
+  --text-3: #5f6368;
+
+  --hover: rgba(0, 0, 0, 0.06);
+  --selected: rgba(0, 0, 0, 0.1);
+  --active-bg: #111111;
+  --active-text: #ffffff;
+
+  --shadow:
+    0 18px 40px rgba(15, 23, 42, 0.12),
+    0 0 0 1px rgba(15, 23, 42, 0.045);
+  --soft-shadow:
+    0 10px 26px rgba(15, 23, 42, 0.08),
+    0 0 0 1px rgba(15, 23, 42, 0.04);
+  --backdrop: rgba(0, 0, 0, 0.24);
+
+  /* Этап 22: на белом фирменные #00b894/#ff6b6b/#e6a700 дают 2.1–2.8:1 —
+     для текста берём затемнённые варианты (4.7–6:1), графики остаются
+     на ярких --chart-* из :root. */
+  --green: #007a63;
+  --red: #c62f2f;
+  --amber: #8a6400;
+  --blue: #0b6bc0;
+
+  --green-bg: rgba(0, 122, 99, 0.1);
+  --red-bg: rgba(198, 47, 47, 0.1);
+  --amber-bg: rgba(138, 100, 0, 0.12);
+  --blue-bg: rgba(11, 107, 192, 0.1);
+}
+
+/* ============================================================
+   СЛУЖЕБНЫЕ КЛАССЫ ТЕМ (используются всеми компонентами)
+   ============================================================ */
+.t-income, .tone-green { color: var(--green); }
+.t-expense, .tone-red { color: var(--red); }
+.t-pending, .tone-amber { color: var(--amber); }
+.t-info, .tone-blue { color: var(--blue); }
+.t-muted { color: var(--muted); }
+
+.badge--paid { background: var(--green-bg); color: var(--green); }
+.badge--pending { background: var(--amber-bg); color: var(--amber); }
+.badge--overdue { background: var(--red-bg); color: var(--red); }
+.badge--info { background: var(--blue-bg); color: var(--blue); }
+.badge--neutral { background: var(--hover); color: var(--muted); }
+.badge--accent { background: var(--accent-soft); color: var(--accent); }
+

@@ -1,0 +1,3 @@
+# Зависимости для CI (GitHub Actions → job "Smoke test") и локальной разработки.
+# Установка: pip install -r requirements.txt
+playwright==1.48.0
