@@ -445,6 +445,65 @@
     if (all) all.indeterminate = all.dataset.indeterminate === "1" && !all.checked;
   }
 
+  /* ---------- единый пайплайн «операций» (Этап 35-fix) ----------
+     Фильтрация + сортировка + страница. Используется И view-таблицей
+     (Views.operations в finance.js), И обработчиком «выбрать все».
+     Раньше это были две независимые копии — они разъезжались, и bulk-
+     удаление «не работало», потому что выделялись id не тех строк.
+     pageItems(db, st, sortedItems): если передан уже отсортированный
+     список view — просто берём страницу из него (дешевле); иначе
+     считаем полный пайплайн сами. */
+  window.OpsQuery = (function () {
+    function applyFilters(db, st) {
+      let list = [...(db.transactions || [])];
+      if (st.filter === "income") list = list.filter((t) => t.type !== "transfer" && t.amount > 0);
+      if (st.filter === "expense") list = list.filter((t) => t.type !== "transfer" && t.amount < 0);
+      if (st.filter === "transfer") list = list.filter((t) => t.type === "transfer");
+      if (st.filter === "pending") list = list.filter((t) => t.status === "pending");
+      if (st.query) {
+        const q = String(st.query).toLowerCase();
+        list = list.filter((t) => String(t.title || "").toLowerCase().includes(q) || String(t.category || "").toLowerCase().includes(q));
+      }
+      if (st.account && st.account !== "all") list = list.filter((t) => t.account === st.account || t.toAccount === st.account);
+      if (st.category && st.category !== "all") list = list.filter((t) => t.category === st.category);
+      const now = new Date(); now.setHours(0, 0, 0, 0);
+      const pm = st.period === "1m" ? 1 : st.period === "3m" ? 3 : st.period === "6m" ? 6 : 0;
+      if (pm) {
+        const from = new Date(now.getFullYear(), now.getMonth() - (pm - 1), 1);
+        list = list.filter((t) => {
+          const p = /^(\d{2})\.(\d{2})/.test(t.date || "") ? u.parseDM(t.date, now) : null;
+          if (!p) return true; // «сегодня» и т.п. — всегда свежие
+          return new Date(p.y, p.m - 1, p.d).getTime() >= from.getTime();
+        });
+      }
+      return list;
+    }
+    function sortList(list, st) {
+      const now = new Date(); now.setHours(0, 0, 0, 0);
+      const dia = (d) => {
+        if (!/^(\d{2})\.(\d{2})/.test(d || "")) return Infinity;
+        const p = u.parseDM(d, now);
+        return p ? new Date(p.y, p.m - 1, p.d).getTime() : Infinity;
+      };
+      const dir = st.dir === "asc" ? 1 : -1;
+      if (st.sort === "amount") list.sort((a, b) => (Math.abs(b.amount) - Math.abs(a.amount)) * dir);
+      else if (st.sort === "category") list.sort((a, b) => a.category.localeCompare(b.category, "ru") * dir);
+      else if (st.sort === "account") list.sort((a, b) => String(a.account || "").localeCompare(String(b.account || ""), "ru") * dir);
+      else if (st.sort === "tags") list.sort((a, b) => String((a.tags || [])[0] || "").localeCompare(String((b.tags || [])[0] || ""), "ru") * dir);
+      else if (st.sort === "merchant") list.sort((a, b) => a.title.localeCompare(b.title, "ru") * dir);
+      else list.sort((a, b) => (dia(b.date) - dia(a.date)) * dir);
+      return list;
+    }
+    function pageItems(db, st, preSorted) {
+      const src = Array.isArray(preSorted) ? preSorted : sortList(applyFilters(db, st), st);
+      return src.slice(0, st.limit);
+    }
+    function visibleIds(db, st) {
+      return pageItems(db, st).map((t) => Number(t.id));
+    }
+    return { applyFilters, sortList, pageItems, visibleIds };
+  })();
+
   /* ---------- сортировки / циклы ---------- */
   function cycleSort(scope) {
     if (scope === "teacher") {
@@ -1611,14 +1670,16 @@
     }
 
     /* Этап 32: клик по заголовку колонки таблицы — сортировка.
-       Этап 34-fix: чекбоксы «выбрать все»/чекбокс строки тоже дают
-       click-всплытие к <tr data-action="tx-select"> и к .th-sort — если
-       не погасить здесь, второй change-обработчик на input отрабатывает
-       повторно (input уже удалён из DOM) и select-all «залипает». */
+       Этап 35-fix: чекбоксы (th.c-check / td.c-check) НЕ должны попадать в
+       ветку .th-sort: раньше клик по «выбрать все» всплывал до document,
+       thBtn совпадал с input[data-action='ops-check-all'] (у него нет
+       data-col → col=undefined), и softRender перерисовывал таблицу ДО
+       нативного change-события — input заменялся новым, change терялся и
+       bulk-панель не появлялась («ничего не происходит»). Чекбоксы теперь
+       обрабатываются только через change + целочисленный fallback ниже. */
     const thBtn = event.target.closest(".th-sort");
-    if (thBtn) {
+    if (thBtn && !event.target.closest(".c-check") && !event.target.matches("input[type='checkbox']")) {
       event.preventDefault();
-      if (event.target.closest(".c-check") || event.target.matches("input[type='checkbox']")) return;
       const col = thBtn.dataset.col;
       const stOps = state.operations;
       if (stOps.sort === col) stOps.dir = stOps.dir === "desc" ? "asc" : "desc";
@@ -1765,45 +1826,12 @@
     if (chkAll) {
       window.__opsChkTx = true;
       setTimeout(() => { window.__opsChkTx = false; }, 0);
-      /* Этап 34: «выбрать все» — ровно текущая видимая страница таблицы.
-         Дублируем пайплайн фильтрации из Views.operations (finance.js),
-         иначе чекбокс в шапке не совпадёт с содержимым tbody. */
-      const st = state.operations;
-      const now = new Date(); now.setHours(0, 0, 0, 0);
-      let list = (window.DB.transactions || []).slice();
-      if (st.filter === "income") list = list.filter((t) => t.type !== "transfer" && t.amount > 0);
-      if (st.filter === "expense") list = list.filter((t) => t.type !== "transfer" && t.amount < 0);
-      if (st.filter === "transfer") list = list.filter((t) => t.type === "transfer");
-      if (st.filter === "pending") list = list.filter((t) => t.status === "pending");
-      if (st.query) {
-        const q = String(st.query).toLowerCase();
-        list = list.filter((t) => t.title.toLowerCase().includes(q) || t.category.toLowerCase().includes(q));
-      }
-      if (st.account && st.account !== "all") list = list.filter((t) => t.account === st.account || t.toAccount === st.account);
-      if (st.category && st.category !== "all") list = list.filter((t) => t.category === st.category);
-      const pm = st.period === "1m" ? 1 : st.period === "3m" ? 3 : st.period === "6m" ? 6 : 0;
-      if (pm) {
-        const from = new Date(now.getFullYear(), now.getMonth() - (pm - 1), 1);
-        list = list.filter((t) => {
-          const p = /^(\d{2})\.(\d{2})/.test(t.date || "") ? u.parseDM(t.date, now) : null;
-          if (!p) return true; // «сегодня» и т.п. — всегда свежие
-          return new Date(p.y, p.m - 1, p.d).getTime() >= from.getTime();
-        });
-      }
-      const sdir = st.dir === "asc" ? 1 : -1;
-      if (st.sort === "amount") list.sort((a, b) => (Math.abs(b.amount) - Math.abs(a.amount)) * sdir);
-      else if (st.sort === "category") list.sort((a, b) => a.category.localeCompare(b.category, "ru") * sdir);
-      else if (st.sort === "account") list.sort((a, b) => String(a.account || "").localeCompare(String(b.account || ""), "ru") * sdir);
-      else if (st.sort === "tags") list.sort((a, b) => String((a.tags || [])[0] || "").localeCompare(String((b.tags || [])[0] || ""), "ru") * sdir);
-      else if (st.sort === "merchant") list.sort((a, b) => a.title.localeCompare(b.title, "ru") * sdir);
-      else list.sort((a, b) => {
-        const da = /^(\d{2})\.(\d{2})/.test(a.date || "") ? u.parseDM(a.date, now) : null;
-        const dbb = /^(\d{2})\.(\d{2})/.test(b.date || "") ? u.parseDM(b.date, now) : null;
-        const ta = da ? new Date(da.y, da.m - 1, da.d).getTime() : Infinity;
-        const tb = dbb ? new Date(dbb.y, dbb.m - 1, dbb.d).getTime() : Infinity;
-        return (tb - ta) * (st.dir === "asc" ? -1 : 1);
-      });
-      const ids = list.slice(0, st.limit).map((t) => Number(t.id));
+      /* Этап 35-fix: единый пайплайн фильтрации+сортировки (window.OpsQuery,
+         см. ниже) — тот же, что рисует таблицу в Views.operations. Раньше
+         здесь была вторая копия пайплайна; она разъезжалась с таблицей,
+         из-за чего «выбрать все» выделял не те строки, а «Удалить выбранное»
+         казалось неработающим. */
+      const ids = window.OpsQuery.visibleIds(window.DB, state.operations);
       state.operations.checked = chkAll.checked ? [...new Set(ids)] : [];
       softRender("operations");
     }
